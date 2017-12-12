@@ -51,14 +51,14 @@ version() {
 }
 
 usage() {
-	echo "usage: $(basename "$0") [-cd:hjlvx] [Args] " >&2 # $USAGE => Args
+	echo "usage: $(basename "$0") [-cd:e:hjlo:vx] $USAGE" >&2
 	echo >&2
 	echo "    -d[0-9] set Debug output 0=off; 2='curl'; 9=help" >&2
-#	echo "    -e set ENVIRONMENT" >&2
+	echo "    -e set ENVIRONMENT" >&2
 	echo "    -h print this Help message" >&2
 	echo "    -j input/output data in Json format" >&2
 	echo "    -l execute a %true% deLete" >&2
-#	echo "    -o set ORGANIZATION" >&2
+	echo "    -o set ORGANIZATION" >&2
 	echo "    -v display Version information" >&2
 	echo "    -x input/output data in Xml format" >&2
 }
@@ -87,12 +87,12 @@ parseCommandline() {
 				9) echo '
 					0) "Turn Debug Off"
 					1) "Turn Debug On (stays on until changed)"
-					2) "Show curl command only"
-					5) "Issue true DELETE (otherwise runs a GET)"
-					7) "Adds --trace to $HOME/.curlrc"
-					8) "Adds --trace-ascii - to $HOME/.curlrc"
+					2) "Show 'curl' command only"
+					5) "Issue true DELETE (other runs a GET)"
+					7) "Adds '--trace' to $HOME/.curlrc"
+					8) "Adds '--trace-ascii -' to $HOME/.curlrc"
 					9) "Show this DEBUG Help"
-					*) "Invalid DEBUG LEVEL"'  ; DEBUG=0 ; exit 1 ;;
+					*) "Invalid DEBUG LEVEL"' ;;
 				*) echo -en "\n\n Invalid DEBUG LVL: $DEBUG \n\n" ; exit 1 ;;
 			esac
 			;;
