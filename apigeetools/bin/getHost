@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# getHost
+#
+# returns the host alias for the specified environment
+#
+# usage:
+#   getHost environment
+
+#set -e
+
+USAGE="environment"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 1
+
+echo "$HOST_ALIAS"

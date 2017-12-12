@@ -1,0 +1,43 @@
+#!/bin/bash
+
+#
+# createApiProduct
+# creates an API Product
+#
+# usage:
+#   createApiProduct host_alias name display_name
+
+#set -e
+
+USAGE="host_alias apiproduct_name display_name"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 3
+loadConfig "${ARGS[0]}"
+
+apiProductName=${ARGS[1]}
+display_name=${ARGS[2]}
+description=$display_name
+
+frmt="xml"
+VERB="POST"
+#VERB="GET"
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/apiproducts"
+# BODY should have been updated with <Proxy>name(s)</Proxy> prior to execution
+# TODO: build an XSLT to auto-update the BODY 
+# TODO: clean up "BODY" not needed, use @<filename> in curl for data
+
+BODY=`cat ${apiProductName}.${frmt}`
+debug "POSTing $BODY"
+output=`curl -s -S --basic -u "$CREDENTIALS" -X ${VERB} -H "Accept: application/${frmt}" -H "Content-Type: application/${frmt}" --data-binary "$BODY" -w "\n%{http_code}" "${URL}"`
+RESPONSE=`echo "$output" | sed '$ d'`
+STATUS_CODE=`echo "$output" | tail -n 1`
+if [ "$STATUS_CODE" != "201" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+debug "response is $RESPONSE"

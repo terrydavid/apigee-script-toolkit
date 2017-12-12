@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+# findBroken<template>
+#	find all the broken stuff
+#
+#	Do the API proxy, API Product, Developer, Developer App. 
+#		In that order to Create. 
+#		Reverse to delete
+#
+# usage:
+#   findBroken<template>
+#
+
+#set -e
+
+USAGE="environment"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+# change "myLoop" to someother Loop for the relevant objects
+proxLoop() {
+	# fix the field seperator so the "for" loop will work when the list has "quotes"
+	#oldFS="$IFS"
+	#IFS=$(echo -en "\n\'\"")
+	#set -v
+	for ap in $ApiProxies ; do
+		#REV=`getDeployedApiVersion ${OPTS[@]} -j "$ENVIRONMENT" "$ap"`
+		#output=`getApi ${OPTS[@]} "$HOST_ALIAS" "$ap" "$REV"`
+		output=`getDeployedStatus ${OPTS[@]} "$ENVIRONMENT" "$ap"`
+		ERRLVL="$?"
+		debug "ERRLVL=${ERRLVL}"
+		debug "Output=\n$output"
+		if [ "$ERRLVL" != "0" ] ; then  # need to validate if we have a real ApiProduct or not ( not there yet )
+			#fail "ErrorLVL [$ERRLVL] occured"
+			warn "ErrorLVL [$ERRLVL] occured from getDeployedStatus for api [$ap]"
+		fi
+		if [ "$output" != "deployed" ] ; then
+			warn "ApiProxy [$ap] is NOT deployed correctly: $output"
+		else
+			echo "ApiProxy [$ap] is correctly $output"
+		fi
+	done
+	#IFS="$oldFS"	
+}
+
+parseCommandline "$@"
+checkArgs 1
+
+loadConfig "${ARGS[0]}"
+
+ApiProxies=`listApis ${OPTS[0]} "$HOST_ALIAS" | grep -v CURL`
+debug "ApiProxies= \n$ApiProxies"
+proxLoop
+

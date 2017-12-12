@@ -1,0 +1,36 @@
+{
+	"name":"${apiProductName}",
+	"description":"${description}",
+	"apiResources":[],
+	"approvalType":"auto",
+	"scopes":[],
+	"displayName":"${display_name}",
+	"attributes":[{
+		"name":"description",
+		"value":"${description}"
+	},{
+		"name":"developer.quota.interval",
+		"value":1
+	},{
+		"name":"developer.quota.limit",
+		"value":10000
+	},{
+		"name":"developer.quota.timeunit",
+		"value":"second"
+	},{
+		"name":"access",
+		"value":"public"
+	},{
+		"name":"apisDeployedIn",
+		"value":""
+	},{
+		"name":"servicePlan",
+		"value":"null"
+	},{
+		"name":"apiResourcesInfo",
+		"value":"[]"
+	},{
+		"name":"disabledApiResourcesInfo",
+		"value":"[]"
+	}]
+}

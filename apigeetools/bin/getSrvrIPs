@@ -1,0 +1,42 @@
+#!/bin/bash
+#
+# getEnvironmentServers
+# lists the servers that are bound to an environment by UUID
+#
+# usage:
+#   getEnvironmentServers environment
+
+#set -e
+
+USAGE="environment"
+
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 1
+
+loadConfig "${ARGS[0]}"
+
+#URL="/o/${ORGANIZATION}/e/$(uri_escape "$ENVIRONMENT")/servers"
+URL="/o/${ORGANIZATION}/servers"
+debug "Retrieving server UUIDs from getApigee ${OPTS[@]} $HOST_ALIAS ${URL}"
+
+getApigee "$HOST_ALIAS" "$URL"
+
+if [ "$FRMT" = "xml" ] ; then
+	ULIST=`echo "$RESPONSE" | xmlValueOf "Item"`
+else
+	ULIST=`echo "$RESPONSE" | $TOOLSDIR/lib/jp.sh` #  | jsonValueOf "Item"`
+fi
+
+debug "ULIST = \n$ULIST"
+
+oldFS="$IFS"
+#IFS=$(echo -en "\n\'\"")
+IFS="$(echo -en '\t\n\r')"
+for u in $ULIST ; do 
+	getSrvrFmUuid ${OPTS[@]} $ENVIRONMENT $u | xmlValueOf "ExternalIP"
+done
+IFS="$oldFS"

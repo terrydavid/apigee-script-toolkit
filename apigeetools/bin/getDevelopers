@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# getDevelopers
+#
+# retrieves the developers contained in the specified host
+#
+# usage:
+#   getDevelopers host_alias
+
+#set -e
+
+USAGE="host_alias"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 1
+HOST_ALIAS=${ARGS[0]}
+
+URL="/o/${ORGANIZATION}/developers"
+
+if [ "$FRMT" = "xml" ] ; then
+	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL"
+else
+	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL"
+fi

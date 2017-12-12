@@ -1,0 +1,5 @@
+ENV=uptake-prod
+ENVIRONMENT=staging
+HOST_ALIAS=uptake-prod-staging
+APIGEE_HOST='https://api.enterprise.apigee.com/v1'
+ENVIRONMENTS=(uptake-prod-staging)

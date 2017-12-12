@@ -1,0 +1,7 @@
+{
+  "entry" : [ {
+    "name" : "glic-dev-stage-APINAME",
+    "value" : "dummy1stEntry"
+  } ],
+  "name" : "envConfig"
+}

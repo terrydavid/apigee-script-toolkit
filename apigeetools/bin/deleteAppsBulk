@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+# Yet Another TEsting Routine
+# 
+
+host="noardapiap06"
+
+oldIFS=$IFS
+#IFS="`echo -en '\t\n\r'`"
+echo -e "$( basename $0)  # Yet Another TEsting Routine \n $@"
+#echo "IFS=$IFS"
+for app in "$@" ; do 
+    echo -e "\n\tDeleting $app from $host "
+    deleteApp -l "$host" "$app"
+    sleep 1
+done
+#IFS=$oldIFS
+
+listAppNames -j Production-WEST

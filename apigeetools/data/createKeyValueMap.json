@@ -1,0 +1,7 @@
+{
+  "entry" : [ {
+    "name" : "cred-in",
+    "value" : "cred-out"
+  } ],
+  "name" : "keyvaluemap_name"
+}

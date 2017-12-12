@@ -1,0 +1,11 @@
+COT-CCDCService,hpexstreamcc_apps
+COT-ESignServicesInt,E_Sig_Apps
+COTCC_GADWallboardServices,gadwallboard
+COTEA-IMPDrupalServices,IMP_Service_Group
+COTEA-SRServices,sr_service_users
+COTEA_ILP8Services,P8ILAAPSGRP
+COTEA_IMPDrupalServicesSIT,IMP_Service_Group
+COTECM-AdobeLifeCycleService,ExpressApp_DI_LiveCycle_Service
+COTESA-UserProfileService,NotA-UserProfile_Service_Users
+COTWA-TTServiceNowServices,sn_external_access
+COT_EADemoSecurityService,mars_xmlgateway

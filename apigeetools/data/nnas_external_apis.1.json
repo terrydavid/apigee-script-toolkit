@@ -1,0 +1,42 @@
+{
+  "apiResources" : [ ],
+  "approvalType" : "auto",
+  "attributes" : [ {
+    "name" : "description",
+    "value" : "NNAS External APIs"
+  }, {
+    "name" : "developer.quota.interval",
+    "value" : "1"
+  }, {
+    "name" : "developer.quota.limit",
+    "value" : "10000"
+  }, {
+    "name" : "developer.quota.timeunit",
+    "value" : "second"
+  }, {
+    "name" : "access",
+    "value" : "public"
+  }, {
+    "name" : "apisDeployedIn",
+    "value" : ""
+  }, {
+    "name" : "servicePlan",
+    "value" : "null"
+  }, {
+    "name" : "apiResourcesInfo",
+    "value" : "[]"
+  }, {
+    "name" : "disabledApiResourcesInfo",
+    "value" : "[]"
+  } ],
+  "createdAt" : 1376665757889,
+  "createdBy" : "apigee-admin@noa.nintendo.com",
+  "description" : "NNAS External APIs",
+  "displayName" : "NNAS External APIs",
+  "environments" : [ ],
+  "lastModifiedAt" : 1376665757889,
+  "lastModifiedBy" : "apigee-admin@noa.nintendo.com",
+  "name" : "nnas_external_apis",
+  "proxies" : [ ],
+  "scopes" : [ ]
+}

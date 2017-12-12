@@ -1,0 +1,6 @@
+#!/bin/bash
+
+include='\(test\)\|\(expected\)\|\(not\ found\)\|\(error\)\|\(fail\)\|\(warn\)\|\(code\)\|\(message\)\|\(no\ such\)\|\(status\)\|\(curl\)'
+exclude='\(<[/]*policy[/]*>\)\|\(<[/]*resource[/]*>\)\|\(<[/]*status[/]*>\)' 
+
+grep -i "$include" | grep -iv "$exclude"

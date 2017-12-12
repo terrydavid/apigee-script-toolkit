@@ -1,0 +1,115 @@
+#!/bin/bash
+ 
+#
+# setTargetServers
+# Sets a group of Target Servers
+#
+# usage:
+#   setTargetServers "Host-Env_alias GroupNumber
+
+#set -e
+
+USAGE="Host-Env_alias GroupNumber"
+TOOLSDIR="${APITOOLS_HOME}"
+
+CMDDBG=""
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+[[ "_$DEBUG" == "_true" ]] && CMDDBG="x"
+CMDDBG="x"
+
+#echo "CMDDBG= ${CMDDBG}"
+
+parseCommandline "$@"
+if [ ${#ARGS[@]} -lt 2 ]; then
+	usefail "wrong number of arguments (expected 2, got ${#ARGS[@]})"
+fi
+loadConfig "${ARGS[0]}"
+
+GroupAll="1 2 3 4"
+
+GroupNumb=${ARGS[1]}
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers"
+
+TS1='{"name":"TS-1","host":"tdavid01-test.apigee.net","port":80,"isEnabled":true}'
+TS2='{"name":"TS-2","host":"tdavid02-test.apigee.net","port":80,"isEnabled":true}'
+TS3='{"name":"TS-3","host":"tdavid03-test.apigee.net","port":80,"isEnabled":true}'
+TS4='{"name":"TS-4","host":"tdavid04-test.apigee.net","port":80,"isEnabled":true}'
+
+TX1='{"name":"TS-1","host":"tdavid01-test.apigee.net","port":80,"isEnabled":false}'
+TX2='{"name":"TS-2","host":"tdavid02-test.apigee.net","port":80,"isEnabled":false}'
+TX3='{"name":"TS-3","host":"tdavid03-test.apigee.net","port":80,"isEnabled":false}'
+TX4='{"name":"TS-4","host":"tdavid04-test.apigee.net","port":80,"isEnabled":false}'
+
+# Re-Create the Target Servers we want
+if [[ "_$GroupNumb" == "_1" ]] ; then
+
+	output=`set -${CMDDBG};curl -nsS -X PUT -H "Accept:application/json" -H "Content-Type:application/json" --data-binary "$TS1" -w "\n%{http_code}" "${URL}/TS-1";set -`
+echo "$output" | tail -n 1
+	output=`set -${CMDDBG};curl -nsS -X PUT -H "Accept:application/json" -H "Content-Type:application/json" --data-binary "$TS2" -w "\n%{http_code}" "${URL}/TS-2";set -`
+echo "$output" | tail -n 1
+	output=`set -${CMDDBG};curl -nsS -X PUT -H "Accept:application/json" -H "Content-Type:application/json" --data-binary "$TX3" -w "\n%{http_code}" "${URL}/TS-3";set -`
+echo "$output" | tail -n 1
+	output=`set -${CMDDBG};curl -nsS -X PUT -H "Accept:application/json" -H "Content-Type:application/json" --data-binary "$TX4" -w "\n%{http_code}" "${URL}/TS-4";set -`
+echo "$output" | tail -n 1
+
+elif [[ "_$GroupNumb" == "_2" ]] ; then
+
+	output=`set -${CMDDBG};curl -nsS -X PUT -H "Accept:application/json" -H "Content-Type:application/json" --data-binary "$TX1" -w "\n%{http_code}" "${URL}/TS-1";set -`
+echo "$output" | tail -n 1
+	output=`set -${CMDDBG};curl -nsS -X PUT -H "Accept:application/json" -H "Content-Type:application/json" --data-binary "$TX2" -w "\n%{http_code}" "${URL}/TS-2";set -`
+echo "$output" | tail -n 1
+	output=`set -${CMDDBG};curl -nsS -X PUT -H "Accept:application/json" -H "Content-Type:application/json" --data-binary "$TS3" -w "\n%{http_code}" "${URL}/TS-3";set -`
+echo "$output" | tail -n 1
+	output=`set -${CMDDBG};curl -nsS -X PUT -H "Accept:application/json" -H "Content-Type:application/json" --data-binary "$TS4" -w "\n%{http_code}" "${URL}/TS-4";set -`
+echo "$output" | tail -n 1
+
+elif [[ "_$GroupNumb" == "_D" ]] ; then
+
+for N in $GroupAll ; do
+
+	output=`set -${CMDDBG};curl -nsS -X DELETE -H "Accept:application/json" -H "Content-Type:application/json" -w "\n%{http_code}" "${URL}/TS-$N";set -`
+echo "$output" | tail -n 1
+
+done
+
+elif [[ "_$GroupNumb" == "_A" ]] ; then
+
+	output=`set -${CMDDBG};curl -nsS -X POST -H "Accept:application/json" -H "Content-Type:application/json" --data-binary "$TS1" -w "\n%{http_code}" "${URL}";set -`
+echo "$output" | tail -n 1
+	output=`set -${CMDDBG};curl -nsS -X POST -H "Accept:application/json" -H "Content-Type:application/json" --data-binary "$TS2" -w "\n%{http_code}" "${URL}";set -`
+echo "$output" | tail -n 1
+	output=`set -${CMDDBG};curl -nsS -X POST -H "Accept:application/json" -H "Content-Type:application/json" --data-binary "$TS3" -w "\n%{http_code}" "${URL}";set -`
+echo "$output" | tail -n 1
+	output=`set -${CMDDBG};curl -nsS -X POST -H "Accept:application/json" -H "Content-Type:application/json" --data-binary "$TS4" -w "\n%{http_code}" "${URL}";set -`
+echo "$output" | tail -n 1
+
+elif [[ "_$GroupNumb" == "_G" ]] ; then
+
+	getTargetServer -o ${ORGANIZATION} -e ${ENVIRONMENT} ${ORGANIZATION}-${ENVIRONMENT} TS-1
+	echo "$output" | tail -n 1
+	getTargetServer -o ${ORGANIZATION} -e ${ENVIRONMENT} ${ORGANIZATION}-${ENVIRONMENT} TS-2
+	echo "$output" | tail -n 1
+	getTargetServer -o ${ORGANIZATION} -e ${ENVIRONMENT} ${ORGANIZATION}-${ENVIRONMENT} TS-3
+	echo "$output" | tail -n 1
+	getTargetServer -o ${ORGANIZATION} -e ${ENVIRONMENT} ${ORGANIZATION}-${ENVIRONMENT} TS-4
+	echo "$output" | tail -n 1
+
+else
+	echo "Error in Group Number $GroupNumb"
+fi
+
+exit
+
+RESPONSE=`echo "$output" | sed '$ d'`
+
+STATUS_CODE=`echo "$output" | tail -n 1`
+
+if [ "$STATUS_CODE" != "201" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+
+debug "response is $RESPONSE"

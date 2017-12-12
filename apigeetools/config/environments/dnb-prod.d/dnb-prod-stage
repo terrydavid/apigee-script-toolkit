@@ -1,0 +1,5 @@
+ENV=dnb-prod
+ENVIRONMENT=stage
+HOST_ALIAS=dnb-prod-stage
+APIGEE_HOST='https://api.enterprise.apigee.com/v1'
+ENVIRONMENTS=(dnb-prod-stage)

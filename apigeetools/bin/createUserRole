@@ -1,0 +1,33 @@
+#!/bin/bash
+ 
+#
+# createUserRole
+# creates a User Role
+#
+# usage:
+#   createUserRole host_alias role_name
+
+#set -e
+
+USAGE="host_alias role_name"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+loadConfig "${ARGS[0]}"
+
+roleName="${ARGS[1]}"
+
+FRMT="json"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/userroles"
+curlOPTS=" --data-urlencode{\"name\":\"${roleName}\"}"
+
+http_post ${URL}
+
+if [ "$STATUS_CODE" != "201" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+debug "response is $RESPONSE"

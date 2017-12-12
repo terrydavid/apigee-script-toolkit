@@ -1,0 +1,45 @@
+#!/bin/bash
+#
+# zkDereg
+# Remove ghost zookeeper entires
+#
+# Use with caution ( especially on LIVE systems ) !
+#
+##
+# usage:
+#   zkDereg ... ... 
+
+#TODO : Fix this to Dereg zk entries !!
+#for ((i=2;i<${#ARGS[@]};i++)) ; do APP_NAME="$APP_NAME ${ARGS[$i]}" ; done
+
+#set -e
+
+USAGE="environment" 
+
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+
+loadConfig "${ARGS[0]}"
+
+#Process
+#	1. undeploy all deployed proxies
+#	2. dereg leftover servers fm zk
+#	3. remove all apiproxies entries
+#	4. redeploy mongo
+
+# Deregister Servers cmd to mgmt svr:
+# POST /o/<org>/e/<env>/servers -d'action=remove&uuid=<uuid>' -H 'content-type: application/x-www-form-urlencoded' -Q -v
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/servers" 
+http_post "$URL" -H 'content-type:application/x-www-form-urlencoded' -d"action=remove&uuid=${uuid}"
+
+echo -e "$RESPONSE"
+
+#to remove apiproxies in zk
+#rmr /organizations/Nintendo/environments/Production-WEST/apiproxies/<proxy_name>
+
+

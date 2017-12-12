@@ -1,0 +1,28 @@
+#!/bin/bash
+
+#
+# getEnvironmentServers
+# 	get the server details by UUID
+#
+# usage:
+#   getEnvironmentServers environment server_uuid
+
+#set -e
+
+USAGE="environment server_uuid"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+
+loadConfig "${ARGS[0]}"
+
+URL="/servers/$(uri_escape "${ARGS[1]}")"
+debug "retrieving server detail from ${URL}"
+
+getApigee "$HOST_ALIAS" "$URL"
+
+echo "$RESPONSE"

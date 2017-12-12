@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# getEnv
+#
+# lists the virtual hosts defined for an environment
+#
+# usage:
+#   getVirtualHosts environment
+
+#set -e
+
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+set

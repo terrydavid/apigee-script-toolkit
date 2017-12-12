@@ -1,0 +1,5 @@
+ENV=devtraining
+ENVIRONMENT=prod
+HOST_ALIAS=devtraining-prod
+APIGEE_HOST='https://api.enterprise.apigee.com/v1'
+ENVIRONMENTS=(devtraining-prod)

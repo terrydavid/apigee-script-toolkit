@@ -1,0 +1,13 @@
+#!/bin/bash
+
+TOOLSDIR="${APITOOLS_HOME}"
+APISDIR="$HOME/apigee/apis"
+ORGANIZATION="dnb-prod"
+DEVELOPER="tdavid@apigee.com"
+
+# default Data format for input & output: json OR xml
+FRMT="xml"
+
+DEBUG="false"
+echo -n "" >$HOME/.curlrc
+

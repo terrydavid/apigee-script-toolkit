@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ApiProduct name="nnas_external_apis">
+    <ApiResources/>
+    <ApprovalType>auto</ApprovalType>
+    <Attributes>
+        <Attribute>
+            <Name>description</Name>
+            <Value>NNAS External APIs</Value>
+        </Attribute>
+        <Attribute>
+            <Name>developer.quota.interval</Name>
+            <Value>1</Value>
+        </Attribute>
+        <Attribute>
+            <Name>developer.quota.limit</Name>
+            <Value>10000</Value>
+        </Attribute>
+        <Attribute>
+            <Name>developer.quota.timeunit</Name>
+            <Value>second</Value>
+        </Attribute>
+        <Attribute>
+            <Name>access</Name>
+            <Value>public</Value>
+        </Attribute>
+        <Attribute>
+            <Name>apisDeployedIn</Name>
+            <Value></Value>
+        </Attribute>
+        <Attribute>
+            <Name>servicePlan</Name>
+            <Value>null</Value>
+        </Attribute>
+        <Attribute>
+            <Name>apiResourcesInfo</Name>
+            <Value>[]</Value>
+        </Attribute>
+        <Attribute>
+            <Name>disabledApiResourcesInfo</Name>
+            <Value>[]</Value>
+        </Attribute>
+    </Attributes>
+    <CreatedAt>1376665757889</CreatedAt>
+    <CreatedBy>apigee-admin@noa.nintendo.com</CreatedBy>
+    <Description>NNAS External APIs</Description>
+    <DisplayName>NNAS External APIs</DisplayName>
+    <Environments/>
+    <LastModifiedAt>1376665757889</LastModifiedAt>
+    <LastModifiedBy>apigee-admin@noa.nintendo.com</LastModifiedBy>
+    <Proxies/>
+    <Scopes/>
+</ApiProduct>

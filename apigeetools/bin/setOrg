@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# setOrg <organization> <!developer_email> # in the cloud
+
+echo "Did you 'source || . ' me?"
+
+newOrg=$1
+newEnv=$2
+
+[ $newOrg ] && {
+	export ORGANIZATION="$newOrg"
+	export ENV="$newOrg"
+}
+
+[ $newEnv ] && {
+	export ENVIRONMENT="$newEnv"
+	export ENVIRONMENTS="\($newOrg-$newEnv\)"
+}

@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# getApiVersions
+#
+# retrieves the revision number of all revisions of an API
+#
+# usage:
+#   getApiVersions host_alias api
+
+
+
+USAGE="host_alias api"
+TOOLSDIR="${APITOOLS_HOME}"
+
+#debug "1HOST_ALIAS=$HOST_ALIAS; ENVIRONMENT=$ENVIRONMENT; ORGANIZATION=$ORGANIZATION"
+
+. "$TOOLSDIR/config/global"
+#debug "2HOST_ALIAS=$HOST_ALIAS; ENVIRONMENT=$ENVIRONMENT; ORGANIZATION=$ORGANIZATION"
+
+. "$TOOLSDIR/lib/functions"
+debug "3HOST_ALIAS=$HOST_ALIAS; ENVIRONMENT=$ENVIRONMENT; ORGANIZATION=$ORGANIZATION"
+
+parseCommandline "$@"
+debug "4HOST_ALIAS=$HOST_ALIAS; ENVIRONMENT=$ENVIRONMENT; ORGANIZATION=$ORGANIZATION"
+checkArgs 1
+debug "5HOST_ALIAS=$HOST_ALIAS; ENVIRONMENT=$ENVIRONMENT; ORGANIZATION=$ORGANIZATION"
+loadConfig "${ARGS[0]}"
+debug "6HOST_ALIAS=$HOST_ALIAS; ENVIRONMENT=$ENVIRONMENT; ORGANIZATION=$ORGANIZATION"
+
+
+[ "_$DEBUG" == "_2" ] && set -x
+
+if [ "$HOST_ALIAS" = "${ARG[0]}" ] ; then
+	APINAME=${ARGS[1]}
+else
+	APINAME=${ARGS[0]}
+fi
+
+if [ "$APINAME" = "" ]; then
+	usefail "no API name specified"
+fi
+
+# force json for now
+FRMT=json
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis/${APINAME}"
+debug "retrieving API ${APNAME} versions from ${URL}"
+http_get "$URL"
+if [ "$STATUS_CODE" != "200" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+
+#JLIST=`echo "$RESPONSE" | sed 's/[\[\]\"\,\:a-zA-Z]*//g'`
+#debug "JLIST: \n$JLIST"
+
+JLIST=`echo "$RESPONSE" | $TOOLSDIR/lib/jp.sh | jsonValueOf "revision"`
+debug "JLIST=$JLIST"
+#APILIST=`echo "$RESPONSE" | awk 'BEGIN { RS = "[\n\r]+" } ; /revision.*,0,.*name/ {print $2}'`
+#debug "APILIST=$APILIST"
+#for a in $JLIST ; do printf "%b\n" $a ; done
+for a in $JLIST ; do printf "%b\n" $a | sed 's/\"//g' ; done
+
+

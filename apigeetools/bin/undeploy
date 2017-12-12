@@ -1,0 +1,36 @@
+#!/bin/bash
+ 
+# undeploy
+#
+# undeploys all deployed versions of an API from an environment
+#
+# usage:
+# 	undeploy environment api
+
+#set -e
+
+USAGE="environment api"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+loadConfig "${ARGS[0]}"
+
+APINAME=${ARGS[1]}
+
+VERSIONS=`getApiVersionDeployed ${OPTS[@]} "$HOST_ALIAS" "$APINAME"`
+if [ "$VERSIONS" = "" ]; then
+	echo "no versions of API $APINAME are deployed in environment $HOST_ALIAS"
+else
+	for VERSION in $VERSIONS; do 
+		URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis/${APINAME}/deployments?action=undeploy&env=${ENVIRONMENT}&revision=${VERSION}"
+		echo "undeploying version $VERSION of API $APINAME in environment $HOST_ALIAS"
+		http_post "$URL"
+		if [ "$STATUS_CODE" != "200" ]; then
+			fail "$(basename "$0") failed with status $STATUS_CODE: RESPONSE= \n$RESPONSE"
+		fi
+	done
+fi

@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# dlAllpis
+#
+# retrieves the bundles for all APIs in an environment
+#
+# usage:
+#   dlAllApis environment
+
+USAGE="environment"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+
+loadConfig "${ARGS[0]}"
+
+rev=""
+APIs=`getApis ${OPTS[@]}`
+
+debug "Found APIs \n$APIs"
+echo -en "\nFound APIs for Org $ORGANIZATION: \n$APIs"
+
+for a in $APIs ; do {
+#	rev=`getApiVersionDeployed ${OPTS[@]} ${ARGS[0]} $a | tail -1`
+	rev=`getApiVersionLatest ${OPTS[@]} ${ARGS[0]} $a | tail -1`
+	# echo -e "\ngetDeployedApiVersion ${OPTS[@]} ${ARGS[0]} $a has Rev [$rev]"
+	if [ "$rev" != "" ] ; then
+		dlApi $HOST_ALIAS $a $rev
+		#mv $a.zip ${APISDIR}
+		#echo -e "\n\tApiProxy ${APISDIR}/$a.zip from Env ${ARGS[0]} Host $HOST_ALIAS revision $rev"
+	else
+		echo -e "\nNO Revision for ApiPoxy $a in Env ${ARGS[0]} Host $HOST_ALIAS"
+	fi
+} done

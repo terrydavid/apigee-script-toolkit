@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# getTargetServer
+#
+# lists the virtual hosts defined for an environment
+#
+# usage:
+#   getVirtualHosts environment
+
+#set -e
+
+USAGE="environment targetserver"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+loadConfig "${ARGS[0]}"
+
+URL="/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers/${ARGS[1]}"
+
+getApigee "HOST_ALIAS" "$URL"
+
+echo "$RESPONSE"

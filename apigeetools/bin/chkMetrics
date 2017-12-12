@@ -1,0 +1,10 @@
+#!/bin/bash
+
+HOST=$1
+
+cmd="curl -vu pigee-admin@noa.nintendo.com:dnn7g63C -H $MetricsAUTH -H 'Accept:*/*' -H TERRY:1 http://${HOST}.nintendo.com:9087/account-services/admin/metrics/metrics?pretty=true"
+
+echo -e "Debugging cmd: \n[$cmd]"
+set -xv
+$cmd
+set -

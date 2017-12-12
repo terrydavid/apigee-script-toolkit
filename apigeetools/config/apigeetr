@@ -1,0 +1,13 @@
+#!/bin/bash
+
+TOOLSDIR="${APITOOLS_HOME}"
+APISDIR="$HOME/git/terry/apis"
+ORGANIZATION="terrytraininguser"
+DEVELOPER="terrytraininguser@gmail.com"
+
+# default Data format for input & output: json OR xml
+FRMT="xml"
+
+DEBUG="false"
+echo -n "" >$HOME/.curlrc
+

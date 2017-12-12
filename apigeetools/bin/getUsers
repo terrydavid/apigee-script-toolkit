@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# getUsers
+#
+# lists the users in an organization
+#
+# usage:
+#   getUsers host_alias
+
+#set -e
+
+USAGE="host_alias  # ouput is simple list"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 1
+loadConfig "${ARGS[0]}"
+
+URL="/o/${ORGANIZATION}/users"
+
+if [ "$FRMT" = "xml" ] ; then
+	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL"
+else
+	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL"
+fi
+
+exit
+
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/users"
+
+debug "retrieving Resources from ${URL}"
+http_get "$URL"
+
+if [ "$STATUS_CODE" != "200" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+
+debug "Parsing: \n$RESPONSE" 
+
+if [ "$FRMT" = "json" ] ; then
+	APILIST=`echo "$RESPONSE" | awk '/path/ {print $3}'`  # Does not work with "BEGIN { RS = "[\n\r]+" } ; "
+#	APILIST=`echo "$RESPONSE" | jsonValueOf '\[[0-9]'`
+else
+	APILIST=`echo "$RESPONSE" | xmlValueOf "Item" | sed 's/[\/>]*$//g'` 
+fi
+debug "APILIST=$APILIST"
+for a in $APILIST ; do printf "%b\n" $a | sed 's/\"//g' ; done

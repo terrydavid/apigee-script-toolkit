@@ -1,0 +1,11 @@
+BLI-EDeliveryServices,E_Del_Apps
+BLI-ExpressAppServices,ExpressApp_DI_Document_Release_Service
+BLI-LocatorService,LocatorServices
+BLI-MultilifeServices,MultilifeServices
+BLIAR-STARSServices,stars_service
+BLIAUS-WebServices,aus_services_user
+BLIDI-ClientPolicyService,ClientPolicyService
+BLIDI-EAppSOAPServices,ExpressApp_DI_LiveCycle_Service
+BLIEFO-EPolicyService,apoly_nb_release
+BLIMIB-DIRSService,mib_dirs_service
+BLIMSL-MainframeServiceLibrary,MainframeServiceLibrary
