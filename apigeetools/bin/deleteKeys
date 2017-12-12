@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#
+# deleteKey
+# deletes a key from a Developer App
+#
+#	https://{host:port}/o/{org_name}/developers/{developer_email}/apps/{app_name}/keys/{consumer_key}
+##
+# usage:
+#   deleteKey host_alias app_name 
+
+#set -e
+
+USAGE="host_alias app_name"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+loadConfig "${ARGS[0]}"
+APP_NAME="${ARGS[1]}"
+
+#first need to delete all the keys
+APPKEYS=`getKey "${OPTS[@]}" "${ARGS[@]}"`
+debug "Host:App [${ARGS[@]}] has APPKEYS: \n$APPKEYS"
+
+for ak in $APPKEYS ; do
+	URL="${APIGEE_HOST}/o/${ORGANIZATION}/developers/${DEVELOPER}/apps/$(uri_escape "$APP_NAME")/keys/${ak}"
+	debug "Deleting APPKEY from $URL"
+	http_delete "$URL"
+	echo -e "Status [$STATUS_CODE]: RESPONSE= \n$RESPONSE"
+done

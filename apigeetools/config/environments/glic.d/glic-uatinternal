@@ -1,0 +1,5 @@
+ENV=glic
+ENVIRONMENT=uatinternal
+HOST_ALIAS=glic-uatinternal
+APIGEE_HOST='http://elqmng01a.glic.com:8080/v1'
+ENVIRONMENTS=(glic-uatinternal)

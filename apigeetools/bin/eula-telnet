@@ -1,0 +1,17 @@
+GET /api/content/agreements/NINTENDO-NETWORK-EULA/US/@latest HTTP/1.1
+Accept: */*
+X-Nintendo-Region: 1
+X-Nintendo-Platform-ID: 1
+X-Nintendo-Device-ID: ga100pabz22o
+X-Nintendo-Client-Secret: 3eff548eac636e2bf45bb7b375e7b6b0
+X-Nintendo-Serial-Number: GA100pabz22o
+X-Nintendo-Country: US
+Content-Type: application/xml
+X-Nintendo-Device-Cert: mockcert
+Accept-Language: en
+X-Nintendo-System-Version: FFFF
+X-Nintendo-Client-ID: daf6227853bcbdce3d75baee8332b
+X-Nintendo-Device-Type: 1
+Host: account.nintendo.net
+X-Skip-Cache-Lookup:true
+Connection: close

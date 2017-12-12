@@ -1,0 +1,42 @@
+#!/bin/bash
+ 
+#
+# createTargetServer
+# creates an SSL-enabled virtual host
+#
+# usage:
+#   createTargetServer "Host-Env_alias BackEndHostName TS-Port TargetServerName
+
+#set -e
+
+USAGE="Host-Env_alias TargetServerName TS-Port BackEndHostName"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+if [ ${#ARGS[@]} -lt 4 ]; then
+	usefail "wrong number of arguments (expected 4, got ${#ARGS[@]})"
+fi
+loadConfig "${ARGS[0]}"
+
+TgtSvrName=${ARGS[1]}
+PORT=${ARGS[2]}
+BEHostName=${ARGS[3]}
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/$(uri_escape "$ENVIRONMENT")/targetservers"
+
+BODY="{\"name\":\"${TgtSvrName}\",\"host\":\"${BEHostName}\",\"port\":${PORT},\"IsEnabled\":true}"
+
+output=`set -x;curl -nsS -X POST -H "Accept: application/json" -H "Content-Type: application/json" --data-binary "$BODY" -w "\n%{http_code}" "${URL}";set -`
+
+RESPONSE=`echo "$output" | sed '$ d'`
+
+STATUS_CODE=`echo "$output" | tail -n 1`
+
+if [ "$STATUS_CODE" != "201" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+
+debug "response is $RESPONSE"

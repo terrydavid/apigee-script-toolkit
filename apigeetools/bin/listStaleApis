@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# listStaleApis
+#
+# lists the apis in an environment where the deployed version is less than the latest version
+#
+# usage:
+#   listStaleApis environment
+
+#set -e
+
+USAGE="environment"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+
+
+APIS=`getApis ${OPTS[@]} "$HOST_ALIAS"`
+
+for API in $APIS; do
+	LATEST_VERSION=`getLatestApiVersion ${OPTS[@]} -j "$HOST_ALIAS" "$API"`
+	DEPLOYED_VERSION=`getDeployedApiVersion ${OPTS[@]} -j "$ENVIRONMENT" "$API"`
+	debug "Deployed: $DEPLOYED_VERSION ; Latest: $LATEST_VERSION"
+	if [ ${DEPLOYED_VERSION:-0} -lt ${LATEST_VERSION:-0} ]; then
+		echo "$API (latest: $LATEST_VERSION, deployed: $DEPLOYED_VERSION)"
+	fi
+done

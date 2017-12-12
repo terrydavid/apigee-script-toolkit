@@ -1,0 +1,35 @@
+#!/bin/bash
+ 
+#
+# updateCredential
+# updates an existing Developer App credential
+#
+# usage:
+#   updateCredential host_alias app_name consumer_key consumer_secret api_product
+
+#set -e
+
+USAGE="host_alias app_name consumer_key consumer_secret api_product"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 5
+loadConfig "${ARGS[0]}"
+APP_NAME=${ARGS[1]}
+CONSUMER_KEY=${ARGS[2]}
+CONSUMER_SECRET=${ARGS[3]}
+API_PRODUCT=${ARGS[4]}
+APP_NAME_ESCAPED=`uri_escape "$APP_NAME"`
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/developers/${DEVELOPER}/apps/${APP_NAME_ESCAPED}/keys/${CONSUMER_KEY}"
+BODY="{\"CredentialRequest\":{\"ConsumerKey\":\"${CONSUMER_KEY}\",\"ConsumerSecret\":\"${CONSUMER_SECRET}\",\"ApiProducts\":{\"ApiProduct\":\"${API_PRODUCT}\"}}}"
+output=`curl -s -S --basic -u "$CREDENTIALS" -X POST -H "Accept: application/json" -H "Content-Type: application/json" --data-binary "$BODY" -w "\n%{http_code}" "${URL}"`
+RESPONSE=`echo "$output" | sed '$ d'`
+STATUS_CODE=`echo "$output" | tail -n 1`
+if [ "$STATUS_CODE" != "200" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+debug "response is $RESPONSE"

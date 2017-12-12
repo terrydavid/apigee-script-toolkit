@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+# chckDeployments
+# usage:
+#	". chkDeployments | more"   # Must be "sourced" from confg'd environment
+
+curl -u "${CREDENTIALS}" -H "Accept: application/json" http://noardapiap06.noa.nintendo.com:8080/o/Nintendo/deployments ; echo

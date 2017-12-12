@@ -1,0 +1,4 @@
+#!/bin/bash
+# Audit keyspace
+
+http://HostName/audits/organizations/{organizationname}?expand=true 

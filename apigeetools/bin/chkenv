@@ -1,0 +1,4 @@
+#!/bin/bash
+
+set | grep -i '\(org\|env\|dev\)'
+ 

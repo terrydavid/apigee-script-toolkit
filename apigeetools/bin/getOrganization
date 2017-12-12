@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# getOrganization
+#
+# retrieves the Nintendo organization
+#
+# usage:
+#   getOrganization host_alias
+
+#set -e  # Dont blow up just trying to get the environment
+
+USAGE="host_alias"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 1
+loadConfig "${ARGS[0]}"
+
+URL="/o/${ORGANIZATION}"
+
+getApigee "$HOST_ALIAS" "$URL"

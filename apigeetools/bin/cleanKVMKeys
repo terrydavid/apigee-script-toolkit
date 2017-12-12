@@ -1,0 +1,49 @@
+#!/bin/bash
+
+#
+# cleanKVMKeys
+# Flush (or "clear") a KVM
+#
+# usage:
+#   cleanKVMKeys environment keyvaluemap_name
+
+#set -e
+
+USAGE="environment keyvaluemap_name"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2 2
+loadConfig "${ARGS[0]}"
+kvm_name="${ARGS[1]}"
+
+org=$ORGANIZATION
+env=$ENVIRONMENT
+map=$kvm_name
+
+echo "ARGS: org=$org; env=$env; map=$map"
+#echo -n "" > $HOME/.curlrc
+
+FRMT="json"
+
+http_get "${APIGEE_HOST}/o/${org}/e/${env}/keyvaluemaps/${map}?expand=true"
+
+getKeys=`echo $RESPONSE | grep name | awk '{print $3}' | sed 's/[",]*//g'`
+
+debug -e "\n\ngetKeyscmd ==\n\t $getKeys"
+
+delKeyEntry="https://api.enterprise.apigee.com/o/${org}/e/${env}/keyvaluemaps/${map}/entries"
+
+debug -e "\n\ndelKeyEntry ==\n\t $delKeyEntry"
+
+for a in $getKeyscmd ; do 
+	if [ $a != "cred-in" -a $a != "$keyvaluemap_name" ] ; then 
+		debug "$delKeyEntry/$a"
+		`http_delete "$delKeyEntry/$a"`
+	fi 
+done
+
+echo -e "$RESPONSE"

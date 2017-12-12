@@ -1,0 +1,25 @@
+{
+  "admin" : {
+    "dN" : "uid=sonoa_svcnet_service_id,ou=apps,dc=glic,dc=com",
+    "password" : "s0n0@53"
+  },
+  "connectPool" : {
+    "enabled" : true,
+    "initsize" : 0,
+    "maxsize" : 5,
+    "prefsize" : 3,
+    "protocol" : "",
+    "timeout" : 30000
+  },
+  "connection" : {
+    "authentication" : "simple",
+    "connectionProvider" : "jndi",
+    "hosts" : [ {
+      "port" : 389,
+      "value" : "am-ldap-dev-intranet.nro.glic.com"
+    } ],
+    "sSLEnabled" : false,
+    "version" : 3
+  },
+  "name" : "ldap1"
+}

@@ -1,0 +1,51 @@
+#!/bin/bash
+ 
+# import
+#
+# imports an API bundle
+#
+# usage:
+#   import host_alias api [zip_file]
+#       host_alias the host alias
+#       api the name of the api
+#       zip_file the name of the apiproxy zip file (default is ./apiproxy.zip)   
+
+#set -e
+
+USAGE="host_alias api [zip_file] # 'import' a .zip file as the name 'api'"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2 3
+loadConfig "${ARGS[0]}"
+APINAME=${ARGS[1]}
+
+APIPROXYZIP=${ARGS[2]} # zip file was passed in
+
+if [[ ! -f "${APIPROXYZIP}" ]] ; then
+	fail "${APIPROXYZIP} File Not Found"
+fi
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis?action=import&name=${APINAME}"
+debug "importing API ${APINAME} via ${URL}"
+
+FRMT=json
+
+HDRS="-H Content-Type:application/octet-stream"
+curlOPTS="--data-binary @${APIPROXYZIP}"
+
+http_post "$URL"
+
+JSON_OUTPUT=`echo "$RESPONSE" | "$TOOLSDIR/lib/jp.sh" -b`
+debug "JSON_OUTPUT=$JSON_OUTPUT"
+
+API_REVISION=`echo "$JSON_OUTPUT" | awk '/\[\"revision\"\,?([0-9])*/ {print $2}' | sed 's/\"//g'`
+debug "API_REVISION = $API_REVISION"
+
+API_NAME=`echo "$JSON_OUTPUT" | awk '/\[\"name\"\,?([0-9])*/ {print $2}' | sed 's/\"//g'`
+debug "API_NAME = $API_NAME"
+
+echo "imported version $API_REVISION of API $API_NAME"

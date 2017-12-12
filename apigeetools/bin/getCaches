@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# getCaches
+#
+# retrieves the caches defined for an environment
+#
+# usage:
+#   getCaches environment
+
+#set -e
+
+USAGE="environment"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 1
+
+loadConfig "${ARGS[0]}"
+
+URL="/o/${ORGANIZATION}/e/${ENVIRONMENT}/caches"
+
+if [ "$FRMT" = "xml" ] ; then
+	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL"
+else
+	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL"
+fi

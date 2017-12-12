@@ -1,0 +1,32 @@
+#!/bin/bash
+
+#
+# deleteVirtualHost
+# deletes a virtual host
+#
+# usage:
+#   deleteVirtualHost environment virtual_host_name
+
+#set -e
+
+USAGE="environment_name virtual_host_name"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+loadConfig "${ARGS[0]}"
+
+VH_NAME=${ARGS[1]}
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/$(uri_escape "$ENVIRONMENT")/virtualhosts/$(uri_escape "${VH_NAME}")"
+debug "Deleting virtual host: DELETE $URL"
+output=`curl -nsS -X DELETE -H "Accept: application/json" -w "\n%{http_code}" "${URL}"`
+RESPONSE=`echo "$output" | sed '$ d'`
+STATUS_CODE=`echo "$output" | tail -n 1`
+if [ "$STATUS_CODE" != "200" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+debug "response is $RESPONSE"

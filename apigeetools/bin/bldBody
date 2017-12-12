@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# bldBody
+#
+#	givien a series of name:value pairs, 
+#		read in a json stream
+#		replace "${name}" with "value"
+#
+#	local y ; y="$@" ;
+#	echo -n ${y/\\/\\\\} | 
+#	[[ $REPLY =~ [A-Za-z0-9] ]] && printf "$REPLY" || printf "%%%x" \'"$REPLY" ;
+
+USAGE="[name:value]+"
+
+. "${APITOOLS_HOME}/config/global"
+. "${APITOOLS_HOME}/lib/functions"
+
+parseCommandline "$@"
+
+var=""
+keep="0"
+argc="${#ARGS[@]}"
+
+#echo -en "\n ARGS: ${ARGS[@]} \n"
+
+while read -n1 ; do
+	case $REPLY in
+	[,\":A-Za-z0-9_-])
+		#echo -en "\n Before: Keep=$keep; Var=$var\n"
+		if [ "$keep" = "1" ] ; then 
+			var="${var}${REPLY}"
+			#echo -en "\n Var=$var  REPLY=$REPLY\n"
+		else
+			printf "$REPLY"
+		fi
+		#echo -en "\n After: Keep=$keep; Var=$var\n"
+		;;
+	'{')
+		if [ "$keep" != "1" ] ; then
+			printf "$REPLY"
+		fi
+		;;
+	'}')
+		#echo -en "\n Before: Keep=$keep; Var=$var\n"
+		if [ "$keep" = "1" ] ; then 
+			if [ "$var" != "" ] ; then
+				printf "\n\tvar=${var}\n"
+				argValue=""
+				for ((i=0;i<argc;i++)) ; do
+					argValue[0]=`echo "${ARGS[i]}" | sed 's/\(.*\):.*/\1/'`
+					argValue[1]=`echo "${ARGS[i]}" | sed 's/.*://'`
+					if [ "${argValue[0]}" = "$var" ] ; then
+						printf "${argValue[1]}"
+					fi
+					printf "\n\taV0=${argValue[0]} aV1=${argValue[1]}\n"
+				done
+				var="${var}_terry"
+			fi
+			#echo -en "\n Should I be here? Keep=$keep; Var=$var\n"
+			var=""
+			#printf "$REPLY"
+		else
+			printf "$REPLY"			
+		fi
+		#echo -en "\nKeep=$keep; Var=$var\n"
+		keep="0"
+		var=""
+		#echo -en "\n After: Keep=$keep; Var=$var\n"
+		;;
+	'$')
+		keep="1"
+		printf "$REPLY"
+		;;
+	[[:space:]])
+		;;
+	*)
+		#printf "%%%x" \'"$REPLY"
+		printf "$REPLY"
+		;;
+	esac
+done
+
+echo

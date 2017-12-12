@@ -1,0 +1,5 @@
+ENV=glic
+ENVIRONMENT=external-dev
+HOST_ALIAS=glic-external-dev
+APIGEE_HOST='http://eltmng01a.glic.com:8080/v1'
+ENVIRONMENTS=(glic-external-dev)

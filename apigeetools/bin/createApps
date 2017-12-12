@@ -1,0 +1,41 @@
+#!/bin/bash
+ 
+#
+# createApps
+# creates Developer Apps
+#
+# this script reads from standard input. each line is expected to contain the following:
+# 
+#   display_name
+#   api_product
+#   app_name
+#   consumer_key
+#   consumer_secret
+#
+# usage:
+#   createApps host_alias
+
+#set -e
+
+USAGE="host_alias"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 1
+HOST_ALIAS=${ARGS[0]}
+
+while read -r ; do
+	(
+		eval set - $REPLY
+		DISPLAY_NAME=$1
+		API_PRODUCT=$2
+		APP_NAME=$3
+		CONSUMER_KEY=$4
+		CONSUMER_SECRET=$5
+		"$TOOLSDIR/createApp" ${OPTS[@]} "$HOST_ALIAS" "$APP_NAME" "$DISPLAY_NAME" "$API_PRODUCT"
+		"$TOOLSDIR/addCredential" ${OPTS[@]} "$HOST_ALIAS" "$APP_NAME" "$CONSUMER_KEY" "$CONSUMER_SECRET" "$API_PRODUCT"
+	)
+done

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+export MOST="http://elqmng01a.glic.com:8080/v1"
+export APIGEE_HOME="/opt/apigee/apigee4"
+export APITOOLS_HOME="$HOME/apigee"
+export PATH="$PATH:$APITOOLS_HOME/bin:$APIGEE_HOME/bin"
+source $HOME/.aliases
+
+if [ -d $APITOOLS_HOME ] ; then
+	cp $APITOOLS_HOME/config/glic $APITOOLS_HOME/config/global
+	source $APITOOLS_HOME/config/global
+	source $APITOOLS_HOME/lib/functions
+else
+	echo "NO [$APITOOLS_HOME] Directory"
+fi
+

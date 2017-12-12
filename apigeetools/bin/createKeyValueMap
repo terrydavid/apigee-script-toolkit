@@ -1,0 +1,63 @@
+#!/bin/bash
+#
+# createKeyValueMap
+# creates a Key/Value Map
+#
+# usage:
+#   createKeyValueMap environment keyvaluemap_name
+#
+#Scoped to environment:
+#$ curl -H "Content-Type:application/json" -X POST -d \
+#{
+#  "entry" : [ {
+#    "name" : "dev",
+#    "value" : "user1"
+#  } ],
+#  "name" : "prodmap"
+#}
+#-u myname:mypass https://api.enterprise.apigee.com/o/{org_name}/environments/{env_name}/keyvaluemaps
+#
+
+#set -e
+
+USAGE="environment keyvaluemap_name"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "${APITOOLS_HOME}/config/global"
+. "${APITOOLS_HOME}/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+loadConfig "${ARGS[0]}"
+
+[ "_$DEBUG" != "_false" -a "_$DEBUG" != "_" ] && set -x
+
+keyvaluemap_name="${ARGS[1]}"
+
+names[0]="keyvaluemap_name"
+
+#names[1]="display_name"  # bldBody additonal of these: "${names[1]}:${ARGS[2]}"
+
+FRMT="json"
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/keyvaluemaps"
+
+cat - > ${APITOOLS_HOME}/data/createKeyValueMap-${ARGS[0]}.${FRMT} <<%
+{
+  "entry" : [ {
+    "name" : "${ARGS[0]}-APINAME",
+    "value" : "dummy1stEntry"
+  } ],
+  "name" : "${keyvaluemap_name}"
+}
+%
+
+HDRS="-H Content-Type:application/json"
+curlOPTS="--data-binary @${APITOOLS_HOME}/data/createKeyValueMap-${ARGS[0]}.${FRMT}"
+
+debug "`cat ${APITOOLS_HOME}/data/createKeyValueMap-${ARGS[0]}.${FRMT}`"
+
+http_post "$URL"
+
+debug "Status Code [$STATUS_CODE] response is: \n$RESPONSE"
+

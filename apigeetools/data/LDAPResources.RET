@@ -1,0 +1,16 @@
+RET-BusinessServices,RSSharedService
+RET-BusinessServices_SIT,RSSharedService
+RET-MAMDWService,MAMWebService
+RET-MAMDWService-SIT,MAMWebService
+RET-MAMProcesSIT,MAMWebService
+RET-MAMProcessWebService,MAMWebService
+RET-MAMTranscend,MAMWebService
+RETMAMDWServiceIL,MAMWebService
+RETMAMDWServiceILSIT,MAMWebService
+RETMAMDWServiceRS,MAMWebService
+RETMAMDWServiceRSSIT,MAMWebService
+RETMAMProcessILSIT,MAMWebService
+RETMAMProcessRSSIT,MAMWebService
+RETMAMProcessWebServiceIL,MAMWebService
+RETMAMProcessWebServiceRS,MAMWebService
+RET_SWBCWebService,SWBCWebService

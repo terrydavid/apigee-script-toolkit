@@ -1,0 +1,5 @@
+ENV=terrytraininguser
+ENVIRONMENT=test
+HOST_ALIAS=terrytraininguser-test
+APIGEE_HOST='https://api.enterprise.apigee.com/v1'
+ENVIRONMENTS=(terrytraininguser-test)

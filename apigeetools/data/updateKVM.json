@@ -1,0 +1,7 @@
+{
+	"entry" : [ { 
+		"name" : "glic-dev-stage-RET-BusinessServices", 
+		"value" : "UserProfile_Service_Users" 
+	} ], 
+	"name" : "ldapResourceConfig"
+}

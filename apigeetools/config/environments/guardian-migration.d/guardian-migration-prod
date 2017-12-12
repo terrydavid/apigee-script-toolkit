@@ -1,0 +1,5 @@
+ENV=guardian-migration
+ENVIRONMENT=prod
+HOST_ALIAS=guardian-migration-prod
+APIGEE_HOST='https://api.enterprise.apigee.com/v1'
+ENVIRONMENTS=(guardian-migration-prod)

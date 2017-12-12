@@ -1,0 +1,5 @@
+ENV=trainingmats
+ENVIRONMENT=test
+HOST_ALIAS=trainingmats-test
+APIGEE_HOST='https://api.enterprise.apigee.com/v1'
+ENVIRONMENTS=(trainingmats-test)

@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# findApiProducts
+#
+# Finds all the Api Products defined in all environments
+#
+# usage:
+#   findApiProducts [directory]
+#       directory the [optional] directory to look in for env files
+
+#set -e
+
+USAGE="[directory]"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+
+DIRECTORY=${ARGS[0]}
+if [ "$DIRECTORY" = "" ]; then
+	DIRECTORY="$TOOLSDIR"
+fi
+
+pushd ${DIRECTORY}
+
+for a in `echo config/environments/*.d/* | sort -n` ; do
+	if [ -s $a ] ; then 
+		echo -e " Checking \"$a\" for ApiProducts\n"
+		getApiProducts "${OPTS[@]}" `basename $a`
+		sleep 1
+	fi
+done
+
+popd

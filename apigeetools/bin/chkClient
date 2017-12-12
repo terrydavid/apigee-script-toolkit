@@ -1,0 +1,18 @@
+#!/bin/bash
+# Nintendo client checks
+# GET/internal/api/clients/all
+# Headers
+# X-Apigee.proxy: internal
+# X-Apigee.application: mongo
+# Host: devrdapiap134.dev.nintendo.com:9092
+# X-Apigee.vhost: internal
+# X-Apigee.revision: 13
+# User-Agent: Java/1.7.0_10
+# Connection: keep-alive
+# Cache-Control: no-cache
+# Pragma: no-cache
+# X-Nintendo-Client-ID: fd993f853f8eb7614daee6ec81bf8eda
+# X-Apigee.organization: Nintendo
+# X-Apigee.environment: Sandbox
+# Accept: application/json
+# X-Nintendo-Client-Secret: ecdaeccb264381d5dfbad053ca2440cc

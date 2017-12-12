@@ -1,0 +1,29 @@
+#!/bin/bash
+
+export MOST="https://api.enterprise.apigee.com/v1"
+export APITOOLS_HOME="$HOME/apigee"
+export PATH="$PATH:$APITOOLS_HOME/bin"
+
+export TOOLSDIR="${APITOOLS_HOME}"
+export APISDIR="$HOME/apigee/apis"
+
+export ORGANIZATION="tdavid"
+export DEVELOPER="tdavid@apigee.com"
+
+export DEBUG="false"
+echo -n "" >$HOME/.curlrc
+# default Data format for input & output: json OR xml
+export FRMT="xml"
+
+source $HOME/.aliases
+
+if [ -d $APITOOLS_HOME ] ; then
+	ENV=$ORGANIZATION
+	ENVIRONMENT=test
+	HOST_ALIAS="$ORGANIZATION-$ENVIRONMENT"
+	APIGEE_HOST="$MOST"
+	ENVIRONMENTS="\($HOST_ALIAS\)"
+else
+	echo "NO [$APITOOLS_HOME] Directory"
+fi
+

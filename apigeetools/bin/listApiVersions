@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# listApiVersions
+#
+# lists the latest version and deployed version of all apis in an environment
+#    TAGs: "!" Deployed version is GT "1" ; "*" Deployed version is LT Latest 
+#
+# usage:
+#   listApiVersions environment
+
+#set -e
+
+USAGE="environment"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+loadConfig "${ARGS[0]}"
+
+APIS=`getApis -x ${OPTS[@]} "$HOST_ALIAS"`
+
+printf "%-35s%6s%10s\n" "API" "Latest" "Deployed"
+
+for API in $APIS; do
+    #LATEST_VERSION=`getApiVersionLatest ${OPTS[@]} "$HOST_ALIAS" "$API"`
+    LATEST_VERSION=`getApiVersionLatest ${OPTS[@]} "$API"`
+    debug "LATEST_VERSION=$LATEST_VERSION"
+    #DEPLOYED_VERSION=( $(getApiVersionDeployed ${OPTS[@]} "$HOST_ALIAS" "$API" 2>/dev/null) )
+    DEPLOYED_VERSION=( $(getApiVersionDeployed ${OPTS[@]} "$API" 2>/dev/null) )
+    debug "DEPLOYED_VERSION=$DEPLOYED_VERSION"
+    TAG=
+    if [ ${#DEPLOYED_VERSION[@]} -gt 1 ]; then
+        TAG=!
+    elif [ ${DEPLOYED_VERSION:-0} -lt ${LATEST_VERSION:-0} ]; then
+        TAG=*
+    fi
+    if [ "$DEPLOYED_VERSION" = "" ]; then
+        DEPLOYED_VERSION=none
+    fi
+    DEPLOYED="${DEPLOYED_VERSION[@]}"
+    printf "%-35s%6s%10s%s\n" "$API" "$LATEST_VERSION" "$DEPLOYED" "$TAG"
+done

@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# compareApi
+#
+# Compare currently deployed version of Proxy with latest GIT version
+#
+# usage:
+#   compareApi host_alias api [zip_file]
+#       host_alias the host alias
+#       api the name of the api
+#set -e
+
+USAGE="host_alias api 
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 3 4
+loadConfig "${ARGS[0]}"
+APINAME="${ARGS[1]}"
+
+REV="${ARGS[2]}"
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis/${APINAME}/revisions/latest?format=bundle"
+
+debug "downloading API ${APINAME}-${REV}.zip via ${URL}"
+
+FRMT=json
+
+#HDRS="-H Content-Type:application/octet-stream"
+#curlOPTS="--data-binary @${APIPROXYZIP}"
+#curlOPTS=" -o ${APINAME}-${REV}.zip "
+
+# No need for version # if using git
+curlOPTS=" -o ${APINAME}.zip "
+
+http_get "$URL"
+
+[ "$DEBUG_" = "false_" ] && deb="2\>/dev/null"
+
+debug "deb = $deb"
+
+JSON_OUTPUT=`echo "$RESPONSE" | "$TOOLSDIR/lib/jp.sh" -b  $deb`
+#debug "JSON_OUTPUT=$JSON_OUTPUT"
+
+#API_REVISION=`echo "$JSON_OUTPUT" | awk '/\[\"revision\"\,?([0-9])*/ {print $2}' | sed 's/\"//g'`
+#debug "API_REVISION = $API_REVISION"
+
+#API_NAME=`echo "$JSON_OUTPUT" | awk '/\[\"name\"\,?([0-9])*/ {print $2}' | sed 's/\"//g'`
+debug "APINAME = $APINAME"
+
+echo "downloaded version $REV of API $APINAME"
+
+

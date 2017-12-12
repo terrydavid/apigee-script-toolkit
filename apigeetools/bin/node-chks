@@ -1,0 +1,20 @@
+curl -w '[%{http_code}]\n' http://localhost:8080/self/up
+curl -w '[%{http_code}]\n' http://localhost:8081/self/up
+curl -w '[%{http_code}]\n' http://localhost:8082/self/up
+curl -w '[%{http_code}]\n' http://localhost:8081/runtime
+curl -w '[%{http_code}]\n' http://localhost:8082/runtime/o/Nintendo/e/Production-EAST/apis/mongo
+curl -w '[%{http_code}]\n' http://localhost:8081/runtime/organizations/Nintendo/environments/Production-EAST/apis/mongo -w ' %{http_code} '
+curl -w '[%{http_code}]\n' http://localhost:8081/runtime/organizations
+curl -w '[%{http_code}]\n' http://localhost:8082/organizations/Nintendo/environment/Production-EAST/apis/mongo
+curl -w '[%{http_code}]\n' http://localhost:8082/organizations/Nintendo/environments/Production-EAST/apis/mongo -w '[%{http_code}]\n'
+curl -w '[%{http_code}]\n' http://localhost:8082/organizations/Nintendo/environments/$(uri_escape "Production-EAST")/apis
+curl -w '[%{http_code}]\n' http://localhost:8082/organizations/Nintendo/apis
+curl -w '[%{http_code}]\n' http://localhost:8082/organizations/Nintendo/apis/mongo
+curl -w '[%{http_code}]\n' http://localhost:8081/classification/tree
+curl -w '[%{http_code}]\n' http://localhost:8081/servers/self/up
+curl -w '[%{http_code}]\n' http://localhost:8081/servers/self
+curl -w '[%{http_code}]\n' http://localhost:8082/servers/self
+curl -w '[%{http_code}]\n' http://localhost:8082/servers/self/up
+curl -w '[%{http_code}]\n' http://localhost:8081/classification/tree
+curl -w '[%{http_code}]\n' http://localhost:8082/classification/tree
+curl -w '[%{http_code}]\n' http://localhost:8082/runtime/organizations/Nintendo/environments/Production-EAST/apis
