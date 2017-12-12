@@ -1,8 +1,0 @@
-PAS-CommonServices,PASBARSUsers
-PAS-CommonServices,pasbarssystemusers
-PASBARS-RegEdService,pasreged
-PASBARS-UserServices,pasbarssystemusers
-PASBARS-WCFServices,PASBARSAdmin
-PASBARS-WCFServices,PASBARSEntitlement
-PASBARS-WCFServices,PASBARSUsers
-PASBARS-WorkFlowService,PASWorkFlow

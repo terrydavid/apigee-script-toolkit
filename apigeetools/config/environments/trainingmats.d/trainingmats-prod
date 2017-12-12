@@ -1,5 +1,0 @@
-ENV=trainingmats
-ENVIRONMENT=prod
-HOST_ALIAS=trainingmats-prod
-APIGEE_HOST='https://api.enterprise.apigee.com/v1'
-ENVIRONMENTS=(trainingmats-prod)

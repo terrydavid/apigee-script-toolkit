@@ -1,2 +1,0 @@
-RSTRSD-QCWorkBenchServices,QCWorkbench
-RSTRSD-QCWorkBenchServicesDev,QCWorkbench

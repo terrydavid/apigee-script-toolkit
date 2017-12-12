@@ -1,5 +1,0 @@
-ILPGPS-WebServices,guardian_il_illustr_all_users
-ILPMLF-BLServices,gms_broker_group
-ILPNAV-IWSServices,guardian_il_illustr_WebService
-ILSM-Services,Equity_Accounting
-ILSM-ServicesSIT2,Equity_Accounting
