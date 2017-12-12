@@ -1,5 +1,0 @@
-ENV=guardian-migration
-ENVIRONMENT=test
-HOST_ALIAS=guardian-migration-test
-APIGEE_HOST='https://api.enterprise.apigee.com/v1'
-ENVIRONMENTS=(guardian-migration-test)

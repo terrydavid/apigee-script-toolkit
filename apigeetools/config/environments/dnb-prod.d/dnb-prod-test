@@ -1,5 +1,0 @@
-ENV=dnb-prod
-ENVIRONMENT=test
-HOST_ALIAS=dnb-prod-test
-APIGEE_HOST='https://api.enterprise.apigee.com/v1'
-ENVIRONMENTS=(dnb-prod-test)

@@ -1,5 +1,0 @@
-ENV=terrytraininguser
-ENVIRONMENT=prod
-HOST_ALIAS=terrytraininguser-prod
-APIGEE_HOST='https://api.enterprise.apigee.com/v1'
-ENVIRONMENTS=(terrytraininguser-prod)

@@ -1,5 +1,0 @@
-ENV=tdavidapigeecom
-ENVIRONMENT=test
-HOST_ALIAS=tdavidapigeecom-test
-APIGEE_HOST='https://api.enterprise.apigee.com/v1'
-ENVIRONMENTS=(tdavidapigeecom-test)

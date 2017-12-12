@@ -1,5 +1,0 @@
-ENV=devtraining
-ENVIRONMENT=test
-HOST_ALIAS=devtraining-test
-APIGEE_HOST='https://api.enterprise.apigee.com/v1'
-ENVIRONMENTS=(devtraining-test)

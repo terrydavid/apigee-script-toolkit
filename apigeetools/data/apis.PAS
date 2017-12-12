@@ -1,5 +1,0 @@
-COTEA_PASFileNetServices
-PASBARS-UserServices
-PASBARS-WCFServices
-PAS-CommonServices
-XPAS-StreetscapeSAMLSSO
