@@ -2,75 +2,42 @@
 
 Source of record for all code, configurations, management scripts, etc. are located in a git repository at
 
-    https://gitlab.apigee.com/apigee-cs/astk.git
+    https://github.com/terrydavid/apigee-script-tools.git
 
 
-The Tools kit comes as a compressed tarball. To deploy, 
-
-### Create a directory for your workspace and explode the tarball into the directory:
-
-Example:
-```
-\> cd ~ <br>
-\> mkdir \<wkspace.dir\> <br>
-\> mv ATK.tgz \<wkspace.dir\> <br>
-\> cd \<wkspace.dir\> <br>
-\> tar -xzvf ATK.tgz <br>
+### Setup your environment variables:
 ```
 
-The tool kit requires a couple configuration files and directories to function.
-	(TBD Reduce this down to a single configuration)
+#!/bin/bash
 
-### Setup your highlevel config file:
-```
-\> cp .apigee .\<yourapigeeorgname\> <br>
-\> vi .\<yourapigeeorgname\> <br>
+# Set the Management Host (IMPORTANT: This determines "which" management server is accessed) <br>
+export MOST="http://<yourmgmhost>.<yourdomain>:8080/v1"
 
-\#!/bin/bash
+# Set the Tools Home directory <br>
+export APITOOLS_HOME="$HOME/<wkspace.dir>"
 
-\# Set the Management Host (IMPORTANT: This determines "which" management server is accessed) <br>
-export MOST="http://\<yourmgmhost\>.\<yourdomain\>:8080/v1"
-
-\# Set the Tools Home directory <br>
-export APITOOLS_HOME="$HOME/\<wkspace.dir\>"
-
-\# Set the Tools bin Path <br>
+# Set the Tools bin Path <br>
 export PATH="$APITOOLS_HOME/bin:$PATH"
-
-\# Set up Secondary config file (handles org/env pairs, will be configured below) <br>
-if [ -d $APITOOLS_HOME ] ; then
-	cp $APITOOLS_HOME/config/\<yourorg\> $APITOOLS_HOME/config/global
-	source $APITOOLS_HOME/config/global
-	source $APITOOLS_HOME/lib/functions
-else
-	echo "NO [$APITOOLS_HOME] Directory"
-fi
 
 :wq
 ```
 ### Source this into your environment: 
-\> source .\<yourapigeeorgname\>
+> source .<yourapigeeorgname>
 
 ### Configure your orgs/environments so the tools knows about them: 
-${APITOOLS_HOME}/bin/crOrgEnv \<yourOrgname\> \<env1\> \<env2\> ...
-
-This step may take some tweaking if you have multiple Environments and/or Orgs.
+> source ${APITOOLS_HOME}/bin/setOrg <yourOrgname> <yourEnv>
 
 ####Addn'l Notes:
 1. These tools use .netrc file for credentials
-2. The first parameter (sometimes called "environment" or "host_environment" consists of the <OrgName>-<EnvName> (dash "-" [no quotes] separator))
-
 
 ## You are now SET UP to use the ApigeeToolKit!
 
 By default, all commands issued with no Args will get the Usage and Switches, e.g.:
 ```shell
-\> getTargetServers <br>
-ERROR: getTargetServers: no host environment specified <br>
-usage: getTargetServers [-cdhjlvx] environment 
+> getTargetServers -h
+usage: getTargetServers [-cd:hjlvx] [Args]
 
-    -c turn on curl command display
-    -d turn on Debug output
+    -d[0-9] set Debug output 0=off; 2='curl'; 9=help
     -h print this Help message
     -j input/output data in Json format
     -l execute a %true% deLete
@@ -81,24 +48,24 @@ usage: getTargetServers [-cdhjlvx] environment
 Example command usage:
 
 ```shell
-\> getTargetServers \<orgname\>-\<envname\> <br>
-\<\?xml version="1.0" encoding="UTF-8" standalone="yes"\?\> <br>
-\<List\> <br>
-    \<Item\>TS-MFS\</Item\> <br>
-    \<Item\>TS-ILSMSIT\</Item\> <br>
-    \<Item\>TS-WFIPOC\</Item\> <br>
+> getTargetServers -x <br>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?> <br>
+<List> <br>
+    <Item>TS-MFS</Item> <br>
+    <Item>TS-ILSMSIT</Item> <br>
+    <Item>TS-WFIPOC</Item> <br>
     ... <br>
-\</List\> <br>
+</List> <br>
 ```
 Then drill down farther with the next command:
 ```shell
-\> getTargetServer \<orgname\>-\<envname\> TS-ILSMIT <br>
-\<\?xml version="1.0" encoding="UTF-8" standalone="yes"\?\> <br>
-\<TargetServer name="TS-ILSMIT"\> <br>
-    \<IsEnabled\>true\</IsEnabled\> <br>
-    \<Host\>stpadm1t.{yourdomain}\</Host\> <br>
-    \<Port\>2012\</Port\> <br>
-\</TargetServer\> <br>
+> getTargetServer TS-ILSMIT <br>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?> <br>
+<TargetServer name="TS-ILSMIT"> <br>
+    <IsEnabled>true</IsEnabled> <br>
+    <Host>stpadm1t.{yourdomain}</Host> <br>
+    <Port>2012</Port> <br>
+</TargetServer> <br>
 ```
 
 Some useful commands - 
@@ -124,7 +91,7 @@ A typical development session might use commands in this sequence:
 2. Extract the latest known good version from your SCM as your starting point (or verify current working version) <br>
 
 3. Download a version of the API <br>
-4. dlApi myorg-myenv myApi myApiRev <br>
+4. dlApi myApi myApiRev <br>
 
 5. Explode the zip file <br>
 6. unzip myApi.zip -d myApi <br>
@@ -138,7 +105,7 @@ A typical development session might use commands in this sequence:
    zip -r myApi apiproxy <br>
 
 11. Import (upload) the new revisions: <br>
-   ImportApi myOrg-myEnv myApi
+   ImportApi myApi
 
 
 Send thoughts, comments, bugs, etc., to tdavid@apigee.com
