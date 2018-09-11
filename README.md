@@ -108,6 +108,6 @@ A typical development session might use commands in this sequence:
    ImportApi myApi
 
 
-Send thoughts, comments, bugs, etc., to tdavid@apigee.com
+Send thoughts, comments, bugs, etc., to tdavid99@gmail.com
 
 Cheers!
