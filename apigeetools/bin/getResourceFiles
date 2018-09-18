@@ -1,3 +1,0 @@
-/organizations/{org_name}/resourcefiles
-/organizations/{org_name}/environments/{environment_name}/resourcefiles
-/organizations/{org_name}/apis/{api_name}/revisions/{revision_number}/resources

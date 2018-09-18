@@ -35,7 +35,7 @@ getKeys=`echo $RESPONSE | grep name | awk '{print $3}' | sed 's/[",]*//g'`
 
 debug -e "\n\ngetKeyscmd ==\n\t $getKeys"
 
-delKeyEntry="https://api.enterprise.apigee.com/o/${org}/e/${env}/keyvaluemaps/${map}/entries"
+delKeyEntry="$APIGEE_HOST/o/${org}/e/${env}/keyvaluemaps/${map}/entries"
 
 debug -e "\n\ndelKeyEntry ==\n\t $delKeyEntry"
 

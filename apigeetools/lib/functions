@@ -1,10 +1,14 @@
 #!/bin/bash
-APIGEE_TOOLS_VERSION='3.1.2'
+APIGEE_TOOLS_VERSION='3.1.3'
 # General approach
 #	"get..." routines will retrieve formatted individual elements of the type
 #	"get...s" routines will retrieve a list of elements of the type (TODO: change these all to "list...")
 #	"list..." routines will retrieve a list of elements of the type
 #	"json" formatting is actually a dimensioned array of elements (TODO: make parser recursive)
+
+version() {
+    echo "$(basename "$0") version $APIGEE_TOOLS_VERSION"  
+}
 
 noop() {
 	echo > /dev/null
@@ -20,9 +24,9 @@ warn() {
 
 debug() {
 	[[ 
-			"$DEBUG" != "false" && 
-			"$DEBUG" != "" && 
-			"$DEBUG" != "2" 
+		"$DEBUG" != "false" && 
+		"$DEBUG" != "" && 
+		"$DEBUG" != "2" 
 	]] && 
 		echo -e "DEBUG[$DEBUG]: $(basename "$0"): $*" >&2
 }
@@ -36,6 +40,19 @@ fail() {
 	exit $RETVAL
 }
 
+usage() {
+	echo "usage: $(basename "$0") [-d:e:hjlo:vx] [Args] " >&2 # $USAGE => Args
+	echo >&2
+	echo "    -d[0-9] set Debug output 0=off; 2='curl'; 9=help" >&2
+	echo "    -e set ENVIRONMENT" >&2
+	echo "    -h print this Help message" >&2
+	echo "    -j input/output data in Json format" >&2
+	echo "    -l execute a %true% deLete" >&2
+	echo "    -o set ORGANIZATION" >&2
+	echo "    -v display Version information" >&2
+	echo "    -x input/output data in Xml format" >&2
+}
+
 usefail() {
 	local RETVAL=$2
 	if [ "$RETVAL" = "" ]; then
@@ -44,23 +61,6 @@ usefail() {
 	error "$1"
 	usage
 	exit $RETVAL
-}
-
-version() {
-    echo "$(basename "$0") version $APIGEE_TOOLS_VERSION"  
-}
-
-usage() {
-	echo "usage: $(basename "$0") [-cd:hjlvx] [Args] " >&2 # $USAGE => Args
-	echo >&2
-	echo "    -d[0-9] set Debug output 0=off; 2='curl'; 9=help" >&2
-#	echo "    -e set ENVIRONMENT" >&2
-	echo "    -h print this Help message" >&2
-	echo "    -j input/output data in Json format" >&2
-	echo "    -l execute a %true% deLete" >&2
-#	echo "    -o set ORGANIZATION" >&2
-	echo "    -v display Version information" >&2
-	echo "    -x input/output data in Xml format" >&2
 }
 
 parseCommandline() {
@@ -97,7 +97,7 @@ parseCommandline() {
 			esac
 			;;
 		e)
-			ENVIRONMENT=$OPTARG
+			export ENVIRONMENT=$OPTARG
 			;;
 		h) 
 			usage
@@ -110,7 +110,8 @@ parseCommandline() {
 			DEBUG=5 # Special option for "True" delete
 			;;
 		o)
-			ORGANIZATION=$OPTARG
+			export ORGANIZATION=$OPTARG
+			export ORG=$OPTARG
 			;;
 		v)
 		    version
@@ -123,7 +124,7 @@ parseCommandline() {
 		shift
 	done
 
-	HOST_ALIAS="${ORGANIZATION}-${ENVIRONMENT}"
+	export HOST_ALIAS="${ORGANIZATION}-${ENVIRONMENT}"
 	debug "PCL[0]: HOST_ALIAS= $HOST_ALIAS"
 	
 	ARGS=("$@")
@@ -131,18 +132,8 @@ parseCommandline() {
 	debug "PCL[2]: OPTS= ${OPTS[@]}; ARGS= ${ARGS[@]}"
 }
 
-checkArgs() {
-	debug "ARGS=${ARGS[@]}"
-}
-
-findEnv() {
-    if [ "_$1" == "_" ]; then
-		usefail "no host specified"
-    fi
-	find -L ${TOOLSDIR} -name "$1"
-}
-
 loadConfig() {
+	#Check the environment
 	[[
 		"_$ORGANIZATION" != "_" && 
 		"_$ENVIRONMENT" != "_" && 
@@ -156,53 +147,35 @@ loadConfig() {
 		"_$FRMT" != "_" &&  
 		"_$MOST" != "_" &&  
 		"_$PATH" != "_" &&  
-		"_$ENV" != "_" # &&  
-		#"_$ORG" != "_"
+		"_$ENV" != "_" &&  
+		"_$ORG" != "_"
 	]] && return
     usefail "Environment Settings Not Found:
-		$ORGANIZATION 
-		$ENVIRONMENT 
-		$HOST_ALIAS  
-		$APIGEE_HOST  
-		$APITOOLS_HOME  
-		$TOOLSDIR  
-		$APISDIR  
-		$DEVELOPER  
-		$DEBUG  
-		$FRMT  
-		$MOST  
-		$PATH  
-		$ENV  
-		$ORG
+		ORGANIZATION 	$ORGANIZATION 
+		ENVIRONMENT 	$ENVIRONMENT 
+		HOST_ALIAS  	$HOST_ALIAS 
+		APIGEE_HOST  	$APIGEE_HOST 
+		APITOOLS_HOME 	$APITOOLS_HOME 
+		TOOLSDIR 		$TOOLSDIR  
+		APISDIR 		$APISDIR 
+		DEVELOPER  		$DEVELOPER 
+		FRMT  			$FRMT  
+		ENV  			$ENV  
+		ORG 			$ORG
     "
 }
 
-loadTestParams() {
-	local HOST="$1"
-    if [ "$HOST" = "" ]; then
-		usefail "no host environment specified"
-	else
-		debug "Loading Test Params for $1"
+checkArgs() {
+	debug "ARGS=${ARGS[@]}"
+	loadConfig
+}
+
+findEnv() {  # No longer used??
+	debug "Called findEnv $1"
+    if [ "_$1" == "_" ]; then
+		usefail "no host specified"
     fi
-
-	local ENVIRON=`findEnv $HOST`
-	local DIR=`dirname $ENVIRON`
-	local ENV=$(basename $DIR ".d")
-	local ENVCONFIG="$DIR/$ENV"
-	local TESTCONFIG="$DIR/${ENV}.tp"
-
-	debug "loading environment Test Params $TESTCONFIG"
-    source "$TESTCONFIG"
-
-    return $?
-
-	local usrTParams="${HOME}/.apigee-tools/environments/$1.tp"
-	if [ -e "$usrTParams" ]; then
-		debug "loading environment config $usrTParams"
-		source "$usrTParams"
-	else
-		debug "no environment config $usrTParams"
-	fi
+	find -L ${TOOLSDIR} -name "$1"
 }
 
 rest() {
@@ -264,20 +237,21 @@ rest() {
 	fi
 
 	debug "\n\tRawOutput= \n$output\n\t"
+
+	# Should use this, but must remove lots of other "echo" commands
+	#[[ "_$ENVIRONMENT" != "_" ]] && echo $RESPONSE
+
 }
 
 http_get() {
-	# $2=URL (full)
 	rest GET $1
 }
 
 http_post() {
-	# $2=URL (full)
 	rest POST $1
 }
 
 http_delete() {
-	# $1=URL (full)
 	VERB=GET
 	[ "$DEBUG" = "5" ] && VERB=DELETE
 	debug "http_delete: $VERB $1"
@@ -330,6 +304,34 @@ jsonValueSet() {
 listify() {
 	[ "$FRMT" = "xml" ] && xmlValueOf $1
 	[ "$FRMT" = "json" ] && jsonValueOf $1
+}
+
+loadTestParams() {
+	local HOST="$1"
+    if [ "$HOST" = "" ]; then
+		usefail "no host environment specified"
+	else
+		debug "Loading Test Params for $1"
+    fi
+
+	local ENVIRON=`findEnv $HOST`
+	local DIR=`dirname $ENVIRON`
+	local ENV=$(basename $DIR ".d")
+	local ENVCONFIG="$DIR/$ENV"
+	local TESTCONFIG="$DIR/${ENV}.tp"
+
+	debug "loading environment Test Params $TESTCONFIG"
+    source "$TESTCONFIG"
+
+    return $?
+
+	local usrTParams="${HOME}/.apigee-tools/environments/$1.tp"
+	if [ -e "$usrTParams" ]; then
+		debug "loading environment config $usrTParams"
+		source "$usrTParams"
+	else
+		debug "no environment config $usrTParams"
+	fi
 }
 
 export STATUS_CODE

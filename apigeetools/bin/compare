@@ -10,7 +10,7 @@
 #       api the name of the api
 #set -e
 
-USAGE="host_alias api 
+USAGE="host_alias api"
 TOOLSDIR="${APITOOLS_HOME}"
 
 . "$TOOLSDIR/config/global"

@@ -9,20 +9,23 @@
 
 #set -e
 
-USAGE="host_alias"
+USAGE="[json | xml]"
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
 checkArgs 1
-HOST_ALIAS=${ARGS[0]}
 
 URL="/o/${ORGANIZATION}/developers"
+#URL="${APIGEE_HOST}/o/${ORGANIZATION}/developers"
 
-if [ "$FRMT" = "xml" ] ; then
-	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL"
-else
-	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL"
-fi
+http_get "$APIGEE_HOST$URL" "$FRMT"
+
+# if [ "$FRMT" = "xml" ] ; then
+# 	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL"
+# else
+# 	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL"
+# fi
+
+echo $RESPONSE

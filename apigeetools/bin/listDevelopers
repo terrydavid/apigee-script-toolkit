@@ -2,7 +2,7 @@
 
 # getApis
 #
-# lists the apis contained in a given host
+# lists the developers for the org
 #
 # usage:
 #   getApis host_alias

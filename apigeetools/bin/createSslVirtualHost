@@ -9,34 +9,29 @@
 
 #set -e
 
-USAGE="environment name port keystore key_alias [host_alias [, host_alias [..."
+USAGE="vhost_name port [host_alias]* ..."
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
 checkArgs 3 5
-loadConfig "${ARGS[0]}"
 
-VIRTUAL_HOST_NAME=${ARGS[1]}
-PORT=${ARGS[2]}
+VIRTUAL_HOST_NAME=${ARGS[0]}
+PORT=${ARGS[1]}
 
-KEYSTORE=${ARGS[3]}
-KEY_ALIAS=${ARGS[4]}
+HOST_ALIASES=""
 
-for ((i=5;i<${#ARGS[@]};i++)); do
-	if [ $i -gt 5 ]; then
-		HOST_ALIASES+=","
+for ((i=${#ARGS[@]};i>1;i--)); do
+	if [[ "${ARGS[$i]}" != "" ]] ; then
+		[[ "$HOST_ALIASES" != "" ]] && HOST_ALIASES+=","
+		HOST_ALIASES+="\"${ARGS[$i]}\""
 	fi
-	HOST_ALIASES+="\"${ARGS[$i]}\""
 done
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/$(uri_escape "$ENVIRONMENT")/virtualhosts"
 
-BODY="{\"name\":\"${VIRTUAL_HOST_NAME}\",\"hostAliases\":[${HOST_ALIASES}],\"interfaces\":[],\"port\":${PORT},\"sSLInfo\":{\"enabled\":true,\"clientAuthEnabled\":false,\"keyStore\":\"${KEYSTORE}\",\"keyAlias\":\"${KEY_ALIAS}\",\"ciphers\":[\"SSL_RSA_WITH_RC4_128_MD5\"],\"ignoreValidationErrors\":true,\"protocols\":[\"SSLv3\",\"TLSv1\"]}}"
-
-#BODY="{\"name\":\"${VIRTUAL_HOST_NAME}\",\"hostAliases\":[${HOST_ALIASES}],\"interfaces\":[],\"port\":${PORT},\"sSLInfo\":{\"enabled\":true,\"clientAuthEnabled\":false,\"keyStore\":\"${KEYSTORE}\",\"ignoreValidationErrors\":true}}"
+BODY="{\"name\":\"${VIRTUAL_HOST_NAME}\",\"hostAliases\":[${HOST_ALIASES}],\"interfaces\":[],\"port\":${PORT},\"sSLInfo\":{\"enabled\":true,\"clientAuthEnabled\":false,\"keyStore\":\"${KEYSTORE}\",\"ignoreValidationErrors\":true}}"
 
 debug "BODY= $BODY"
 

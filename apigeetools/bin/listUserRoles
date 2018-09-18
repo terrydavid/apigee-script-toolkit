@@ -5,7 +5,7 @@
 # list User Roles
 #
 # usage:
-#   createUserRole host_alias
+#   listUserRole host_alias
 
 #set -e
 
