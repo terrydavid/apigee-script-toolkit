@@ -1,3 +1,3 @@
 #!/bin/bash
 
-curl -i -u "admin:9m8e7t6r5i4c3s" http://10.88.149.134:9087/admin/health ; echo
+curl -nsS $APIGEE_HOST/admin/health; echo

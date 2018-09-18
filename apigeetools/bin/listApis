@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# getApis
+# listApis
 #
 # lists the apis contained in a given host
 #

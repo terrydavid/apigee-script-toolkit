@@ -2,7 +2,7 @@
 
 # getOrganization
 #
-# retrieves the Nintendo organization
+# retrieves the organization
 #
 # usage:
 #   getOrganization host_alias

@@ -9,16 +9,15 @@
 
 #set -e
 
-USAGE="host_alias"
+USAGE="developer"
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
-checkArgs 2
-HOST_ALIAS=${ARGS[0]}
-DEVID=${ARGS[1]}
+checkArgs 1
+
+DEVID=${ARGS[0]}
 
 URL="/o/${ORGANIZATION}/developers/${DEVID}"
 

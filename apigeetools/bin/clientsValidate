@@ -1,3 +1,0 @@
-#!/bin/bash
-
-curl -i "http://devrdapiap134.dev.nintendo.com:9087/clients/validate" -H "Content-Type:application/x-www-form-urlencoded" -d "client_id=991c9d1ad4dd150bae920ab65850936c&client_secret=9c00b8d9362b52105b1a69dcbddf4b41" -H "TERRY:clientsValidate" 

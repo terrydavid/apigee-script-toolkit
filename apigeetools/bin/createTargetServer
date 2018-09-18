@@ -9,25 +9,25 @@
 
 #set -e
 
-USAGE="Host-Env_alias TargetServerName TS-Port BackEndHostName"
+USAGE="TargetServerName TS-Port BackEndHostName [ssl=y/N]"
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
-if [ ${#ARGS[@]} -lt 4 ]; then
-	usefail "wrong number of arguments (expected 4, got ${#ARGS[@]})"
-fi
-loadConfig "${ARGS[0]}"
+checkArgs 3
 
-TgtSvrName=${ARGS[1]}
-PORT=${ARGS[2]}
-BEHostName=${ARGS[3]}
+TgtSvrName=${ARGS[0]}
+PORT=${ARGS[1]}
+BEHostName=${ARGS[2]}
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/$(uri_escape "$ENVIRONMENT")/targetservers"
 
-BODY="{\"name\":\"${TgtSvrName}\",\"host\":\"${BEHostName}\",\"port\":${PORT},\"IsEnabled\":true}"
+if [[ "${ARGS[3]}" == "y" ]] ; then
+	BODY="{\"name\":\"${TgtSvrName}\",\"host\":\"${BEHostName}\",\"port\":${PORT},\"IsEnabled\":true,\"sSLInfo\":{\"enabled\":true}}"
+else
+	BODY="{\"name\":\"${TgtSvrName}\",\"host\":\"${BEHostName}\",\"port\":${PORT},\"IsEnabled\":true}"
+fi
 
 output=`set -x;curl -nsS -X POST -H "Accept: application/json" -H "Content-Type: application/json" --data-binary "$BODY" -w "\n%{http_code}" "${URL}";set -`
 

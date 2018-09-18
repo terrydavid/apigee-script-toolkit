@@ -9,16 +9,14 @@
 
 #set -e
 
-USAGE="environment targetserver"
+USAGE="targetserver"
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
-loadConfig "${ARGS[0]}"
 
-URL="/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers/${ARGS[1]}"
+URL="/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers/${ARGS[0]}"
 
 getApigee "HOST_ALIAS" "$URL"
 

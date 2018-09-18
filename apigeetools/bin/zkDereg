@@ -40,6 +40,6 @@ http_post "$URL" -H 'content-type:application/x-www-form-urlencoded' -d"action=r
 echo -e "$RESPONSE"
 
 #to remove apiproxies in zk
-#rmr /organizations/Nintendo/environments/Production-WEST/apiproxies/<proxy_name>
+#rmr /organizations/<ORG>/environments/<ENV>/apiproxies/<proxy_name>
 
 

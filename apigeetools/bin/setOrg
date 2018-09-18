@@ -2,17 +2,24 @@
 
 # setOrg <organization> <!developer_email> # in the cloud
 
-echo "Did you 'source || . ' me?"
+echo "newOrg newEnv newDev  - Did you 'source || . ' me?"
 
 newOrg=$1
 newEnv=$2
+newDev=$3
 
 [ $newOrg ] && {
 	export ORGANIZATION="$newOrg"
 	export ENV="$newOrg"
+	export ORG="$newOrg"
 }
 
 [ $newEnv ] && {
 	export ENVIRONMENT="$newEnv"
 	export ENVIRONMENTS="\($newOrg-$newEnv\)"
+}
+
+[ $newDev ] && {
+        export DEVELOPER="$newDev"
+        export ENVIRONMENTS="\($newOrg-$newEnv\)"
 }

@@ -9,18 +9,18 @@
 
 #set -e
 
-USAGE="environment virtual_host_name"
+USAGE="virtual_host_name"
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
-checkArgs 2
+checkArgs 1
 
-loadConfig "${ARGS[0]}"
+#loadConfig "${ARGS[0]}"
+#VH_NAME=${ARGS[1]}
 
-VH_NAME=${ARGS[1]}
+VH_NAME=${ARGS[0]}
 
 URL="/o/${ORGANIZATION}/e/${ENVIRONMENT}/virtualhosts/${VH_NAME}"
 

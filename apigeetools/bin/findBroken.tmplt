@@ -40,7 +40,6 @@ myLoop() {
 			warn "Error [$ERRLVL] occured"
 		fi
 
-		## there is only one Developer at nintendo so no need to scan them
 		## find all the proxies in the product
 		ApiProxFmP=`getProxFmProd ${OPTS[@]} "$HOST_ALIAS" "$prodOut"`
 		debug "ApiProxFmP=\n$ApiProxFmP"

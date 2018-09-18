@@ -1,8 +1,0 @@
-#!/bin/bash
-
-environ=$1
-
-source ${APITOOLS_HOME}/config/global
-source ${APITOOLS_HOME}/lib/functions
-source ${APITOOLS_HOME}/config/environments/${environ}
-source ${APITOOLS_HOME}/config/hosts/${HOST_ALIAS}

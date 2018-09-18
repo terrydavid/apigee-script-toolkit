@@ -18,44 +18,40 @@
 #-u myname:mypass https://api.enterprise.apigee.com/o/{org_name}/environments/{env_name}/keyvaluemaps
 #
 
-#set -e
-
-USAGE="environment keyvaluemap_name"
+USAGE="keyvaluemap_name kvm_keys_file"
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "${APITOOLS_HOME}/config/global"
 . "${APITOOLS_HOME}/lib/functions"
 
 parseCommandline "$@"
 checkArgs 2
-loadConfig "${ARGS[0]}"
 
 [ "_$DEBUG" != "_false" -a "_$DEBUG" != "_" ] && set -x
 
-keyvaluemap_name="${ARGS[1]}"
-
-names[0]="keyvaluemap_name"
-
-#names[1]="display_name"  # bldBody additonal of these: "${names[1]}:${ARGS[2]}"
+kvm_name="${ARGS[0]}"
+kvm_keys_file="${ARGS[1]}"
 
 FRMT="json"
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/keyvaluemaps"
 
-cat - > ${APITOOLS_HOME}/data/createKeyValueMap-${ARGS[0]}.${FRMT} <<%
-{
-  "entry" : [ {
-    "name" : "${ARGS[0]}-APINAME",
-    "value" : "dummy1stEntry"
-  } ],
-  "name" : "${keyvaluemap_name}"
-}
-%
+# if [[ "_${kvm_keys_file}" != "_" ]] ; then {
+# 	cat - > ${APITOOLS_HOME}/data/crKVMap-${kvm_name}.json <<%
+# {
+#   "entry" : [ {
+#     "name" : "${ARGS[0]}-APINAME",
+#     "value" : "dummy1stEntry"
+#   } ],
+#   "name" : "${kvm_name}"
+# }
+# %
+# 	kvm_keys_file="${APITOOLS_HOME}/data/crKVMap-${kvm_name}.json"
+# }
 
 HDRS="-H Content-Type:application/json"
-curlOPTS="--data-binary @${APITOOLS_HOME}/data/createKeyValueMap-${ARGS[0]}.${FRMT}"
+curlOPTS="--data-binary @${kvm_keys_file}"
 
-debug "`cat ${APITOOLS_HOME}/data/createKeyValueMap-${ARGS[0]}.${FRMT}`"
+debug " checking kvmk file ${kvm_keys_file}: `cat ${kvm_keys_file}`"
 
 http_post "$URL"
 

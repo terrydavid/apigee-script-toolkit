@@ -9,23 +9,22 @@
 
 #set -e
 
-USAGE="host_alias app_name display_name api_product"
+USAGE="app_name display_name api_product"
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
 checkArgs 4
-loadConfigH "${ARGS[0]}"
 
-APP_NAME=${ARGS[1]}
-DISPLAY_NAME=${ARGS[2]}
-API_PRODUCT=${ARGS[3]}
+APP_NAME=${ARGS[0]}
+DISPLAY_NAME=${ARGS[1]}
+API_PRODUCT=${ARGS[2]}
+CALLBACKURL=${ARGS[3]}
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/developers/${DEVELOPER}/apps"
 
-BODY="{\"name\":\"${APP_NAME}\",\"accessType\":\"read\",\"callbackUrl\":\"http://nintendo.net\",\"apiProducts\":[\"${API_PRODUCT}\"],\"attributes\":[{\"name\":\"Developer\",\"value\":\"${DEVELOPER}\"},{\"name\":\"DisplayName\",\"value\":\"${DISPLAY_NAME}\"},{\"name\":\"Notes\",\"value\":\"\"}],\"developerEmail\":\"developer@nintendo.com\"}"
+BODY="{\"name\":\"${APP_NAME}\",\"accessType\":\"read\",\"callbackUrl\":\"${CALLBACKURL}\",\"apiProducts\":[\"${API_PRODUCT}\"],\"attributes\":[{\"name\":\"Developer\",\"value\":\"${DEVELOPER}\"},{\"name\":\"DisplayName\",\"value\":\"${DISPLAY_NAME}\"},{\"name\":\"Notes\",\"value\":\"\"}],\"developerEmail\":\"${DEVELOPER}\"}"
 
 output=`curl -s -S --basic -u "$CREDENTIALS" -X POST -H "Accept: application/json" -H "Content-Type: application/json" --data-binary "$BODY" -w "\n%{http_code}" "${URL}"`
 
