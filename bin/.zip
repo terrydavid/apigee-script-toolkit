@@ -1,0 +1,5 @@
+{
+  "code" : "messaging.config.beans.ApplicationDoesNotExist",
+  "message" : "APIProxy named revisions does not exist in organization upretyamar-eval",
+  "contexts" : [ ]
+}

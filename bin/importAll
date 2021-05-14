@@ -1,0 +1,38 @@
+#!/bin/bash
+ 
+# importAll
+#
+# imports all API bundles contained in a directory
+#
+# usage:
+#   importAll host_alias [directory]
+#		host_alias the host alias
+#       directory the directory to look in for bundles (default: $APISDIR)
+
+#set -e
+
+USAGE="host_alias [directory] # Uploads all apiproxy.zip files in a directory"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 1 2
+loadConfig "${ARGS[0]}"
+
+DIRECTORY=${ARGS[1]}
+if [ "$DIRECTORY" = "" ]; then
+	DIRECTORY="$APISDIR"
+fi
+	
+for PROXY in $DIRECTORY/*.zip; do
+	API_NAME=$(basename "$PROXY" .zip)
+	DIR=$(dirname "$PROXY")
+	if [ -s "$DIR/$API_NAME.zip" ]; then
+		#createApiProxyZip ${OPTS[@]} "$DIR"
+		importApi ${OPTS[@]} "$HOST_ALIAS" "$API_NAME" "$DIR/$API_NAME.zip"
+	else
+		fail "Proxy [$DIR/$API_NAME.zip] File Not Found!"
+	fi
+done

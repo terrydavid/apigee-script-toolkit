@@ -1,0 +1,32 @@
+#!/bin/bash
+
+#
+# deleteApi
+# deletes an API
+#
+#	NOTE: DOC STATES THIS WILL DELETE ALL ENDPOINTS AND RESOURCES AS WELL AS POLICIES AND REVISIONS !!
+#
+# usage:
+#   deleteApi environment api
+
+#set -e
+
+USAGE="environment api_name"  #	NOTE: THIS WILL DELETE ALL ENDPOINTS AND RESOURCES AS WELL AS POLICIES AND REVISIONS !!"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+loadConfig "${ARGS[0]}"
+
+API_NAME=${ARGS[1]}
+
+#echo "# NOTE!! Get all the ApiProxy revisions and delete them individually FIRST!!"
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis/$(uri_escape "$API_NAME")"
+
+http_delete "$URL"
+
+debug "Status Code = $STATUS_CODE"

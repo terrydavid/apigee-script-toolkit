@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# getCache
+#
+# retrieves the specified cache
+#
+# usage:
+#   getCache cache_name
+
+#set -e
+
+USAGE="environemnt cache_name # This only works from localhost"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+
+loadConfig "${ARGS[0]}"
+
+cache_name="${ARGS[1]}"
+
+#URL="${APIGEE_HOST}/runtime/o/${ORGANIZATION}/e/${ENVIRONMENT}/caches/$(uri_escape "$cache_name")/entries?action=clear"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/caches/$(uri_escape "$cache_name")/entries"
+
+debug "Getting Cache Entries for $URL"
+
+http_get "$URL"

@@ -1,0 +1,30 @@
+#!/bin/bash
+#
+# getKVMValue
+# 	gets a KVM value for the keyname
+#
+#Scoped to environment:
+#  https://api.enterprise.apigee.com/o/{org_name}/environments/{env_name}/keyvaluemaps
+#
+
+#set -e
+
+USAGE="environment keyvaluemap_name key_to_retrieve"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "${APITOOLS_HOME}/config/global"
+. "${APITOOLS_HOME}/lib/functions"
+
+parseCommandline "$@"
+checkArgs 3
+loadConfig "${ARGS[0]}"
+
+keyvaluemap_name="${ARGS[1]}"
+
+FRMT="json"
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/keyvaluemaps/$(uri_escape "${keyvaluemap_name}")/entries/${ARGS[2]}"
+
+http_get "$URL"
+
+echo -e "Status Code [$STATUS_CODE] response is: \n$RESPONSE"

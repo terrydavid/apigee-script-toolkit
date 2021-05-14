@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# findBroken<template>
+#	find all the broken stuff
+#
+#	Do the API proxy, API Product, Developer, Developer App. 
+#		In that order to Create. 
+#		Reverse to delete
+#
+# usage:
+#   findBroken<template>
+#
+
+#set -e
+
+USAGE="environment"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+# change "myLoop" to someother Loop for the relevant objects
+myLoop() {
+	# fix the field seperator so the "for" loop will work
+	oldFS="$IFS"
+	IFS=$(echo -en "\n\'\"")
+	#set -v
+	for an in $AppNames ; do
+		debug "AN=$an :: ue=$(uri_escape "$an")"
+		#output=`getApp ${OPTS[@]} "$HOST_ALIAS" "$(uri_escape "$an")" | grep -i '\(name\)\|\(item\)\|\(message\)'`
+		output=`getApp ${OPTS[@]} "$HOST_ALIAS" "$an" | grep -i '\(name\)\|\(item\)\|\(message\)'`
+		ERRLVL="$?"
+		debug "ERRLVL=${ERRLVL}"
+		debug "Output=\n$output"
+		if [ "$ERRLVL" = "0" ] ; then  # need to validate if we have a real ApiProduct or not ( not there yet )
+			prodOut=`echo "$output" | xmlValueOf "'\(name\)\|\(item\)\|\(message\)'"`
+			debug "prodOut=\n$prodOut"
+			echo "$prodOut"
+		else 	# If the App has NO ApiProduct we need to flag that
+			warn "Error [$ERRLVL] occured"
+		fi
+
+		## there is only one Developer at nintendo so no need to scan them
+		## find all the proxies in the product
+		ApiProxFmP=`getProxFmProd ${OPTS[@]} "$HOST_ALIAS" "$prodOut"`
+		debug "ApiProxFmP=\n$ApiProxFmP"
+		# If a Product has no Proxies we need to flag that
+		if [ "$ApiProxFmP" = "" ] ; then 
+			error "ApiProduct [$prodOut] has NO Proxies!"
+		fi
+		# for ap in ApiProxies ; do
+			#
+	done
+
+	IFS="$oldFS"	
+}
+
+parseCommandline "$@"
+checkArgs 1
+
+loadConfig "${ARGS[0]}"
+
+# Only one of these should be called per object type
+# AppNames is Done
+#AppNames=`getAppNames ${OPTS[0]} ${ARGS[0]}`
+#debug "AppNames= \n$AppNames"
+
+ApiProxies=`listApis ${OPTS[0]} "$HOST_ALIAS"`
+debug "ApiProxies= \n$ApiProxies"
+
+# ApiProducts is Done
+#ApiProducts=`getApiProducts ${OPTS[0]} "$HOST_ALIAS"`
+#debug "ApiProducts= \n$ApiProducts"
+
+AppDevlprs=`getDevelopers ${OPTS[0]} "$HOST_ALIAS"`
+debug "AppDevlprs= \n$AppDevlprs"
+

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+getDeployedApiVersion Production-WEST $1
+read "OK?" 
+deleteApiRevision -d noardapiap06 $1 $2

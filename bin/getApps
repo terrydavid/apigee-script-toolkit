@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# getApps
+#
+# retrieves the developer apps in a host
+#
+# TODO: This currently returns the appid (uuid) which is useless. 
+#		Need to return the app Name
+#
+# usage:
+#   getApps host_alias
+
+#set -e
+
+USAGE="host_alias"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 1
+HOST_ALIAS=${ARGS[0]}
+
+URL="/o/${ORGANIZATION}/apps"
+
+if [ "$FRMT" = "xml" ] ; then
+	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL" | sort
+else
+	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL" | sort
+fi

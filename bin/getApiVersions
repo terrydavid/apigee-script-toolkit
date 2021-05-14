@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# getApiVersions
+#
+# retrieves the revision number of all revisions of an API
+#
+# usage:
+#   getApiVersions host_alias api
+
+
+
+USAGE="host_alias api"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 1
+loadConfig "${ARGS[0]}"
+
+[ "_$DEBUG" == "_2" ] && set -x
+
+if [ "$HOST_ALIAS" = "${ARG[0]}" ] ; then
+	APINAME=${ARGS[1]}
+else
+	APINAME=${ARGS[0]}
+fi
+
+if [ "$APINAME" = "" ]; then
+	usefail "no API name specified"
+fi
+
+# force json for now
+FRMT=json
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis/${APINAME}"
+debug "retrieving API ${APNAME} versions from ${URL}"
+
+http_get "$URL"
+
+if [ "$STATUS_CODE" != "200" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+
+#JLIST=`echo "$RESPONSE" | sed 's/[\[\]\"\,\:a-zA-Z]*//g'`
+JLIST=`echo "$RESPONSE" | $TOOLSDIR/lib/jp.sh | jsonValueOf "revision"`
+debug "JLIST: \n$JLIST"
+
+#APILIST=`echo "$RESPONSE" | awk 'BEGIN { RS = "[\n\r]+" } ; /revision.*,0,.*name/ {print $2}'`
+#debug "APILIST=$APILIST"
+#for a in $JLIST ; do printf "%b\n" $a ; done
+
+for a in $JLIST ; do printf "%b\n" $a | sed 's/\"//g' ; done
+
+

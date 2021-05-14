@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# getApiProduct
+#
+# retrieves an API product
+#
+# usage:
+#   getApiProduct host_alias product_name
+
+set -e
+
+USAGE="host_alias product_name"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+#HOST_ALIAS=${ARGS[0]}
+PRODUCT_NAME=${ARGS[1]}
+
+URL="/o/${ORGANIZATION}/apiproducts/$(uri_escape "$PRODUCT_NAME")"
+
+if [ "$FRMT" = "xml" ] ; then
+	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL"
+else
+	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL"
+fi
