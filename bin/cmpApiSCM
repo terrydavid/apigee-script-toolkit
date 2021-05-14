@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# cmpApiVersions
+#
+
+# usage:
+#   cmpApiVersions environment ApiProxyNameset -e
+
+USAGE="org-environment apiproxyname revision GITAPI"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 3 4
+loadConfig "${ARGS[0]}"
+
+[ "_$DEBUG" == "_2" ] && set -x
+
+API="${ARGS[1]}"; GAPI=$API
+REV="${ARGS[2]}"
+[ ${ARGS[3]} ] && GAPI="${ARGS[3]}"
+
+if [ "_$REV" == "_Latest" ] ; then
+	REV=`getApiVersionLatest "${OPTS[@]}" "$HOST_ALIAS" "$API"`
+fi
+
+dlApi ${OPTS[@]} "$HOST_ALIAS" "$API" "$REV" "$API"-"$REV".zip 2>/dev/null
+unzip -oq $API-$REV.zip -d $API-$REV 2>&1 >/dev/null
+debug diff -br "$API-$REV/" "$APISDIR/$API/"
+diff -br "$API-$REV/" "$HOME/git/guardian/apis/$GAPI/"
+[ "_$?" == "_0" ] && echo " Proxies are the same"
+

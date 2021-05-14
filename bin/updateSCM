@@ -1,0 +1,40 @@
+#!/bin/bash
+ 
+# updateSCM
+#
+# updates a git repository
+#
+# usage:
+#   dlApi host_alias api 
+#       host_alias the host alias
+#       api the name of the api
+#       zip_file the name of the apiproxy zip file (default is ./apiproxy.zip) to create
+#set -e
+
+USAGE="host_alias api revision # 'download (export)' an api proxy into git"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 3 3
+loadConfig "${ARGS[0]}"
+APINAME="${ARGS[1]}"
+REV="${ARGS[2]}"
+
+dlApi ${OPTS[@]} "$HOST_ALIAS" "$APINAME" "$REV"
+
+echo "downloaded version $REV of API $APINAME; checking against $APISDIR"
+
+read -p "You sure you want to overwrite ${APISDIR}/${APINAME} [Y] ?"
+if [[ "${REPLY}_" != "Y_" ]] ; then
+	echo "Aborting!"
+	exit 2 
+fi
+
+# Expode zip file
+unzip -o ${APINAME}-${REV}.zip -d ${APISDIR}/${APINAME} && rm ${APINAME}-${REV}.zip
+
+
+

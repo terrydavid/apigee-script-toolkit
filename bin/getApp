@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# getApp
+#
+# retrieves the specified developer app
+#
+# usage:
+#   getApp host_alias app_name
+
+#set -e
+
+USAGE="host_alias app_name"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+#DEVELOPER=${ARGS[0]}
+APP_NAME=${ARGS[0]}
+
+URL="/o/${ORGANIZATION}/developers/${DEVELOPER}/apps/$(uri_escape "$APP_NAME")"
+
+if [ "$FRMT" = "xml" ] ; then
+	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL"
+else
+	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL"
+fi

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# dlAllpis
+#
+# retrieves the bundles for all APIs in an environment
+#
+# usage:
+#   dlAllApis environment
+
+function max {
+	[[ "none" == "$1" && "none" == "$2" ]] && return "none"
+	[[ "none" == "$1" && null != $2 ]] && return $2
+	[[ "none" == "$2" && null != $1 ]] && return $1
+	ret=`if [[ $1 -gt $2 ]] ; then echo $1 ; else echo $2 ; fi`
+	printf %s $ret
+	return $ret
+}
+
+USAGE="environment"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+
+loadConfig "${ARGS[0]}"
+
+rev=""
+APIs=`getApis ${OPTS[@]}`
+
+debug "Found APIs \n$APIs"
+echo -en "\nFound APIs for Org $ORGANIZATION: \n$APIs"
+
+for a in $APIs ; do {
+	deprev=`getApiVersionDeployed ${OPTS[@]} ${ARGS[0]} $a | tail -1`
+	latrev=`getApiVersionLatest ${OPTS[@]} ${ARGS[0]} $a | tail -1`
+	myrev=`max $deprev $latrev`
+
+	# echo -e "\ngetDeployedApiVersion ${OPTS[@]} ${ARGS[0]} $a has Rev [$rev]"
+	if [ "$myrev" != "" ] ; then
+		dlApi $HOST_ALIAS $a $myrev
+		#mv $a.zip ${APISDIR}
+		#echo -e "\n\tApiProxy ${APISDIR}/$a.zip from Env ${ARGS[0]} Host $HOST_ALIAS revision $rev"
+	else
+		echo -e "\nNO Revision for ApiPoxy $a in Env ${ARGS[0]} Host $HOST_ALIAS"
+	fi
+} done

@@ -1,0 +1,60 @@
+#!/bin/bash
+ 
+#
+# createSslVirtualHost
+# creates an SSL-enabled virtual host
+#
+# usage:
+#   createSslVirtualHost environment name port keystore key_alias host_alias ...
+
+#set -e
+
+USAGE="vhost_name port keystore key_alias [host_alias]* ..."
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 3 5
+
+VIRTUAL_HOST_NAME=${ARGS[0]}
+PORT=${ARGS[1]}
+KEYSTORE=${ARGS[1]}
+KEY_ALIAS=${ARGS[1]}
+
+HOST_ALIASES=""
+
+for ((i=${#ARGS[@]};i>1;i--)); do
+	if [[ "${ARGS[$i]}" != "" ]] ; then
+		[[ "$HOST_ALIASES" != "" ]] && HOST_ALIASES+=","
+		HOST_ALIASES+="\"${ARGS[$i]}\""
+	fi
+done
+
+URL="${MOST}/o/${ORGANIZATION}/e/$(uri_escape "$ENVIRONMENT")/virtualhosts"
+
+BODY="{
+	\"name\":\"${VIRTUAL_HOST_NAME}\",
+	\"hostAliases\":[${HOST_ALIASES}],
+	\"interfaces\":[],
+	\"port\":${PORT},
+	\"sSLInfo\":{
+		\"enabled\":true,
+		\"clientAuthEnabled\":false,
+		\"keyStore\":\"${KEYSTORE}\",
+		\"ignoreValidationErrors\":true
+	}
+}"
+
+debug "BODY= $BODY"
+
+set -x
+output=`curl -nsS -X POST -H "Accept: application/json" -H "Content-Type: application/json" --data-binary "$BODY" -w "\n%{http_code}" "${URL}"`
+set -
+
+RESPONSE=`echo "$output" | sed '$ d'`
+STATUS_CODE=`echo "$output" | tail -n 1`
+
+if [ "$STATUS_CODE" != "201" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+debug "response is $RESPONSE"

@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# getEnvironmentServers
+# lists the servers that are bound to an environment by UUID
+#
+# usage:
+#   getEnvironmentServers environment
+
+#set -e
+
+USAGE="environment UUID"
+
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2 
+
+loadConfig "${ARGS[0]}"
+
+URL="/servers/$(uri_escape ${ARGS[1]})"
+debug "Retrieving server UUIDs from getApigee ${OPTS[@]} $HOST_ALIAS ${URL}"
+
+getApigee "$HOST_ALIAS" "$URL"
+
+echo "$RESPONSE"

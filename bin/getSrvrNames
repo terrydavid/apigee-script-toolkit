@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# getSvrNames
+#
+# retrieves the server names from their IP address
+#
+# TODO: this should be done by environment name, not MS host alias
+#
+# usage:
+#   getApp host_alias
+
+#set -e
+
+USAGE="host_alias"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 1
+HOST_ALIAS=${ARGS[0]}
+
+output=`getServers -j $HOST_ALIAS`
+
+RESPONSE=`echo "$output" | awk 'BEGIN { RS = "[\n\r]+" } ; /internalIP/ {print $2}' | sed 's/\"//g'`
+
+debug "RESPONSE: \n$RESPONSE"
+
+for ip in $RESPONSE ; do
+	debug "IP is $ip"
+	myDNSname=`host -t CNAME $ip | awk '{print $5}' | sed 's/\.$//'`
+	debug "myDNSname is $myDNSname"
+	if [ "$myDNSname" != "" ] ; then
+		printf "%s\n" $myDNSname
+	else
+		echo " Name $myDNSname Not Found for $ip"
+	fi
+done

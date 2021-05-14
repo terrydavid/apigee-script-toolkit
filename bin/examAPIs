@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# examApis
+#
+# retrieves the content of all APIs in an environment
+#
+# usage:
+#   examApis environment
+
+#set -e
+
+USAGE="environment"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+
+loadConfig "${ARGS[0]}"
+
+rev=""
+APIs=`getApis ${OPTS[@]} $HOST_ALIAS`
+# debug 1 "Found APIs \n$APIs"
+echo -e "Found APIs \n$APIs"
+for a in $APIs ; do {
+	rev=`getApiVersionDeployed ${OPTS[@]} ${ARGS[0]} $a | tail -1`
+	# echo -e "\ngetDeployedApiVersion ${OPTS[@]} ${ARGS[0]} $a has Rev [$rev]"
+	if [ "$rev" != "" ] ; then
+		echo -e "\n\tApiPoxy $a from Env ${ARGS[0]} Host $HOST_ALIAS revision $rev"
+		#getApi $HOST_ALIAS $a $rev
+	else
+		echo -e "\nNO DEPLOYED Revision for ApiPoxy $a in Env ${ARGS[0]} Host $HOST_ALIAS"
+	fi
+} done

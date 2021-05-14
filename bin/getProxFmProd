@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# getProxFmProd
+#
+# retrieves the Proxies associated with an API product
+#
+# usage:
+#   getProxFmProd host_alias product_name
+
+#set -e
+
+USAGE="host_alias product_name"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+HOST_ALIAS=${ARGS[0]}
+PRODUCT_NAME=${ARGS[1]}
+
+output=`getApiProduct ${OPTS[@]} "$HOST_ALIAS" "$PRODUCT_NAME"`
+debug "Output=\n$output"
+if [ "$FRMT" = "json" ] ; then
+	result=`echo $output | jsonValueOf "proxies"`
+else
+	result=`echo $output | xmlValueOf "Proxy"`
+fi
+debug "Result=\n$result"
+echo "$result"

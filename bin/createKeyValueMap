@@ -1,0 +1,59 @@
+#!/bin/bash
+#
+# createKeyValueMap
+# creates a Key/Value Map
+#
+# usage:
+#   createKeyValueMap environment keyvaluemap_name
+#
+#Scoped to environment:
+#$ curl -H "Content-Type:application/json" -X POST -d \
+#{
+#  "entry" : [ {
+#    "name" : "dev",
+#    "value" : "user1"
+#  } ],
+#  "name" : "prodmap"
+#}
+#-u myname:mypass https://api.enterprise.apigee.com/o/{org_name}/environments/{env_name}/keyvaluemaps
+#
+
+USAGE="keyvaluemap_name kvm_keys_file"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "${APITOOLS_HOME}/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+
+[ "_$DEBUG" != "_false" -a "_$DEBUG" != "_" ] && set -x
+
+kvm_name="${ARGS[0]}"
+kvm_keys_file="${ARGS[1]}"
+
+FRMT="json"
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/keyvaluemaps"
+
+# if [[ "_${kvm_keys_file}" != "_" ]] ; then {
+# 	cat - > ${APITOOLS_HOME}/data/crKVMap-${kvm_name}.json <<%
+# {
+#   "entry" : [ {
+#     "name" : "${ARGS[0]}-APINAME",
+#     "value" : "dummy1stEntry"
+#   } ],
+#   "name" : "${kvm_name}"
+# }
+# %
+# 	kvm_keys_file="${APITOOLS_HOME}/data/crKVMap-${kvm_name}.json"
+# }
+
+HDRS="-H Content-Type:application/json"
+curlOPTS="--data-binary @${kvm_keys_file}"
+
+debug " checking kvmk file ${kvm_keys_file}: `cat ${kvm_keys_file}`"
+
+http_post "$URL"
+
+debug "Status Code [$STATUS_CODE] response is: \n$RESPONSE"
+

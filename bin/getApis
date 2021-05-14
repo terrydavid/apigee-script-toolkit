@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# getApis
+#
+# lists the apis contained in a given host
+#
+# usage:
+#   getApis host_alias
+
+
+USAGE="# ouput is simple list"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/lib/functions"
+parseCommandline "$@"
+checkArgs 0
+
+URL="${MOST}/o/${ORGANIZATION}/apis"
+debug "retrieving APIs from ${URL}"
+
+http_get "$URL"
+
+if [ "$STATUS_CODE" != "200" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+
+debug "Parsing: \n$RESPONSE" 
+
+if [ "$FRMT" = "json" ] ; then
+	APILIST=`echo "$RESPONSE" | sed -e 's/[",\[]//g'`
+	#debug "APILIST= $APILIST"
+	args=( $APILIST )
+	args=( "${args[@]:1:$(( ${#args[@]} - 2 ))}" )
+	APILIST="${args[*]}"
+	#debug "APILIST= $APILIST"
+else
+	APILIST=`echo "$RESPONSE" | xmlValueOf "Item"`
+fi
+
+debug "APILIST=$APILIST"
+#echo "."
+
+for a in $APILIST ; do printf "%b\n" $a | sed 's/\"//g' ; done

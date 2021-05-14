@@ -1,0 +1,31 @@
+#!/bin/bash
+
+#
+# deleteEnvironment
+# deletes an environment
+#
+# usage:
+#   deleteEnvironment host_alias environment_name
+
+#set -e
+
+USAGE="host_alias environment_name"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+loadConfig "${ARGS[0]}"
+
+ENVIRONMENT_NAME=${ARGS[1]}
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/$(uri_escape "$ENVIRONMENT_NAME")"
+output=`curl -s -S --basic -u "$CREDENTIALS" -X DELETE -H "Accept: application/json" -w "\n%{http_code}" "${URL}"`
+RESPONSE=`echo "$output" | sed '$ d'`
+STATUS_CODE=`echo "$output" | tail -n 1`
+if [ "$STATUS_CODE" != "200" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+debug "response is $RESPONSE"

@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#
+# deleteApp
+# deletes a Developer App
+#
+# Use with caution!
+#
+#	??QQ??: WHAT HAPPENS TO THE KEYS??
+#
+#	!!AA!!: We are going to delete them
+#
+#	https://{host:port}/o/{org_name}/developers/{developer_email}/apps/{app_name}/keys/{consumer_key}
+##
+# usage:
+#   deleteApp host_alias app_name
+
+#set -e
+
+USAGE="host_alias app_name # Use with caution!"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+loadConfig "${ARGS[0]}"
+HOST_ALIAS="${ARGS[0]}"
+
+APP_NAME=${ARGS[1]}
+#for ((i=2;i<${#ARGS[@]};i++)) ; do APP_NAME="$APP_NAME ${ARGS[$i]}" ; done
+
+#first need to delete all the keys
+debug "Deleting Keys for \"$APP_NAME\""
+deleteKeys ${OPTS[@]} $HOST_ALIAS "${APP_NAME}"
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/developers/${DEVELOPER}/apps/$(uri_escape "$APP_NAME")"
+http_delete "$URL"
+
+echo -e "$RESPONSE"
+

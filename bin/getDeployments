@@ -1,0 +1,31 @@
+#!/bin/bash
+ 
+# deploy
+#
+# deploys the specified version of an API to an environment 
+# (This script DOES NOT undeploy any deployed versions of the API - call undeploy first!)
+#
+# usage:
+#   deploy environment api version
+#		environment the environment to deploy to
+#		api the name of the api to deploy
+# 		version the version to deploy (use "latest" to deploy the latest version)
+
+#set -e
+
+USAGE="environment"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+
+loadConfig "${ARGS[0]}"
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/deployments"
+echo "Getting deployments in environment $ENVIRONMENT"
+
+http_get "$URL"
+
+echo "$RESPONSE"
