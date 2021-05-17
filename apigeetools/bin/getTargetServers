@@ -20,7 +20,7 @@ parseCommandline "$@"
 #loadConfig "${ARGS[0]}"
 loadConfig "${ARGS[0]}"
 
-URL="/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers"
+URL="/v1/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers"
 
 getApigee "HOST_ALIAS" "$URL"
 

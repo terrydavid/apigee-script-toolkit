@@ -14,16 +14,16 @@
 
 #set -e
 
-USAGE="host_alias zip_file"
+USAGE="zip_file"
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
 checkArgs 2 2
-HOST_ALIAS=${ARGS[0]}
-APIPROXYZIP=${ARGS[1]}
+
+# HOST_ALIAS=${ARGS[0]}
+APIPROXYZIP=${ARGS[0]}
 
 if [ ! -f "$APIPROXYZIP" ]; then
 	usefail "file not found: $APIPROXYZIP"
@@ -34,4 +34,4 @@ if ! echo "$APIPROXYZIP" | grep -F '.zip' > /dev/null ; then
 fi
 
 APINAME=$(basename "$APIPROXYZIP" .zip)
-importApi ${OPTS[@]} "$HOST_ALIAS" "$APINAME" "$APIPROXYZIP"
+importApi ${OPTS[@]} "$APINAME" "$APIPROXYZIP"

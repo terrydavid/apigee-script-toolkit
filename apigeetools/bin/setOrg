@@ -1,25 +1,46 @@
 #!/bin/bash
 
-# setOrg <organization> <!developer_email> # in the cloud
-
-echo "newOrg newEnv newDev  - Did you 'source || . ' me?"
+# setorg <organization> <!developer_email> # in the cloud
 
 newOrg=$1
 newEnv=$2
 newDev=$3
 
-[ $newOrg ] && {
+if [ $newOrg ] ; then
 	export ORGANIZATION="$newOrg"
-	export ENV="$newOrg"
-	export ORG="$newOrg"
-}
+else 
+	echo "newOrg newEnv newDev  - Did you 'source || . ' me?"
+fi
 
 [ $newEnv ] && {
+	export ENV="$newEnv"
 	export ENVIRONMENT="$newEnv"
-	export ENVIRONMENTS="\($newOrg-$newEnv\)"
 }
 
 [ $newDev ] && {
         export DEVELOPER="$newDev"
-        export ENVIRONMENTS="\($newOrg-$newEnv\)"
 }
+
+echo "APITOOLS_HOME=	$APITOOLS_HOME"
+echo -en "PATH=		$PATH\n\n"
+echo "TOOLSDIR=	$TOOLSDIR"
+echo "APISDIR=	$APISDIR"
+echo "DEVELOPER=	$DEVELOPER"
+echo "DEBUG=		$DEBUG"
+echo "FRMT=		$FRMT"
+
+if [ -d $APITOOLS_HOME ] ; then
+	echo "ORGANIZATION=	$ORGANIZATION"
+	echo "ENVIRONMENT=	$ENVIRONMENT"
+	echo "HOST_ALIAS=	$HOST_ALIAS"
+	echo "DOMAIN=		$DOMAIN"
+	echo "PORT=		$PORT"
+	echo "APIGEE_HOST=	$APIGEE_HOST"
+	echo "MOST=	$MOST"
+
+else
+	echo "NO [$APITOOLS_HOME] Directory"
+fi
+
+source $HOME/.aliases
+
