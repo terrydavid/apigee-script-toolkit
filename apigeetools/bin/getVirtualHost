@@ -11,31 +11,31 @@
 
 USAGE="virtual_host_name"
 TOOLSDIR="${APITOOLS_HOME}"
-
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
 checkArgs 1
 
-#loadConfig "${ARGS[0]}"
-#VH_NAME=${ARGS[1]}
+debug "OPTs[@]=${OPTS[@]}; ARGS[@]=${ARGS[@]}; ARGS[0]=${ARGS[0]}"
 
-VH_NAME=${ARGS[0]}
+VH_NAME=`trims "${ARGS[0]}"`
+debug "VH_NAME=${VH_NAME}; ARGS=${ARGS}; \$\@=$@"
 
-URL="/o/${ORGANIZATION}/e/${ENVIRONMENT}/virtualhosts/${VH_NAME}"
+URL="${MOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/virtualhosts/${VH_NAME}"
 
-if [ "$FRMT" = "xml" ] ; then
-	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL"
-else
-	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL"
-fi
+debug "URL= $URL"
+http_get "$URL"
 
 echo "$RESPONSE"
 
-
 exit
 
-http_get "$URL"
+if [ "$FRMT" = "xml" ] ; then
+	getApigeeXml ${OPTS[@]} "$URL"
+else
+	getApigeeJson ${OPTS[@]} "$URL"
+fi
+
 if [ "$STATUS_CODE" != "200" ]; then
 	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
 fi
@@ -44,9 +44,11 @@ PARSED=`echo "$RESPONSE" | "$TOOLSDIR/lib/json_parse.sh"`
 name=`echo "$PARSED" | grep -E '^\["name"\]' | cut -f 2- | sed 's/"//g'`
 hostaliases=(`echo "$PARSED" | grep -E '^\["hostAliases",[0-9]+\]' | cut -f 2- | sed 's/\[//' | sed 's/\]//' | tr "," "\n" | sed 's/"//g' | sort`)
 port=`echo "$PARSED" | grep -E '^\["port"\]' | cut -f 2- | sed 's/"//g'`
+
 echo "Name: $name"
 echo "Port: $port"
 echo -n "HostAliases: "
+
 if [ ${#hostaliases[@]} -eq 0 ]; then
 	echo
 else

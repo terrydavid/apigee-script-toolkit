@@ -7,16 +7,15 @@
 # usage:
 #   getApis host_alias
 
-USAGE="host_alias 	# ouput is simple list"
+
+USAGE="# ouput is simple list"
 TOOLSDIR="${APITOOLS_HOME}"
 
 . "$TOOLSDIR/lib/functions"
 parseCommandline "$@"
-checkArgs 1
-loadConfig "${ARGS[0]}"
+checkArgs 0
 
-
-URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis"
+URL="${MOST}/o/${ORGANIZATION}/apis"
 debug "retrieving APIs from ${URL}"
 
 http_get "$URL"
