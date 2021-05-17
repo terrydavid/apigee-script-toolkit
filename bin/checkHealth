@@ -1,3 +1,0 @@
-#!/bin/bash
-
-curl -nsS $APIGEE_HOST/admin/health; echo
