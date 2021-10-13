@@ -39,7 +39,7 @@ if [ -d $APITOOLS_HOME ] ; then
 
  export HOST_ALIAS="$ORGANIZATION-$ENVIRONMENT" # for use with Cloud SaaS Edge
  export HOST_ALIAS="apigee" # for use with OPDK
- export DOMAIN="diuptt.io"
+ export DOMAIN="<somedomain.any>"
  export PORT="8080"
  export APIGEE_HOST="${SCHEME}://${HOST_ALIAS}.${DOMAIN}:${PORT}/v1"
 
