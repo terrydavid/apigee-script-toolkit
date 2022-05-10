@@ -9,17 +9,18 @@
 
 #set -e
 
-USAGE="Host-Env_alias"
+USAGE="virtual_host_environment"
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
-loadConfig "${ARGS[0]}"
+checkArgs 1
 
-URL="/o/${ORGANIZATION}/e/${ENVIRONMENT}/virtualhosts"
+URL="${MOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/virtualhosts"
 
-getApigee "HOST_ALIAS" "$URL"
+debug "URL= $URL"
 
-echo "$RESPONSE"
+http_get "$URL"
+
+echo "$RESPONSE" | sed -e 's/[",\[]//g' -e 's/\]//g'

@@ -10,35 +10,32 @@
 
 #set -e
 
-USAGE="environment"
+USAGE="none"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
-loadConfig "${ARGS[0]}"
 
-APIS=`getApis -x ${OPTS[@]} "$HOST_ALIAS"`
+APIS=`getApis ${OPTS[@]}`
 
 printf "%-35s%6s%10s\n" "API" "Latest" "Deployed"
 
 for API in $APIS; do
-    #LATEST_VERSION=`getApiVersionLatest ${OPTS[@]} "$HOST_ALIAS" "$API"`
-    LATEST_VERSION=`getApiVersionLatest ${OPTS[@]} "$API"`
+    LATEST_VERSION=`getApiRevisionLatest ${OPTS[@]} "$API"`
     debug "LATEST_VERSION=$LATEST_VERSION"
-    #DEPLOYED_VERSION=( $(getApiVersionDeployed ${OPTS[@]} "$HOST_ALIAS" "$API" 2>/dev/null) )
-    DEPLOYED_VERSION=( $(getApiVersionDeployed ${OPTS[@]} "$API" 2>/dev/null) )
+
+    DEPLOYED_VERSION=`getApiRevisionDeployed ${OPTS[@]} "$API"`
     debug "DEPLOYED_VERSION=$DEPLOYED_VERSION"
+
     TAG=
     if [ ${#DEPLOYED_VERSION[@]} -gt 1 ]; then
         TAG=!
-    elif [ ${DEPLOYED_VERSION:-0} -lt ${LATEST_VERSION:-0} ]; then
+    elif [[ ${DEPLOYED_VERSION:-0} -lt ${LATEST_VERSION:-0} ]]; then
         TAG=*
     fi
+
     if [ "$DEPLOYED_VERSION" = "" ]; then
         DEPLOYED_VERSION=none
     fi
-    DEPLOYED="${DEPLOYED_VERSION[@]}"
-    printf "%-35s%6s%10s%s\n" "$API" "$LATEST_VERSION" "$DEPLOYED" "$TAG"
+
+    printf "%-35s%6s%10s%s\n" "$API" "$LATEST_VERSION" "$DEPLOYED_VERSION" "$TAG"
 done

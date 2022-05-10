@@ -1,0 +1,27 @@
+#!/bin/bash
+ 
+#
+# createUser
+# creates a user
+
+#set -e
+
+USAGE="apigee_org first_name last_name password email"
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/lib/functions"
+parseCommandline "$@"
+#checkArgs 5 5
+
+thisOrg="${ARGS[0]}"
+firstName="${ARGS[1]}"
+lastName="${ARGS[2]}"
+password="${ARGS[3]}"
+email="${ARGS[4]}"
+
+URL="${APIGEE_HOST}/users"
+BODY="{\"firstName\":\"${firstName}\",\"lastName\":\"${lastName}\",\"password\":\"${password}\",\"emailId\":\"${email}\",\"ORG_NAME\":\"${thisOrg}\"}"
+
+export curlOPTS="-HContent-Type:application/json --data-binary ""$BODY"
+http_post  "${URL}" -H "Accept: application/json" -w "\n%{http_code}"
+
+# do we need to "addUserRole" for this user?

@@ -38,4 +38,5 @@ else
 fi
 
 debug "APILIST=$APILIST"
-for a in $APILIST ; do printf "%b\n" $a | sed 's/[\"]//g' ; done
+#for a in $APILIST ; do printf "%b\n" $a | sed 's/[\"]//g' ; done
+for a in $RESPONSE ; do printf "%b\n" $a | sed -e 's/[",\[]//g' -e 's/\]//g' ; done

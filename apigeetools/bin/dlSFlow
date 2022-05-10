@@ -1,0 +1,40 @@
+#!/bin/bash
+ 
+# downloadSharedFlow
+#
+# downloads a Shared Flow bundle
+#
+# usage:
+#   dlSFlow sfname [zip_file]
+#       sfname: 	the name of the Shared Flow
+#       zip_file: 	the name of the sharedflow zip file (default is ./apiproxy.zip) to create
+
+USAGE="sfname [revision] [zip_file] # 'download (export)' a .zip file as the name 'sfname'"
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/lib/functions"
+parseCommandline "$@"
+checkArgs 2 4
+
+[[ $DEBUG -ge 3 ]] && set -x
+
+SFNAME="${ARGS[0]}"
+REV="${ARGS[1]}"
+FNAME="${ARGS[2]}"
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/sharedflows/${SFNAME}/revisions/${REV}?format=bundle"
+
+debug "Downloading SharedFlow ${APISDIR}/${SFName}-${REV}.zip via ${URL}"
+
+FRMT=json
+
+#HDRS="-H Content-Type:application/octet-stream"
+# No need for version # if using git
+if [ "$REV" != "" ] ; then
+	curlOPTS=" -o ${APISDIR}/${SFNAME}-${REV}.zip "
+else
+	curlOPTS=" -o ${APISDIR}/${SFNAME}.zip "
+fi
+
+http_get "$URL"
+
+#echo -e "\tDownloaded version $REV of SHFlow $SFNAME to ${APISDIR}/${SFNAME}-${REV}.zip"

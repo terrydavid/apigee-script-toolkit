@@ -1,0 +1,170 @@
+#!/bin/bash
+# mvApiEnv
+# 
+# 1st half of moving an API Env
+#	Captures all ENV specific artifacts into dir structure
+#
+#
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/lib/functions"
+parseCommandline "$@"
+checkArgs 2 4
+
+OUTFILE="APIRevList.out"
+echo '' > $OUTFILE
+SFOUTFILE="SFRevList.out"
+echo '' > $SFOUTFILE
+KVMOUTFILE="KVMList.out"
+echo '' > $KVMOUTFILE
+
+# addnl functions:
+gettargets () {
+	DIR=$1
+	# Scan for KVMs
+	[[ ! -d ${DIR}/targets ]] && mkdir "${DIR}/targets";
+	TSLIST=`getTargetServers`
+	for ts in $TSLIST; do
+	    echo "thisTS: ${ts}"
+	    TSLIST=`getTargetServer ${ts} | sed -e 's/[",\[]//g' -e 's/\]//g' > ${DIR}/targets/${ts}.json`
+	done
+}
+
+getvhosts () {
+	DIR=$1
+	# Scan for KVMs
+	[[ ! -d ${DIR}/vhosts ]] && mkdir "${DIR}/vhosts";
+	VHLIST=`getVirtualHosts`
+	for vh in $VHLIST; do
+	    echo "thisVH: ${vh}"
+	    VHOST=`getVirtualHost ${vh} | sed -e 's/[",\[]//g' -e 's/\]//g' > ${DIR}/vhosts/${vh}.json`
+	done
+}
+
+# KVMs come in 2 flavors; configuration that is for the specific environment but does not change during functional operation
+#	(we create as needed the directory and the JSON file of the results),
+#	and operational KVMS that hold variable information across multiple requests
+#	(we only create as needed the directory. Its name will create KVM at upload time)
+#
+getkvms() {
+	DIR=$1
+	# get the list of virtual hosts
+	find "${DIR}" -name '*.xml' -exec grep mapIdentifier= '{}' ';' |
+			sed -a -e 's/^.*mapIdentifier=\"//g' -e 's/\".*$/ /g' | sort -u >> $KVMOUTFILE
+	
+	KLIST=`cat $KVMOUTFILE | sort -u`
+	debug "KLIST= $KLIST"
+	for k in $KLIST; do 
+
+	    echo "thisKVM: ${k}"
+	    KVM="$(getKeyValueMap ${k})" 
+
+	    KDIR="${APISDIR}/${k}";
+	    [[ ! -d ${KDIR} ]] && mkdir "${KDIR}";
+
+	    CFG=""; [[ `echo "$k" | grep "APIGEE-PTT"` ]] && CFG=true;
+	    [[ ${CFG} ]] && [[ -d ${KDIR} ]] && echo "$KVM" > $KDIR/$k.json;
+	done
+}
+
+getsharedflows() {
+	DIR=$1
+	# Scan for SharedFlows used by this proxy
+	echo ' ' > $SFOUTFILE
+	find "${DIR}" -name "*.xml" -exec grep 'Bundle>sf_' {} \; | 
+			sed -a -e 's/^.*Bundle>sf_/sf_/g' -e 's/<.*$/ /g' | sort -u >> ${SFOUTFILE}
+
+	SFLIST=`cat $SFOUTFILE`
+	# SFLIST='sf_ptt-verifyToken sf_gcp-srvcAuth'
+	debug "SFLIST=$SFLIST"
+
+	for sf in $SFLIST ; do
+		echo "thisSF: ${sf}" # for each SF, download the revision deployed for that environment
+
+		SFREV="$(getSFRevisionDeployed ${sf})"
+		echo "dlSFlow ${sf} ${SFREV} " # debug
+		if [ "${SFREV}_" != "_" ] ; then
+			dlSFlow ${sf} ${SFREV}
+	
+			SFDIR="${DIR}/${sf}_${SFREV}"
+			[[ ! -d "${SFDIR}" ]] && mkdir "${SFDIR}"
+
+			debug "unzip -oqu ${sf}-${SFREV}.zip -d ${SFDIR}"
+			unzip -oqu ${sf}-${SFREV}.zip -d ${SFDIR}
+			mv ${sf}-${SFREV}.zip ${SFDIR}
+		else
+			echo -en "\n\n\t    No Revision of ${sf} is deployed \n\n"
+		fi
+	done
+}
+
+getapiproxies () {
+	ALIST=`getApis` # retrieves list of apis in this ENV
+	# ALIST="ptt-auth" # Unit test only
+	debug "ALIST=$ALIST"
+
+	for a in $ALIST ; do
+		# debug 
+		echo "thisAPI: ${a}" # for each API Proxy, download the revision deployed for that environment
+		# find the deployed revision
+		AREV=`getApiRevisionDeployed ${a}` 
+		if [ "${AREV}_" != "_" ] ; then
+			echo "${a}:${AREV}" >> ${APISDIR}/$OUTFILE
+			ADIR="${APISDIR}/${a}_${AREV}"
+			[[ ! -d "${ADIR}" ]] && mkdir ${ADIR}
+
+			# download the deployed revision"
+			debug "dlApi ${a} ${AREV}"
+			dlApi ${a} ${AREV}   # download the deployed revision
+
+			# explode the zip and store in the top subdir
+			debug "unzip -oqu ${a}-${AREV}.zip -d ${ADIR}"
+			unzip -oqu ${a}-${AREV}.zip -d "${ADIR}"
+			mv ${a}-${AREV}.zip ${ADIR}
+		else
+			echo -en "\n\n\t    No Revision of ${a} is deployed \n\n"
+		fi
+		# download any additional SFs??
+	done
+}
+
+# MAIN starts here; ENV is controlled by .apigee file
+# MAIN starts here; ENV is controlled by .apigee file
+# MAIN starts here; ENV is controlled by .apigee file
+# MAIN starts here; ENV is controlled by .apigee file
+
+[[ $DEBUG -ge 3 ]] && set -x
+
+echo -en "\n\n\n\t***** Downloading the ${ENV} environment to directory ${APISDIR} *****\n\n\n\n"
+
+[[ ! -d ${APISDIR} ]] && mkdir ${APISDIR}
+cd ${APISDIR}
+echo "Root for Downloading is:"
+pwd
+
+echo "Getting Proxies"
+getapiproxies ${APISDIR}
+
+echo "Getting SharedFlows"
+# Scan for SharedFlows used by this proxy
+getsharedflows ${APISDIR}
+
+# loop to check SFs for embedded SFs??
+
+echo "Getting KVMS"
+# Scan for KVMs and download info
+getkvms ${APISDIR}
+
+echo "Getting TargetServers"
+# Scan for TargetServers & download
+gettargets ${APISDIR}
+
+echo "Getting VirtualHosts"
+# Scan for VirtualHosts & download
+getvhosts ${APISDIR}
+
+# Scan for 'caches' & download
+
+echo -en "\n\n\n\t************ End of processing `basename $0` **********\n\n\n"
+
+cd -
+set -

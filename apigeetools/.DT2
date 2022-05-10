@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# EnVars for App DIUPTT-Terry2-Test
+
+export CLID="qSGdkMGEd4EzNLJwAnZTeQI4lPGv3L1N"
+export RSPT="code"
+export RDRU="https%3A%2F%2Fdev.lms.diuptt.net%2Fadmin%2Foauth2callback.php"
+export STAT="%2Fauth%2Foauth2%2Flogin.php%3Fwantsurl%3Dhttps%253A%252F%252Fdev.lms.diuptt.net%252F%26sesskey%3D4aZ6l1iSHN%26id%3D14"
+export SCOP="openid%20email%20profile%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fadmin.directory.group%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-identity.groups%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform"
+
+echo "-v" > ~/.curlrc
+chmod 600 ~/.curlrc
+export DEBUG=3
+

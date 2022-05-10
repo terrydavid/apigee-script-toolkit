@@ -9,44 +9,38 @@
 
 #set -e
 
-USAGE="environment api"
+USAGE="api"
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 checkArgs 2
-loadConfig "${ARGS[0]}"
 
-if [ "$HOST_ALIAS" == "${ARG[0]}" ] ; then
-	APINAME=${ARGS[1]}
-	debug "ARG1=${ARGS[1]}"
-else
-	APINAME=${ARGS[0]}
-	debug "ARG0=${ARGS[0]}"
-fi
+APINAME=${ARGS[0]}
+
+debug "APINAME=${APINAME}"
 
 if [ "$APINAME" = "" ]; then
 	usefail "no API name specified"
 fi
 
-# force json for now
-FRMT=json
-
 #URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/apis/$(uri_escape "$API_NAME")/deployments"
-URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/apis/$(uri_escape "$APINAME")/deployments"
+URL="${MOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/apis/"$APINAME"/deployments"
 
 debug "retrieving deployments of API ${API_NAME} from ${URL}"
+
 http_get "$URL"
-if [ "$STATUS_CODE" == "400" ]; then
-	echo ""
+
+if [ "$STATUS_CODE" == "404" ]; then
+	echo "Deployment Not Found"
 elif [ "$STATUS_CODE" != "200" ]; then
 	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
 fi
 
-JLIST=`echo "$RESPONSE" | $TOOLSDIR/lib/jp.sh | jsonValueOf "revision.*,0,.*name"`
-debug "JLIST=$JLIST"
-#APILIST=`echo "$RESPONSE" | awk 'BEGIN { RS = "[\n\r]+" } ; /revision.*,0,.*name/ {print $2}'`
-#debug "APILIST=$APILIST"
+JLIST=`echo "$RESPONSE" | $TOOLSDIR/lib/jp.sh | jsonValueOf "revision.*,0,.*name" | grep -v gateway`
+debug "\nJLIST=$JLIST"
 for a in $JLIST ; do printf "%b\n" $a | sed 's/\"//g' ; done
+
+#APILIST=`echo "$RESPONSE" | awk 'BEGIN { RS = "[\n\r]+" } ; /revision.*,0,.*name/ {print $2}' | grep -v gateway`
+#debug "\nAPILIST=$APILIST"
+#for a in $APILIST ; do printf "%b\n" $a | sed 's/\"//g' ; done
