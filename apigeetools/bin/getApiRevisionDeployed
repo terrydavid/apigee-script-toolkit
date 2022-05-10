@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# getApiRevisionDeployed
+#
+# retrieves the revision number of any versions of an API that are deployed to an environment
+#
+# usage:
+#   getApiRevisionDeployed environment api
+
+[[ $DEBUG -ge 4 ]] && set -x
+
+USAGE="api"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/lib/functions"
+parseCommandline "$@"
+checkArgs 2
+
+APINAME=${ARGS[0]}
+
+debug "APINAME=${APINAME}"
+
+if [ "$APINAME" = "" ]; then
+	usefail "no API name specified"
+fi
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/apis/${APINAME}/deployments"
+
+debug "retrieving deployments of API ${APINAME} from ${URL}"
+
+http_get "$URL"
+
+if [ "$STATUS_CODE" == "404" ]; then
+	echo "Deployment Not Found"
+elif [ "$STATUS_CODE" != "200" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+
+parse () {
+	sed -n -e '/[0-9]*/s/[\\"]//gp' | grep 'name[\ \t]*:[\ \t]*[0-9]*,' | sed -e 's/[:,]//g' -e 's/name//g' -e 's/[\ \t]*//g'
+}
+
+JLIST=`echo "$RESPONSE" | $TOOLSDIR/lib/jp.sh | jsonValueOf "revision.*,0,.*name" | grep -v gateway`
+#JLIST=`echo "$RESPONSE" | sed -n -e '/[0-9]*/s/[\\"]//gp' | grep 'name : [0-9]*,' | sed -e 's/[:,]//g' -e 's/name//g' -e 's/[\ \t]*//g'`
+#JLIST=`echo "$RESPONSE" | parse`
+
+debug "JLIST=$JLIST"
+for a in $JLIST ; do printf "%b\n" $a | sed 's/\"//g' ; done
+
+#APILIST=`echo "$RESPONSE" | awk 'BEGIN { RS = "[\n\r]+" } ; /revision.*,0,.*name/ {print $2}' | grep -v gateway`
+#debug "\nAPILIST=$APILIST"
+#for a in $APILIST ; do printf "%b\n" $a | sed 's/\"//g' ; done
+

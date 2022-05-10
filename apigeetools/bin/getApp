@@ -17,8 +17,8 @@ TOOLSDIR="${APITOOLS_HOME}"
 
 parseCommandline "$@"
 checkArgs 2
-HOST_ALIAS=${ARGS[0]}
-APP_NAME=${ARGS[1]}
+#DEVELOPER=${ARGS[0]}
+APP_NAME=${ARGS[0]}
 
 URL="/o/${ORGANIZATION}/developers/${DEVELOPER}/apps/$(uri_escape "$APP_NAME")"
 

@@ -12,21 +12,20 @@
 USAGE="environment api"
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
 checkArgs 2
-loadConfig "${ARGS[0]}"
 
-APINAME=${ARGS[1]}
+APINAME=${ARGS[0]}
 
-VERSIONS=`getApiVersionDeployed ${OPTS[@]} "$HOST_ALIAS" "$APINAME"`
+VERSIONS=`getApiVersionDeployed ${OPTS[@]} "$APINAME"`
+
 if [ "$VERSIONS" = "" ]; then
 	echo "no versions of API $APINAME are deployed in environment $HOST_ALIAS"
 else
 	for VERSION in $VERSIONS; do 
-		URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis/${APINAME}/deployments?action=undeploy&env=${ENVIRONMENT}&revision=${VERSION}"
+		URL="${MOST}/o/${ORGANIZATION}/apis/${APINAME}/deployments?action=undeploy&env=${ENVIRONMENT}&revision=${VERSION}"
 		echo "undeploying version $VERSION of API $APINAME in environment $HOST_ALIAS"
 		http_post "$URL"
 		if [ "$STATUS_CODE" != "200" ]; then
@@ -34,3 +33,5 @@ else
 		fi
 	done
 fi
+
+echo "[$STATUS_CODE]"

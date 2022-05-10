@@ -3,4 +3,4 @@
 URL="${MOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers"
 TSfile=$1
 
-curl -n -X POST -H "Accept: application/xml" -H "Content-Type: application/xml" --data-binary "@${TSfile}" -w "\n%{http_code}" "${URL}"
+curl -n -X POST -H "Accept: application/json" -H "Content-Type: application/json" --data-binary "@${TSfile}" -w "\n%{http_code}" "${URL}"

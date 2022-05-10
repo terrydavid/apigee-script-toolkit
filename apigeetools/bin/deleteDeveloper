@@ -17,7 +17,7 @@ TOOLSDIR="${APITOOLS_HOME}"
 
 parseCommandline "$@"
 checkArgs 4 6
-loadConfig "${ARGS[0]}"
+#loadConfig "${ARGS[0]}"
 
 email="${ARGS[1]}"
 userName="${ARGS[2]}"

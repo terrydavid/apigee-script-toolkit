@@ -12,24 +12,21 @@
 
 #set -e
 
-USAGE="host_alias api [zip_file] # 'import' a .zip file as the name 'api'"
+USAGE="api [zip_file] # 'import' a .zip file as the name 'api'"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 checkArgs 2 3
-loadConfig "${ARGS[0]}"
-APINAME=${ARGS[1]}
 
-APIPROXYZIP=${ARGS[2]} # zip file was passed in
+APINAME=${ARGS[0]}
+
+APIPROXYZIP=${ARGS[1]} # zip file was passed in
 
 if [[ ! -f "${APIPROXYZIP}" ]] ; then
 	fail "${APIPROXYZIP} File Not Found"
 fi
 
-URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis?action=import&name=${APINAME}"
+URL="${MOST}/o/${ORGANIZATION}/apis?action=import&name=${APINAME}"
 debug "importing API ${APINAME} via ${URL}"
 
 FRMT=json

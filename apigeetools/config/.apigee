@@ -1,0 +1,41 @@
+#!/bin/bash
+
+export APITOOLS_HOME="$HOME/apigee"
+
+export DEBUG=0
+echo -n "" >$HOME/.curlrc
+chmod 600 $HOME/.curlrc
+
+# default Data format for input & output: json OR xml
+export ORGANIZATION="diuptt-nonprod"
+export ORG=$ORGANIZATION
+
+if [ -d $APITOOLS_HOME ] ; then
+	export PATH="$PATH:$APITOOLS_HOME/bin"
+	export TOOLSDIR="${APITOOLS_HOME}"
+	export APISDIR="$HOME/$ORG/apis"
+	export CDPATH="$CDPATH:$APISDIR"
+	export FRMT="json"
+	#export ENVIRONMENT="${1:dev}"
+	export ENVIRONMENT="api-dev"
+	export ENV=$ENVIRONMENT
+	export DEVELOPER="diupttapigadm@diuptt.com"
+
+	export HOST_ALIAS="$ORGANIZATION-$ENVIRONMENT"
+	export HOST_ALIAS="10.54.54.21"
+	export DOMAIN="diuptt.io"
+	export PORT="8080"
+	export APIGEE_HOST="${HOST_ALIAS}.${DOMAIN}:${PORT}"
+	export APIGEE_HOST="${HOST_ALIAS}:${PORT}"
+	export MOST="http://${APIGEE_HOST}/v1"
+
+        export ae_org=$ORGANIZATION
+        export ae_password="Apigee\!234"
+        export ae_username="terry.david@540.co"
+
+else
+	echo "NO [$APITOOLS_HOME] Directory"
+fi
+
+source $HOME/.aliases
+

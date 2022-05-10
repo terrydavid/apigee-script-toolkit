@@ -1,0 +1,17 @@
+#!/bin/bash
+
+curl -nsSv -X POST "${APIGEE_HOST}/v1/o/diuptt-dev/e/all-inttest/virtualhosts" -w '\n%{http_code}\n' \
+	-HAccept:application/json -HContent-Type:application/json --data "
+	{ 	"name":"secure",
+		"hostAliases":[10.128.0.19:9453,10.128.0.20:9453,35.224.141.98:9453,34.72.230.63:9453,diuptt-inttest.diuptt.net:9453,diuptt-dev-initest.diuptt.net:9453],
+		"interfaces":[],
+		"port":"9453",
+		"sSLInfo":{
+			"enabled":true,
+			"ClientAuthEnabled":false,
+			"keyStore":"KS_securePEP",
+			"keyAlias":"KeyName_secure",
+			"ignoreValidationErrors":true
+		}
+	}
+"

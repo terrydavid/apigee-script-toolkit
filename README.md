@@ -27,6 +27,10 @@ export PATH="$APITOOLS_HOME/bin:$PATH"
 ### Configure your orgs/environments so the tools knows about them: 
 > source ${APITOOLS_HOME}/bin/setOrg <yourOrgname> <yourEnv>
 
+OR
+# Make changes to setup.sh and options.sh file after making changes to it.
+>source setup.sh
+>source options.sh
 ####Addn'l Notes:
 1. These tools use .netrc file for credentials
 
@@ -107,6 +111,7 @@ A typical development session might use commands in this sequence:
 11. Import (upload) the new revisions: <br>
    ImportApi myApi
 
+12. Please use a json file to enter data for createAppfromfile and createDeveloperfromfile. The arg is the name of the json file. 
 
 Send thoughts, comments, bugs, etc., to tdavid@apigee.com
 

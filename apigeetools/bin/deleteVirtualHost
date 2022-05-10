@@ -9,24 +9,26 @@
 
 #set -e
 
-USAGE="environment_name virtual_host_name"
+USAGE="vhost_name"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
-checkArgs 2
-loadConfig "${ARGS[0]}"
+checkArgs 1
 
-VH_NAME=${ARGS[1]}
+VH_NAME="${ARGS[0]}"
+debug "VH_NAME=${VH_NAME}; ARGS=${ARGS}; \$\@=$@"
 
-URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/$(uri_escape "$ENVIRONMENT")/virtualhosts/$(uri_escape "${VH_NAME}")"
+URL="${MOST}/o/${ORGANIZATION}/e/"$ENVIRONMENT"/virtualhosts/${VH_NAME}"
+
 debug "Deleting virtual host: DELETE $URL"
-output=`curl -nsS -X DELETE -H "Accept: application/json" -w "\n%{http_code}" "${URL}"`
+
+output=`[ "$DEBUG" != "false" -a "$DEBUG" != "" ] && set -x; curl -nsS -X DELETE -H "Accept: application/json" -w "\n%{http_code}" "${URL}"; set -`
+
 RESPONSE=`echo "$output" | sed '$ d'`
 STATUS_CODE=`echo "$output" | tail -n 1`
 if [ "$STATUS_CODE" != "200" ]; then
 	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
 fi
-debug "response is $RESPONSE"
+
+echo -en "\nStatusCode: [$STATUS_CODE]\n\tResponse is \n$RESPONSE"

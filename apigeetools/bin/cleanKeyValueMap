@@ -1,0 +1,40 @@
+#!/bin/bash
+#
+# cleanKeyValueMap
+# deletes & creates a Key/Value Map to erase the entries
+#
+# usage:
+#   cleanKeyValueMap keyvaluemap_name
+#
+#Scoped to environment:
+#$ curl -H "Content-Type:application/json" -X POST -d \
+#{
+#  "entry" : [ {
+#    "name" : "dev",
+#    "value" : "user1"
+#  } ],
+#  "name" : "prodmap"
+#}
+#-u myname:mypass https://api.enterprise.apigee.com/o/{org_name}/environments/{env_name}/keyvaluemaps
+#
+
+USAGE="keyvaluemap_name [kvm_keys_file]"
+TOOLSDIR="${APITOOLS_HOME}"
+. "${APITOOLS_HOME}/lib/functions"
+parseCommandline "$@"
+checkArgs
+
+[[ $DEBUG -ge 3 ]] && set -x
+
+kvm_name="${ARGS[0]}"
+kvm_keys_file="${ARGS[1]}"
+
+FRMT="json"
+
+# output=`deleteKeyValueMap -l ${kvm_name}`
+deleteKeyValueMap -l ${kvm_name}
+createKeyValueMap ${kvm_name}
+
+debug "Status Code [$STATUS_CODE] response is: \n${output}"
+
+set -

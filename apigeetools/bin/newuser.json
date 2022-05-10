@@ -1,0 +1,8 @@
+
+{
+	"ORG_NAME":"$1",
+	"FIRST_NAME:"$2",
+	"LAST_NAME:"$3",
+	"USER_PWD:"$4",
+	"USER_NAME:"$5"
+}
