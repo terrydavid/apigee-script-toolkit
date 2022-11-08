@@ -4,7 +4,6 @@ Source of record for all code, configurations, management scripts, etc. are loca
 
     https://github.com/terrydavid/apigee-script-tools.git
 
-
 ### Setup your environment variables:
 ```
 
@@ -12,47 +11,9 @@ Source of record for all code, configurations, management scripts, etc. are loca
 
 # Set the Management Host (IMPORTANT: This determines "which" management server is accessed) <br>
 
-> cat ~/.apigee
-#!/bin/bash
+There are several example scripts located in the ../config directory
 
-# /apigee here is a soft link to <yourgitsubdir>/apigee-script-toolkit/apigeetools/
-export APITOOLS_HOME="$HOME/apigee"
-
-export DEBUG=0
-echo -n "" >$HOME/.curlrc
-chmod 600 $HOME/.curlrc
-
-export ORGANIZATION="<yourapigeeorganization>"
-export ORG=$ORGANIZATION
-
-if [ -d $APITOOLS_HOME ] ; then
- export PATH="$PATH:$APITOOLS_HOME/bin"
- export TOOLSDIR="${APITOOLS_HOME}"
- export APISDIR="$HOME/$ORG/apis"
- export CDPATH="$CDPATH:$APISDIR"
- export FRMT="json"
- export SCHEME="https"
- #export ENVIRONMENT="${1:dev}"
- export ENVIRONMENT="<yourapigeeenvironment>"
- export ENV=$ENVIRONMENT
- export DEVELOPER="<yourdeveloperusername>"
-
- export HOST_ALIAS="$ORGANIZATION-$ENVIRONMENT" # for use with Cloud SaaS Edge
- export HOST_ALIAS="apigee" # for use with OPDK
- export DOMAIN="<somedomain.any>"
- export PORT="8080"
- export APIGEE_HOST="${SCHEME}://${HOST_ALIAS}.${DOMAIN}:${PORT}/v1"
-
-else
- echo "NO [$APITOOLS_HOME] Directory"
-fi
-
-> source ~/.apigee
-
-####Addn'l Notes:
-1. These tools use .netrc file for credentials
-
-## You are now SET UP to use the ApigeeToolKit!
+Note: These tools use .netrc file for credentials
 
 By default, all commands issued with no Args will get the Usage and Switches, e.g.:
 ```shell
