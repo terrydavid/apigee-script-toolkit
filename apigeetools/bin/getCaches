@@ -9,21 +9,19 @@
 
 #set -e
 
-USAGE="environment"
+USAGE="no parms"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 checkArgs 1
 
-loadConfig "${ARGS[0]}"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/caches"
 
-URL="/o/${ORGANIZATION}/e/${ENVIRONMENT}/caches"
+# if [ "$FRMT" = "xml" ] ; then
+# 	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL"
+# else
+# 	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL"
+# fi
+ http_get $URL
 
-if [ "$FRMT" = "xml" ] ; then
-	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL"
-else
-	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL"
-fi
+ echo "$RESPONSE"

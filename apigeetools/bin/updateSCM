@@ -34,7 +34,7 @@ if [[ "${REPLY}_" != "Y_" ]] ; then
 fi
 
 # Expode zip file
-unzip -o ${APINAME}-${REV}.zip -d ${APISDIR}/${APINAME} && rm ${APINAME}-${REV}.zip
+unzip -ou ${APINAME}-${REV}.zip -d ${APISDIR}/${APINAME} ;  # && rm ${APINAME}-${REV}.zip
 
 
 

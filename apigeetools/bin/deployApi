@@ -1,0 +1,48 @@
+#!/bin/bash
+ 
+# deploy
+#
+# deploys the specified version of an API to an environment 
+# (This script DOES NOT undeploy any deployed versions of the API - call undeploy first!)
+#
+# usage:
+#   deploy environment api version
+#		environment the environment to deploy to
+#		api the name of the api to deploy
+# 		version the version to deploy (use "latest" to deploy the latest version)
+
+#set -e
+
+USAGE="api version"
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/lib/functions"
+parseCommandline "$@"
+
+APINAME=${ARGS[0]}
+if [ "$APINAME" = "" ]; then
+	usefail "no API name specified"
+fi
+
+VERSION=${ARGS[1]}
+if [ "$VERSION" = "latest" ]; then
+	VERSION=`getApiRevisionLatest ${OPTS[@]} "$APINAME"`
+	if [ "$VERSION" = "" ]; then
+		fail "no revisions of API $APINAME in environment $ENVIRONMENT"
+	fi
+fi
+if [ "$VERSION" = "" ]; then
+	usefail "no version specified"
+fi
+
+export BODY="override=true"
+export curlOPTS="-d ${BODY}"
+export HDRS="-HContent-Type:application/x-www-form-urlencoded -HContent-Length:${#BODY}"
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/apis/${APINAME}/revisions/${VERSION}/deployments"
+
+echo "deploying version $VERSION of API $APINAME in environment $ENVIRONMENT"
+http_post "$URL"
+
+if [ "$STATUS_CODE" != "200" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi

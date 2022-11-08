@@ -1,0 +1,33 @@
+#!/bin/bash
+ 
+#
+# deleteUser
+# deletes a User from a role
+#
+# usage:
+#   deleteUser user_email
+
+#set -e
+
+USAGE="user_email"
+TOOLSDIR="${APITOOLS_HOME}"
+
+. "$TOOLSDIR/config/global"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+checkArgs 2
+loadConfig "${ARGS[0]}"
+
+USER="${ARGS[0]}"
+roleName="${ARGS[1]}"
+
+URL="${APIGEE_HOST}/v1/users/$USER"
+#curlOPTS=" --data-urlencode{\"name\":\"${roleName}\"}"
+
+http_delete ${URL}
+
+# if [ "$STATUS_CODE" != "201" ]; then
+# 	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+# fi
+# debug "response is $RESPONSE"

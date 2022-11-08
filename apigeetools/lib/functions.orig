@@ -41,7 +41,7 @@ fail() {
 }
 
 usage() {
-	echo "usage: $(basename "$0") [-d:e:hjlo:vx] $USAGE [Args] " >&2 # $USAGE => Args
+	echo "usage: $(basename "$0") [-d:e:hjlo:vx] [Args] " >&2 # $USAGE => Args
 	echo >&2
 	echo "    -d[0-9] set Debug output 0=off; 2='curl'; 9=help" >&2
 	echo "    -e set ENVIRONMENT" >&2
@@ -194,6 +194,7 @@ loadConfig() {
 		"_$DEVELOPER" != "_" &&  
 		"_$DEBUG" != "_" &&  
 		"_$FRMT" != "_" &&  
+		"_$MOST" != "_" &&  
 		"_$PATH" != "_" &&  
 		"_$ENV" != "_" &&  
 		"_$ORG" != "_"

@@ -1,0 +1,431 @@
+#!/bin/bash
+APIGEE_TOOLS_VERSION='4b'
+# General approach
+#	"get..." routines will retrieve formatted individual elements of the type
+#	"get...s" routines will retrieve a list of elements of the type (TODO: change these all to "list...")
+#	"list..." routines will retrieve a list of elements of the type
+#	"json" formatting is actually a dimensioned array of elements (TODO: make parser recursive)
+
+version() {
+    echo "$(basename "$0") version $APIGEE_TOOLS_VERSION"  
+}
+
+noop() {
+	echo > /dev/null
+}
+
+error() {
+	echo -e "ERROR: $(basename "$0"): $*" >&2
+}
+
+warn() {
+	echo -e "Warning: $(basename "$0"): $*" >&2
+}
+
+debug() {
+	[[ $DEBUG -ge 2 ]] && 
+		echo -en "DEBUG[$DEBUG]: $(basename "$0"): $* \n" >&2
+}
+
+fail() {
+	local RETVAL=$2
+	if [ "$RETVAL" = "" ]; then
+		RETVAL=1
+	fi
+	error "$1"
+	exit $RETVAL
+}
+
+usage() {
+	echo "usage: $(basename "$0") [-d:e:hjlo:vx] {${USAGE}} " >&2 # $USAGE => Args
+	echo >&2
+	echo "    -d [0-9] set Debug output 0=off; 1='curl'; 
+	2=default; 3=1+2; 4=3+functions; 5=delete 9=help" >&2
+	echo "    -e: set ENVIRONMENT" >&2
+	echo "    -h print this Help message" >&2
+	echo "    -j input/output data in Json format" >&2
+	echo "    -l execute a %true% deLete" >&2
+	echo "    -o: set ORGANIZATION" >&2
+	echo "    -v display Version information" >&2
+	echo "    -x input/output data in Xml format" >&2
+}
+
+usefail() {
+	local RETVAL=$2
+	if [ "$RETVAL" = "" ]; then
+		RETVAL=1
+	fi
+	error "$1"
+	usage
+	exit $RETVAL
+}
+
+debugOpts () {
+	[[ $DEBUG -eq 4 ]] && debug "PCL[dO2]: DEBUG=$DEBUG; FLAGARG=$FLAGARG"
+	case $DEBUG in 
+		0) echo -n "" > $HOME/.curlrc ; export DEBUG=0 ;;
+		1) echo -n "" > $HOME/.curlrc ; export DEBUG=1 ;;
+		2) echo "-v" > $HOME/.curlrc ; export DEBUG=2 ;;
+		3) echo "-v" > $HOME/.curlrc ; export DEBUG=3 ;;
+		4) echo "-v" > $HOME/.curlrc ; export DEBUG=4 ;;
+		5) export DEBUG=5 ; echo "5 is special true DELETE code" ;;
+		7) echo "--trace" > $HOME/.curlrc ;;
+		8) echo "--trace-ascii -" > $HOME/.curlrc ;;
+		9) echo '
+			0) "Turn Debug Off"
+			1) "Show curl command only"
+			2) "Turn Debug On (stays on until changed)"
+			3) "Debug=1 + Debug=2"
+			4) "Include function library in debug"
+			5) "Issue true DELETE (otherwise runs a GET)"
+			7) "Adds --trace to $HOME/.curlrc"
+			8) "Adds --trace-ascii - to $HOME/.curlrc"
+			9) "Show this DEBUG Help"
+			*) "Invalid DEBUG LEVEL"'  ; DEBUG=0 ; exit 1 ;;
+		*) echo -en "\n\n Invalid DEBUG LVL: $DEBUG \n\n" ; exit 1 ;;
+	esac
+	[[ $DEBUG -eq 4 ]] && debug "PCL[dO3]: DEBUG=$DEBUG; FLAGARG=$FLAGARG"
+}
+
+loadConfig() {
+	# Check that the environment is loaded correctly
+	[[
+		"_$PATH" != "_" &&  
+		"_$ORGANIZATION" != "_" && 
+		"_$ENVIRONMENT" != "_" && 
+		"_$HOST_ALIAS" != "_" &&  
+		"_$APIGEE_HOST" != "_" &&  
+		"_$MOST" != "_" &&  
+		"_$APITOOLS_HOME" != "_" &&  
+		"_$TOOLSDIR" != "_" &&  
+		"_$APISDIR" != "_" &&  
+		"_$DEVELOPER" != "_" &&  
+		"_$FRMT" != "_"
+	]] && return
+
+    usefail "Environment Settings failed:
+		PATH 		$PATH \n
+		ORGANIZATION 	$ORGANIZATION 
+		ENVIRONMENT 	$ENVIRONMENT 
+		HOST_ALIAS  	$HOST_ALIAS 
+		APIGEE_HOST  	$APIGEE_HOST 
+		MngmtHOST  	$MOST 
+		APITOOLS_HOME 	$APITOOLS_HOME 
+		TOOLSDIR 	$TOOLSDIR  
+		APISDIR 	$APISDIR 
+		DEVELOPER  	$DEVELOPER 
+		FRMT  		$FRMT  
+    "
+}
+
+checkArgs() {
+	[[ $DEBUG -eq 4 ]] && debug "[checkArgs]: ARGS= $@"
+	# [[ "${ARGS[0]}_" == "_" ]] && usefail "Missing Argument(s)"
+	# [[ "$1_" == "_" ]] && usefail "Missing Argument(s)"
+	loadConfig
+}
+
+parseCommandline() {
+
+	[[ $DEBUG -eq 4 ]] && debug "PCL[test2-1]: OPTS & ARGS=$ARGS; \$@= $@";
+	ARGS=""
+	FLAG_ARG=""
+
+	while (( "$#" )); do
+		FLAGARG=""
+		if [ "${2:0:1}" != "-" ]; then
+			FLAGARG=$2
+		fi
+		[[ $DEBUG -eq 4 ]] && debug "PCL[0]: OPT=$1 FLAGARG=$FLAGARG";
+
+		case "$1" in
+		-d|--debug)
+			[[ $DEBUG -eq 4 ]] && debug "PCL[d1]: DEBUG=$DEBUG; FLAGARG=$FLAGARG"
+			
+			echo "" > $HOME/.curlrc
+			DEBUG=0
+			if [[ "$FLAGARG" ]]; then
+				DEBUG=${FLAGARG}
+				echo '-v' > $HOME/.curlrc
+			else 
+				export DEBUG=1
+			fi
+
+			debugOpts
+			# [[ $DEBUG -eq 4 ]] && 
+				debug "PCL[d1end]: DEBUG=$DEBUG; FLAGARG=$FLAGARG"
+			;;
+		-e)
+			export ENVIRONMENT=$FLAGARG
+			[[ $DEBUG -eq 4 ]] && debug "PCL[-e]: ENVIRONMENT=$FLAGARG"
+			;;
+		-h|--help) 
+			[[ $DEBUG -eq 4 ]] && debug "PCL[-help]: ORGANIZATION=$ORGANIZATION"
+			usage
+			exit 0
+			;;
+		-j)
+			FRMT=json
+			[[ $DEBUG -eq 4 ]] && debug "PCL[-j]: FRMT=$FRMT"
+			;;
+		-l)
+			export DEBUG=5 # Special option for "True" delete
+			[[ $DEBUG -eq 4 ]] && debug "PCL[-l]: DEBUG=$DEBUG"
+			;;
+		-o)
+			export ORGANIZATION=$FLAGARG
+			[[ $DEBUG -eq 4 ]] && debug "PCL[-o]: ORGANIZATION=$ORGANIZATION"
+			;;
+		-v)
+		    version
+		    exit 0
+		    ;;
+		-x)
+			FRMT=xml
+			[[ $DEBUG -eq 4 ]] && debug "PCL[-x]: FRMT=$FRMT"
+			;;
+		*)
+			[[ $DEBUG -eq 4 ]] && debug "PCL[*]: ARGS=$ARGS"
+			ARGS="$ARGS $1"
+			;;
+		esac
+
+		[[ $DEBUG -eq 4 ]] && debug "PCL[endloop-bs]: OPT=$1  FLAGARG=$2"
+		shift
+		[[ $DEBUG -eq 4 ]] && debug "PCL[endloop-as]: OPT=$1  FLAGARG=$2"
+
+		[[ "$1" && !("$2") ]] && ARGS="$ARGS $1"
+
+		[[ "$FLAGARG" ]] && shift
+		FLAGARG=""
+		[[ $DEBUG -eq 4 ]] && debug "PCL[endloop-as2]: OPT=$1  FLAGARG=$2  \$3=$3"
+	done
+
+	[[ $DEBUG -eq 4 ]] && 
+		debug "PCL[4a-set] Before eval : ARGS=${ARGS} \$@=$@"
+
+	eval set -- "$ARGS"
+	[[ $DEBUG -eq 4 ]] && 
+		debug "PCL[4b-set] After eval : ARGS=${ARGS} \$@=$@"
+
+	# OFS=$IFS;IFS=', \n\r\t'; read -r -a ARGS <<< "$ARGS";IFS=$OFS
+	local IFS=', '; read -r -a ARGS <<< "$ARGS"
+	[[ $DEBUG -eq 4 ]] && 
+		debug "PCL[4c-set] After read : ARGS=${ARGS} \$@=$@"
+}
+
+parseCommandline2 () {
+	PARAMS=""
+	while (( "$#" )); do
+	  case "$1" in
+	    -a|--my-boolean-flag)
+	      MY_FLAG=0
+	      shift
+	      ;;
+	    -b|--my-flag-with-argument)
+	      if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+	        MY_FLAG_ARG=$2
+	        shift 2
+	      else
+	        echo "Error: Argument for $1 is missing" >&2
+	        exit 1
+	      fi
+	      ;;
+	    -*|--*=) # unsupported flags
+	      echo "Error: Unsupported flag $1" >&2
+	      exit 1
+	      ;;
+	    *) # preserve positional arguments
+	      PARAMS="$PARAMS $1"
+	      shift
+	      ;;
+	  esac
+	done
+	# set positional arguments in their proper place
+	eval set -- "$PARAMS"
+
+}
+
+findEnv() {  # No longer used??
+	[[ $DEBUG -eq 4 ]] && debug "Called findEnv $1"
+    if [ "_$1" == "_" ]; then
+		usefail "no host specified"
+    fi
+	find -L ${TOOLSDIR} -name "$1"
+}
+
+rest() {
+	# All calls to rest must supply a Verb and a fully qualified URL 
+	#   (Headers, output format; and curl options are specified in caller routine)
+	#   (Output includes response and status code)
+	local VERB=$1
+	local URL=$2
+	if [ "$FRMT" != "xml" -a "$FRMT" != "json" ] ; then
+		FRMT=json
+		[[ $DEBUG -eq 4 ]] && debug "rest: No FRMT [$FRMT] - setting to 'json'"
+	fi
+	local ACCPT="application/$FRMT"
+	#local ACCPT="*/*"
+
+	[[ $DEBUG -eq 4 ]] && debug "rest[1] VERB=$VERB; URL=$URL; Headers: $HDRS ; curlOPTS: $curlOPTS ; ~/.curlrc = [`cat $HOME/.curlrc`]"
+
+	# set -x
+
+	case $VERB in
+		"DELETE") ;;
+		"GET") ;;
+		"POST")
+			[[ "$HDRS" != *"Content-Type"* ]] && HDRS="-HContent-Type:application/${FRMT} ${HDRS}"
+			#[[ "$HDRS" != *"Content-Length"* ]] && HDRS="-HContent-Length:0 ${HDRS}"
+			[[ $DEBUG -ge 3 ]] && debug "rest [POST] Headers: $HDRS ; curlOPTS: $curlOPTS ; ~/.curlrc = [`cat $HOME/.curlrc`]"
+			;;
+		*) fail "Invalid VERB=[$VERB] for curl call" ;;
+	esac
+
+	[[ $DEBUG -eq 4 ]] && debug "rest[2] VERB=$VERB; URL=$URL; Headers: $HDRS ; curlOPTS: $curlOPTS ; ~/.curlrc = [`cat $HOME/.curlrc`]"
+
+	SHOWCURL="false"
+	[[ $DEBUG -ge 1 ]] && SHOWCURL=true
+	[[ $DEBUG -ge 4 ]] && echo "rest[4] SHOWCURL= $SHOWCURL ; DEBUG= $DEBUG"
+
+	# Non .netrc version
+	#local output=$([ "$DEBUG" != "false" ] && set -x;curl -sSu "$CREDENTIALS" -X $VERB -H "Accept: $ACCPT" -w "\n%{http_code}\n" "${URL}" ${HDRS} ${curlOPTS};set -)
+
+	# .netrc version
+	# MAKE THE CURL CALL!
+	local output=$(
+		set -
+		$SHOWCURL && set -x
+		curl -nsS -X ${VERB} ${URL} -HAccept:${ACCPT} ${HDRS} -w "\n%{http_code}\n" ${curlOPTS}
+		set -
+	)
+
+	if [ "$output" != "" ] ; then
+		STATUS_CODE=`echo "$output" | tail -n 1`
+		rawRESPONSE=`echo "$output" | sed '$ d'`
+
+		case $STATUS_CODE in
+			"200"|"201")  # TODO: Need to do this as a "SUCCESS_CODES" list
+				#echo -e "CURL Succeeded: STATUS_CODE= $STATUS_CODE"
+				[[ $DEBUG -ge 1 ]] && debug "CURL Succeeded: STATUS_CODE= $STATUS_CODE"
+				;;
+			*) 	fail "CURL call failed: STATUS_CODE= $STATUS_CODE; Output= \n$output"
+				;;
+		esac
+
+		if [ "$FRMT" = "json" ] && [ "$rawResponse" != "" ] ; then
+			RESPONSE=`echo "$rawRESPONSE" | "$TOOLSDIR/lib/jp.sh"`
+			[[ $DEBUG -eq 4 ]] && debug "rest: STATUS_CODE [${STATUS_CODE}]: \n\tRESPONSE= \n$RESPONSE\n\n\t"
+		else
+			RESPONSE=`echo "$rawRESPONSE"`
+			[[ $DEBUG -eq 4 ]] && debug "rest: STATUS_CODE [${STATUS_CODE}]: \n\tRESPONSE= \n$RESPONSE\n\n\t"
+		fi
+	else
+		fail "CURL call failed: Output= $output"
+	fi
+
+	[[ $DEBUG -eq 4 ]] && debug "\n\tRawOutput= \n$output\n\t"
+
+	# Should use this, but must remove lots of other "echo" commands
+	#[[ "_$ENVIRONMENT" != "_" ]] && echo $RESPONSE
+
+}
+
+http_get() {
+	rest GET $@
+}
+
+http_post() {
+	rest POST $@
+}
+
+http_delete() {
+	VERB=GET
+	[[ "$DEBUG" == "5" ]] && VERB=DELETE
+	[[ "$DEBUG" == "5" ]] && debug "http_delete: $VERB $1"
+	rest $VERB $@
+}
+
+getApigee() {
+	# $1 = HOST_ALIAS (curr not used: config loaded "APIGEE_HOST")
+	# $2 = host relative URL
+	local RESOURCE_PATH="$2"
+
+	local URL="${APIGEE_HOST}${RESOURCE_PATH}"
+	http_get "$URL"
+}
+
+trims() {
+	# echo "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+	sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
+
+uri_escape() {
+	local y ; y="$@" ;
+	echo -n ${y/\\/\\\\} | while read -n1 ; do 
+		[[ $REPLY =~ [A-Za-z0-9] ]] && printf "$REPLY" || printf "%%%x" \'"$REPLY" ;
+	done ; echo ;
+}
+
+xmlValueOf() {
+	local field=$1
+	local sp='s/[\<\/]*\('${field}'\)[\/\>]*//g'
+	debug "xmlValueOf ${field} from stream $sp"
+	grep "${field}" | sed "$sp" 
+}
+
+jsonValueOf() {
+	local field=$1
+	echo "BEGIN { RS = \"[\\n\\r]+\" } ; /${field}/ {print \$2}" >awk.inf
+	[[ $DEBUG -eq 4 ]] && debug "jsonValueOf ${field} from stream `cat awk.inf`"
+	awk -f awk.inf -
+}
+
+jsonValueSet() {
+	local field=$1
+	local value=$2
+	echo "BEGIN { RS = \"[\\n\\r]+\" } ; /${field}/ {print \$2}" >awk.inf
+	[[ $DEBUG -ge 4 ]] && debug "jsonValueOf $field from stream `cat awk.inf`"
+	awk -f awk.inf -
+	sed 's/\("name"[:, "]*$field'
+}
+
+listify() {
+#	sed -e 's/[",\[]//g' -e 's/\]//g'
+	debug "Listify: $FRMT"
+	[ "$FRMT" = "xml" ] && xmlValueOf $1
+	[ "$FRMT" = "json" ] && jsonValueOf $1 | sed -e 's/[\",\[]//g' -e 's/\]//g'
+}
+
+# loadTestParams() {
+# 	local HOST="$1"
+#     if [ "$HOST" = "" ]; then
+# 		usefail "no host environment specified"
+#     else
+# 		[[ $DEBUG -eq 4 ]] && debug "Loading Test Params for $1"
+#     fi
+
+# 	local ENVIRON=`findEnv $HOST`
+# 	local DIR=`dirname $ENVIRON`
+# 	local ENV=$(basename $DIR ".d")
+# 	local ENVCONFIG="$DIR/$ENV"
+# 	local TESTCONFIG="$DIR/${ENV}.tp"
+
+# 	[[ $DEBUG -eq 4 ]] && debug "loading environment Test Params $TESTCONFIG"
+#     source "$TESTCONFIG"
+
+#     return $?
+
+# 	local usrTParams="${HOME}/.apigee-tools/environments/$1.tp"
+# 	if [ -e "$usrTParams" ]; then
+# 		[[ $DEBUG -eq 4 ]] && debug "loading environment config $usrTParams"
+# 		source "$usrTParams"
+# 	else
+# 		[[ $DEBUG -eq 4 ]] && debug "no environment config $usrTParams"
+# 	fi
+# }
+
+export STATUS_CODE
+export RESPONSE
+export curlOPTS
+export HDRS

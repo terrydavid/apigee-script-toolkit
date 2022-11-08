@@ -9,18 +9,14 @@
 #
 # NOTE: now using <name>".d" ("dot d") for directories
 
+USAGE="api_name apidirectory # Create the .zip; Import to mgmt srvr; Deploy the Latest"
 
-USAGE="environment api_name apidirectory # Create the .zip; Import to mgmt srvr; Deploy the Latest"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 checkArgs 3 3
-loadConfig "${ARGS[0]}"
 
-[ "_$DEBUG" == "_2" ] && set -e
+[ "_$DEBUG" >= "_4" ] && set -x
 
 API_NAME="${ARGS[1]}"
 API_DIRECTORY="${ARGS[2]}"

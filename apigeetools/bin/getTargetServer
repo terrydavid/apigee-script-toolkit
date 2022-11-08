@@ -1,23 +1,32 @@
 #!/bin/bash
 
-# getTargetServer
+# getVirtualHost
 #
-# lists the virtual hosts defined for an environment
+# retrieves details about a virtual host
 #
 # usage:
-#   getVirtualHosts environment
+#   getVirtualHost environment virtual_host_name
 
 #set -e
 
-USAGE="targetserver"
+USAGE="virtual_host_name"
 TOOLSDIR="${APITOOLS_HOME}"
-
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
+checkArgs 1
 
-URL="/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers/${ARGS[0]}"
+debug "OPTs[@]=${OPTS[@]}; ARGS[@]=${ARGS[@]}; ARGS[0]=${ARGS[0]}"
 
-getApigee "HOST_ALIAS" "$URL"
+TS_NAME="${ARGS[0]}"
+debug "VH_NAME=${TS_NAME}; ARGS=${ARGS}; \$\@=$@"
 
-echo "$RESPONSE"
+URL="${MOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers/${TS_NAME}"
+
+debug "URL= $URL"
+SCODE=`http_get "$URL"`
+
+# echo "$RESPONSE"
+echo "STATUS_CODE= ${SCODE}"
+
+#for a in $RESPONSE ; do printf "%b\n" $a | sed -e 's/[",\[]//g' -e 's/\]//g' ; done

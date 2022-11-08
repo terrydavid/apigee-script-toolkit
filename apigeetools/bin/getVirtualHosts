@@ -23,4 +23,4 @@ debug "URL= $URL"
 
 http_get "$URL"
 
-echo "$RESPONSE"
+echo "$RESPONSE" | sed -e 's/[",\[]//g' -e 's/\]//g'

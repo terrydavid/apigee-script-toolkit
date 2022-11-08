@@ -1,0 +1,51 @@
+#!/bin/bash
+#
+# dlKVMs
+# standalone routine to download KVMS and any perm values
+#
+# usage:
+#   dlKVMs {APIDIR}  # the directory where to store the downloaded data
+#
+# KVMs come in 2 flavors; 
+#	Configuration that is for the specific environment but does not change during 
+#	functional operation (we create as needed the directory and the JSON file of the results),
+#	and Operational KVMS that hold variable information across multiple requests
+#	(we only create as needed the directory. Its name will create KVM at upload time)
+#
+
+USAGE="APIDIR"
+TOOLSDIR="${APITOOLS_HOME}"
+. "${APITOOLS_HOME}/lib/functions"
+parseCommandline "$@"
+checkArgs 3
+
+KVMOUTFILE="KVMList.out"
+
+DIR="${ARGS[0]}"
+cd ${DIR}
+kvmDIR="$DIR/kvms"
+[[ ! -d ${kvmDIR} ]] && mkdir ${kvmDIR}
+
+# Scan for KVMs
+find "${DIR}" -name '*.xml' -exec grep mapIdentifier= '{}' ';' |
+		sed -a -e 's/^.*mapIdentifier=\"//g' -e 's/\".*$/ /g' | sort -u > $KVMOUTFILE
+
+KLIST=`cat $KVMOUTFILE | sort -u`
+debug "KLIST= $KLIST"
+for k in $KLIST; do 
+
+    echo "thisKVM: ${k}"
+    KVM="$(getKeyValueMap ${k})" 
+
+    KDIR="${kvmDIR}/${k}";
+    [[ ! -d ${KDIR} ]] && mkdir "${KDIR}";
+
+    CFG=""; [[ `echo "$k" | grep "PTT-"` ]] && CFG=true;
+    [[ ${CFG} ]] && [[ -d ${KDIR} ]] && echo "$KVM" > $KDIR/$k.json;
+done
+cd -
+
+
+keyvaluemap_name="${ARGS[1]}"
+names[0]="keyvaluemap_name"
+debug "Status Code [$STATUS_CODE] response is: \n$RESPONSE"

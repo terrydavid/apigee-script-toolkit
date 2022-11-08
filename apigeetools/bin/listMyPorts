@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#set -x
+
+for line in `cat $1` ; do
+	vhname=`echo $line | cut -f 1 -d\; -`
+	env=`echo $line | cut -f 2 -d\; -`
+	port=`echo $line | cut -f 3 -d\; -`
+	vha=`echo $line | cut -f 4 -d\; - | sed 's/,/ /g'`
+	echo "env:port:vhname: $env  $port  $vhname"
+done
+
+set -

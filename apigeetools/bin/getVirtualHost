@@ -18,7 +18,7 @@ checkArgs 1
 
 debug "OPTs[@]=${OPTS[@]}; ARGS[@]=${ARGS[@]}; ARGS[0]=${ARGS[0]}"
 
-VH_NAME=`trims "${ARGS[0]}"`
+VH_NAME="${ARGS[0]}"
 debug "VH_NAME=${VH_NAME}; ARGS=${ARGS}; \$\@=$@"
 
 URL="${MOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/virtualhosts/${VH_NAME}"

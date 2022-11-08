@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# listSFVersions
+#
+# lists the latest version and deployed version of all SFs in an environment
+#    TAGs: "!" Deployed version is GT "1" ; "*" Deployed version is LT Latest 
+#
+# usage:
+#   listSFVersions environment
+
+#set -e
+
+USAGE="environment"
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/lib/functions"
+parseCommandline "$@"
+loadConfig "${ARGS[0]}"
+
+SFS=`getSFs -x ${OPTS[@]} "$HOST_ALIAS"`
+
+printf "%-35s%6s%10s\n" "SF" "Latest" "Deployed"
+
+for SF in $SFS; do
+    LATEST_VERSION=`getSFRevisionLatest ${OPTS[@]} "$SF"`
+    debug "LATEST_VERSION=$LATEST_VERSION"
+
+    DEPLOYED_VERSION=( $(getSFRevisionDeployed ${OPTS[@]} "$SF" 2>/dev/null) )
+    debug "DEPLOYED_VERSION=$DEPLOYED_VERSION"
+
+    TAG=
+    if [ ${#DEPLOYED_VERSION[@]} -gt 1 ]; then
+        TAG=!
+    elif [[ ${DEPLOYED_VERSION:-0} -lt ${LATEST_VERSION:-0} ]]; then
+        TAG=*
+    fi
+    if [ "$DEPLOYED_VERSION" = "" ]; then
+        DEPLOYED_VERSION=none
+    fi
+
+    DEPLOYED="${DEPLOYED_VERSION[@]}"
+    printf "%-35s%6s%10s%s\n" "$SF" "$LATEST_VERSION" "$DEPLOYED" "$TAG"
+done

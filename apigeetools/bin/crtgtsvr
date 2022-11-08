@@ -1,6 +1,34 @@
 #!/bin/bash
 
-URL="${MOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers"
-TSfile=$1
+#
+# createTargetServer
+# creates an SSL-enabled virtual host
+#
+# usage:
+#   crtgtsvr "TargetServerName"
 
-curl -n -X POST -H "Accept: application/xml" -H "Content-Type: application/xml" --data-binary "@${TSfile}" -w "\n%{http_code}" "${URL}"
+USAGE="target_server_config_file(.json)"
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/lib/functions"
+
+parseCommandline "$@"
+
+# NO=$(parseCommandline "$@")
+# for ((n=0; n -lt ${NO}; n++)); do debug $n; shift; done
+checkArgs $NO
+
+debug "[crtgtsvr-d]: ARGS=$ARGS NO=$NO; \$@=$@; \$*=$*; \$1=$1; \$2=$2"
+
+# echo "[crtgtsvr-e]: ARGS=$ARGS NO=$NO; \$@=$@; \$*=$*; \$1=$1; \$2=$2"
+
+# TSfile=$1
+# TSfile=$*
+TSfile=${ARGS[0]}
+
+URL="${MOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers"
+
+HDRS="-HAccept:application/json -HContent-Type:application/json"
+
+curlOPTS="--data-binary @${TSfile}"
+
+http_post "${URL}"

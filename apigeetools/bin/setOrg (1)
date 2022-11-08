@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# setOrg <organization> <!developer_email> # in the cloud
+
+echo "newOrg newEnv newMAPIHost newMAPIPort newDev - Did you 'source || . ' me?"
+
+newOrg=$1
+newEnv=$2
+newHost=$3
+newPort=$4
+newDev=$5
+
+[ $newOrg ] && {
+	export ORGANIZATION="$newOrg"
+	export ENV="$newOrg"
+	export ORG="$newOrg"
+}
+
+[ $newEnv ] && {
+	export ENVIRONMENT="$newEnv"
+	export ENVIRONMENTS="\($newOrg-$newEnv\)"
+}
+
+[ $newDev ] && {
+        export DEVELOPER="$newDev"
+}
+
+[ $newHost ] && {
+        export HOST_ALIAS="$newHost"
+        export PORT="${newPort:-8080}"
+        export APIGEE_HOST="$HOST_ALIAS:$PORT"
+}
+
+getenv
