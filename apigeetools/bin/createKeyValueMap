@@ -18,42 +18,39 @@
 #-u myname:mypass https://api.enterprise.apigee.com/o/{org_name}/environments/{env_name}/keyvaluemaps
 #
 
-USAGE="keyvaluemap_name kvm_keys_file"
+USAGE="keyvaluemap_name [kvm_keys_file]"
 TOOLSDIR="${APITOOLS_HOME}"
-
 . "${APITOOLS_HOME}/lib/functions"
-
 parseCommandline "$@"
 checkArgs 2
 
-[ "_$DEBUG" != "_false" -a "_$DEBUG" != "_" ] && set -x
+[[ $DEBUG -ge 3 ]] && set -x
 
 kvm_name="${ARGS[0]}"
 kvm_keys_file="${ARGS[1]}"
 
 FRMT="json"
 
-URL="${APIGEE_HOST}/o/${ORGANIZATION}/keyvaluemaps"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/keyvaluemaps"
 
-# if [[ "_${kvm_keys_file}" != "_" ]] ; then {
-# 	cat - > ${APITOOLS_HOME}/data/crKVMap-${kvm_name}.json <<%
-# {
-#   "entry" : [ {
-#     "name" : "${ARGS[0]}-APINAME",
-#     "value" : "dummy1stEntry"
-#   } ],
-#   "name" : "${kvm_name}"
-# }
-# %
-# 	kvm_keys_file="${APITOOLS_HOME}/data/crKVMap-${kvm_name}.json"
-# }
+if [[ ! -f ${kvm_keys_file} ]] ; then 
+	kvm_keys_file="${kvm_name}.json"
+	echo -en "{ \"name\" : \"${kvm_name}\", \"entry\" : [ { \"name\" : \"${ARGS[0]}-APINAME\",  \"value\" : \"dummy1stEntry\" } ] }" > ${kvm_keys_file}
+fi
 
-HDRS="-H Content-Type:application/json"
+LEN=`cat ${kvm_keys_file} | wc -c`
+LEN=`echo "$LEN" | trims`
+
+#HDRS="-HContent-Type:application/json -HContent-Length:${LEN}"
+HDRS="-HContent-Length:${LEN}"
 curlOPTS="--data-binary @${kvm_keys_file}"
 
-debug " checking kvmk file ${kvm_keys_file}: `cat ${kvm_keys_file}`"
+#KFNAME=`cat ${kvm_keys_file}`
+#debug " checking kvm file ${kvm_keys_file}: $KFNAME"
 
 http_post "$URL"
 
 debug "Status Code [$STATUS_CODE] response is: \n$RESPONSE"
+echo $STATUS_CODE
 
+set -

@@ -11,22 +11,20 @@
 
 #set -e
 
-USAGE="host_alias api_name revision#"
+USAGE="api_name revision#"
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
-checkArgs 3
-loadConfig "${ARGS[0]}"
-theApi="${ARGS[1]}"
-theRevision="${ARGS[2]}"
+checkArgs 0
+
+theApi="${ARGS[0]}"
+theRevision="${ARGS[1]}"
 
 oldDEBUG=$DEBUG
 #DEBUG=5 # "5" == "Real" Deletion
 
-URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis/$(uri_escape "${theApi}")/revisions/${theRevision}"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis/${theApi}/revisions/${theRevision}"
 debug "Deleting ${URL}"
 
 http_delete "$URL"

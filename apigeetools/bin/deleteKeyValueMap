@@ -1,10 +1,10 @@
 #!/bin/bash
 #
-# createKeyValueMap
-# creates a Key/Value Map
+# deleteKeyValueMap
+# delete an environment Key/Value Map
 #
 # usage:
-#   createKeyValueMap environment keyvaluemap_name
+#   deleteKeyValueMap keyvaluemap_name
 #
 #Scoped to environment:
 #$ curl -H "Content-Type:application/json" -X POST -d \
@@ -18,30 +18,28 @@
 #-u myname:mypass https://api.enterprise.apigee.com/o/{org_name}/environments/{env_name}/keyvaluemaps
 #
 
-#set -e
-
-USAGE="environment keyvaluemap_name"
+USAGE="keyvaluemap_name"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "${APITOOLS_HOME}/config/global"
 . "${APITOOLS_HOME}/lib/functions"
-
 parseCommandline "$@"
 checkArgs 2
-loadConfig "${ARGS[0]}"
 
-#keyvaluemap_name="${ARGS[1]}"
+keyvaluemap_name="${ARGS[0]}"
 
 names[0]="keyvaluemap_name"
 
-#names[1]="display_name"  # bldBody additonal of these: "${names[1]}:${ARGS[2]}"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/environments/$ENVIRONMENT/keyvaluemaps/$keyvaluemap_name"
 
-FRMT="json"
-
-URL="${APIGEE_HOST}/o/${ORGANIZATION}/environments/$ENVIRONMENT/keyvaluemaps/$(uri_escape "$keyvaluemap_name")"
-
-cat ${APITOOLS_HOME}/data/createKeyValueMap.${FRMT} | bldBody "${names[0]}:${ARGS[1]}" > $APITOOLS_HOME/data/createKeyValueMap-body.${FRMT}
+#cat ${APITOOLS_HOME}/data/createKeyValueMap.${FRMT} | bldBody "${names[0]}:${ARGS[1]}" > $APITOOLS_HOME/data/createKeyValueMap-body.${FRMT}
 
 http_delete "$URL"
 
-debug "Status Code [$STATUS_CODE] response is: \n$RESPONSE"
+debug "Status Code [$STATUS_CODE]"
+
+echo "$STATUS_CODE"
+
+# if [[ $DEBUG -ge 3 ]] ; then
+# 	debug "response is: \n$RESPONSE"
+# elif  [[ $DEBUG -eq 0 ]] ; then
+# 	echo $RESPONSE 
+# fi

@@ -1,0 +1,53 @@
+#!/bin/bash
+ 
+#
+# setTargetServer
+# Configures a Target Server
+#
+# usage:
+#   setTargetServers "Host-Env_alias GroupNumber
+
+#set -e
+
+USAGE="target server config json file"
+TOOLSDIR="${APITOOLS_HOME}"
+
+CMDDBG=""
+
+. "$TOOLSDIR/lib/functions"
+
+[[ "_$DEBUG" == "_true" ]] && CMDDBG="x"
+CMDDBG="x"
+
+#echo "CMDDBG= ${CMDDBG}"
+
+parseCommandline "$@"
+
+
+if [ ${#ARGS[@]} -lt 1 ]; then
+	usefail "wrong number of arguments (expected 1, got ${#ARGS[@]})"
+fi
+loadConfig "${ARGS[0]}"
+
+URL="${MOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers"
+TSfile=${ARGS[0]}
+
+set -x;curl -n -X POST -H "Accept: application/json" -H "Content-Type: application/json" --data-binary "@${TSfile}" -w "\n%{http_code}" "${URL}";set -;
+
+
+# Re-Create the Target Servers we want
+#output=`set -${CMDDBG};curl -nsS -X PUT -H "Accept:application/json" -H "Content-Type:application/json" --data-binary "$TS1" -w "\n%{http_code}" "${URL}/TS-1";set -`
+#echo "$output" | tail -n 1
+
+
+#exit
+
+RESPONSE=`echo "$output" | sed '$ d'`
+
+STATUS_CODE=`echo "$output" | tail -n 1`
+
+if [ "$STATUS_CODE" != "201" ]; then
+	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
+fi
+
+debug "response is $RESPONSE"

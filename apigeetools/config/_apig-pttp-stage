@@ -1,0 +1,49 @@
+#!/bin/bash
+
+export APITOOLS_HOME="$HOME/apigee"
+
+export DEBUG=0
+chmod 600 $HOME/.curlrc
+echo -n "" >$HOME/.curlrc
+
+if [ -d $APITOOLS_HOME ] ; then
+	export ORGANIZATION="pttportal-stage"
+	export ORG=$ORGANIZATION
+	export ENVIRONMENT="api-stage"
+	export ENV=$ENVIRONMENT
+
+	export PATH="$PATH:$APITOOLS_HOME/bin"
+	export CDPATH="$CDPATH:$APISDIR"
+
+	export TOOLSDIR="${APITOOLS_HOME}"
+	export APISDIR="$HOME/$ORG/$ENV/apis"
+
+	export FRMT="json"
+	#export DEVELOPER="diupttapigadm@diuptt.com"
+	export DEVELOPER="terry.david@diuptt.com"
+
+	export SCHEME="http"
+	# export SCHEME="https"
+
+	# export HOST_ALIAS="$ORGANIZATION-$ENVIRONMENT"
+	# export HOST_ALIAS="mgmt.api"
+	export HOST_ALIAS=10.80.18.21
+
+	# export DOMAIN=".stage.pttportal.com"
+	export DOMAIN=
+
+	# export PORT=
+	export PORT=":8080"
+
+	export APIGEE_HOST="$SCHEME://${HOST_ALIAS}${DOMAIN}${PORT}/v1"
+	export MOST="${APIGEE_HOST}"
+
+	export ae_org=$ORGANIZATION
+	export ae_password="Apigee\\!234"
+	export ae_username="terry.david@540.co"
+
+else
+	echo "NO [$APITOOLS_HOME] Directory"
+fi
+
+source $HOME/.aliases

@@ -1,6 +1,22 @@
 #!/bin/bash
+#
+# Resets Environment Vars for ORG, ENV, & DEV
+#
+# usage:
+#   setorg <organization> <environment> <developer_email>
+#
+#
+[[ ! ${APITOOLS_HOME} ]] && {
+	echo "NO APITOOLS_HOME Dir: [$APITOOLS_HOME]"
+	exit	
+}
+USAGE="source setorg [[[organization] environment] developer_email]"
+TOOLSDIR="${APITOOLS_HOME}"
+. "${APITOOLS_HOME}/lib/functions"
+parseCommandline "$@"
+checkArgs 1 3
 
-# setorg <organization> <!developer_email> # in the cloud
+[[ $DEBUG -ge 3 ]] && set -x
 
 newOrg=$1
 newEnv=$2
@@ -22,7 +38,7 @@ fi
 }
 
 echo "APITOOLS_HOME=	$APITOOLS_HOME"
-echo -en "PATH=		$PATH\n\n"
+#echo -en "PATH=		$PATH\n\n"
 echo "TOOLSDIR=	$TOOLSDIR"
 echo "APISDIR=	$APISDIR"
 echo "DEVELOPER=	$DEVELOPER"
@@ -32,11 +48,12 @@ echo "FRMT=		$FRMT"
 if [ -d $APITOOLS_HOME ] ; then
 	echo "ORGANIZATION=	$ORGANIZATION"
 	echo "ENVIRONMENT=	$ENVIRONMENT"
+	echo "SCHEME=		$SCHEME"
 	echo "HOST_ALIAS=	$HOST_ALIAS"
 	echo "DOMAIN=		$DOMAIN"
 	echo "PORT=		$PORT"
 	echo "APIGEE_HOST=	$APIGEE_HOST"
-	echo "MOST=	$MOST"
+	echo "MOST=		$MOST"
 
 else
 	echo "NO [$APITOOLS_HOME] Directory"

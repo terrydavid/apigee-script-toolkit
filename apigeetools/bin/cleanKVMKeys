@@ -9,41 +9,28 @@
 
 #set -e
 
-USAGE="environment keyvaluemap_name"
+USAGE="keyvaluemap_name"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 checkArgs 2 2
-loadConfig "${ARGS[0]}"
-kvm_name="${ARGS[1]}"
 
-org=$ORGANIZATION
-env=$ENVIRONMENT
-map=$kvm_name
+kvm_name="${ARGS[0]}"
 
-echo "ARGS: org=$org; env=$env; map=$map"
-#echo -n "" > $HOME/.curlrc
+debug "ARGS: org=$ORGANIZATION; env=$ENVIRONMENT; map=$kvm_name"
 
 FRMT="json"
 
-http_get "${APIGEE_HOST}/o/${org}/e/${env}/keyvaluemaps/${map}?expand=true"
+http_get "${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/keyvaluemaps/${kvm_name}?expand=true"
 
-getKeys=`echo $RESPONSE | grep name | awk '{print $3}' | sed 's/[",]*//g'`
+KVMap=`echo $RESPONSE | $HOME/apigee/lib/jp.sh -b | grep 'name"]' | cut -f 2 | sed -e 's/"//g'`
 
-debug -e "\n\ngetKeyscmd ==\n\t $getKeys"
+debug "KVMap= $KVMap"
 
-delKeyEntry="$APIGEE_HOST/o/${org}/e/${env}/keyvaluemaps/${map}/entries"
-
-debug -e "\n\ndelKeyEntry ==\n\t $delKeyEntry"
-
-for a in $getKeyscmd ; do 
-	if [ $a != "cred-in" -a $a != "$keyvaluemap_name" ] ; then 
-		debug "$delKeyEntry/$a"
-		`http_delete "$delKeyEntry/$a"`
-	fi 
+for k in $KVMap ; do
+	URL="$APIGEE_HOST/o/${ORGANIZATION}/e/${ENVIRONMENT}/keyvaluemaps/${kvm_name}/entries/$k"
+	debug -e "delKeyEntry ==\t $delKeyEntry"
+	http_delete $URL
+	[[ $DEBUG -ge 2 ]] && read -p pause
 done
 
-echo -e "$RESPONSE"

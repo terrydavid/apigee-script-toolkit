@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -x
+
+LIST=true;
+
+for line in `cat $1` ; do
+	vhname=`echo $line | cut -f 1 -d\; -`
+	env=`echo $line | cut -f 2 -d\; -`
+	port=`echo $line | cut -f 3 -d\; -`
+	vha=`echo $line | cut -f 4 -d\; - | sed 's/,/ /g'`
+	echo "env:port:vha:  $vhname $env  $port  $vha"
+	export ENVIRONMENT=$env
+	export ENV=$env
+	[[ !$LIST ]] && deleteVirtualHost $vhname
+	if [[ "$DEBUG" == "5" ]] ; then
+		createSslVirtualHost $vhname $port KS_securePEP KeyName_secure $vha
+	fi
+	echo "called w/$env: createSslVirtualHost $vhname $port KS_securePEP KeyName_secure $vha"
+	[[ "_$DEBUG" != "_" && "_$DEBUG" != "_5" && !$LIST ]] && read
+done
+
+set -
