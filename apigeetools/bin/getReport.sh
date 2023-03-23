@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# getStats
+# getReport
 #
-# gets the analytics stats requested
+# gets the analytics report requested
 #
 # usage:
-#   getStats <statistic_diminsion_query_string>
+#   getReport <report_name>
 
 #set -e
 
@@ -15,8 +15,8 @@ TOOLSDIR="${APITOOLS_HOME}"
 parseCommandline "$@"
 checkArgs 1
 
-STATSTR="${ARGS[0]}"
+RPTID="${ARGS[0]}"
 
-URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/stats${STATSTR}"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/reports/${RPTID}"
 
 http_get "$URL"

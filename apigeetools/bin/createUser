@@ -4,7 +4,6 @@
 # createUser
 # creates a user
 
-#set -e
 
 USAGE="apigee_org first_name last_name password email"
 TOOLSDIR="${APITOOLS_HOME}"

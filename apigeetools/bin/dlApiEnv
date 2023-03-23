@@ -25,9 +25,9 @@ gettargets () {
 	TSLIST=`getTargetServers`
 	for ts in $TSLIST; do
 	    echo "thisTS: ${ts} "
-	    DEBUG=2
+	    # DEBUG=2
 	    TSLIST=`getTargetServer ${ts} | sed -e 's/[",\[]//g' -e 's/\]//g' > ${DIR}/targets/${ts}.json`
-	    DEBUG=0
+	    # DEBUG=0
 	    sleep 2  # Debug for TS timeouts
 	done
 }
@@ -82,7 +82,7 @@ getsharedflows() {
 
 	# Scan for SharedFlows used by this proxy
 	echo ' ' > $SFOUTFILE
-	find "${DIR}/apis" -name "*.xml" -exec grep 'Bundle>sf_' {} \; | 
+	find ${DIR}/apis -name "*.xml" -exec grep 'Bundle>sf_' {} \; | 
 			sed -a -e 's/^.*Bundle>sf_/sf_/g' -e 's/<.*$/ /g' | sort -u > ${SFOUTFILE}
 
 	SFLIST=`cat $SFOUTFILE`
@@ -101,12 +101,12 @@ getsharedflows() {
 			SFDIR="${shDIR}/${sf}_${SFREV}"
 			[[ ! -d "${SFDIR}" ]] && mkdir "${SFDIR}"
 
-			debug "unzip -oqu ${sf}-${SFREV}.zip -d ${SFDIR}"
-			if [[ -f ${sf}-${SFREV}.zip ]] ; then
-				unzip -oqu ${sf}-${SFREV}.zip -d ${SFDIR}
-				mv ${sf}-${SFREV}.zip ${SFDIR}
+			if [[ -f ${shDIR}/${sf}-${SFREV}.zip ]] ; then
+				debug "unzip -oqu ${DIR}/${sf}-${SFREV}.zip -d ${SFDIR}"
+				unzip -oqu ${shDIR}/${sf}-${SFREV}.zip -d ${SFDIR}
+				mv ${shDIR}/${sf}-${SFREV}.zip ${SFDIR}
 			else
-				echo "${sf}-${SFREV}.zip Not Found"
+				echo "${shDIR}/${sf}-${SFREV}.zip Not Found"
 			fi
 		else
 			echo ": [404] A Deployed Revision ${SFREV} of SharedFlow ${sf} is Not Found"
@@ -115,6 +115,7 @@ getsharedflows() {
 }
 
 getapiproxies () {
+	# DIR="$1"
 	DIR="$1/apis"
 	[[ ! -d ${DIR} ]] && mkdir ${DIR}
 
@@ -137,15 +138,15 @@ getapiproxies () {
 			[[ ! -d "${ADIR}" ]] && mkdir ${ADIR}
 
 			# download the deployed revision"
-			debug "dlApi ${a} ${AREV}"
+			debug "dlApi ${ADIR} ${a} ${AREV}"
 			dlApi ${a} ${AREV}   # download the deployed revision
-			if [[ -f ${a}-${AREV}.zip ]] ; then
+			if [[ -f ${DIR}/${a}-${AREV}.zip ]] ; then
 				# explode the zip and store in the top subdir
-				debug "unzip -oqu ${a}-${AREV}.zip -d ${ADIR}"
-				unzip -oqu ${a}-${AREV}.zip -d "${ADIR}"
-				mv ${a}-${AREV}.zip ${ADIR}
+				debug "unzip -oqu ${DIR}/${a}-${AREV}.zip -d ${ADIR}"
+				unzip -oqu ${DIR}/${a}-${AREV}.zip -d "${ADIR}"
+				mv ${DIR}/${a}-${AREV}.zip ${ADIR}
 			else
-				echo "${a}-${AREV}.zip Not Found"
+				echo "`pwd`/${a}-${AREV}.zip Not Found"
 			fi
 		else
 			echo ": [404] A Deployed Revision ${AREV} of API ${a} is Not Found"
@@ -162,7 +163,7 @@ getapiproxies () {
 
 echo -en "\n\n\t***** Downloading the ${ENV} environment to directory ${APISDIR} *****\n\n\n"
 
-if [[ ! -d ${APISDIR} ]] ; then
+if [[ ! -d ${APISDIR} && ! -d ${APISDIR}/apis ]] ; then
 	echo -en '${APISDIR}= '${APISDIR}' is not found [404]'
 	exit
 else

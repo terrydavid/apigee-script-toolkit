@@ -40,14 +40,13 @@ parse () {
 	sed -n -e '/[0-9]*/s/[\\"]//gp' | grep 'name[\ \t]*:[\ \t]*[0-9]*,' | sed -e 's/[:,]//g' -e 's/name//g' -e 's/[\ \t]*//g'
 }
 
-JLIST=`echo "$RESPONSE" | $TOOLSDIR/lib/jp.sh | jsonValueOf "revision.*,0,.*name" | grep -v gateway`
-#JLIST=`echo "$RESPONSE" | sed -n -e '/[0-9]*/s/[\\"]//gp' | grep 'name : [0-9]*,' | sed -e 's/[:,]//g' -e 's/name//g' -e 's/[\ \t]*//g'`
+# JLIST=`echo "$RESPONSE" | $TOOLSDIR/lib/jp.sh | jsonValueOf "revision.*,0,.*name" | grep -v gateway`
+JLIST=`echo "$RESPONSE" | sed -n -e '/[0-9]*/s/[\\"]//gp' | grep 'name : [0-9]*,' | sed -e 's/[:,]//g' -e 's/name//g' -e 's/[\ \t]*//g'`
 #JLIST=`echo "$RESPONSE" | parse`
-
 debug "JLIST=$JLIST"
 for a in $JLIST ; do printf "%b\n" $a | sed 's/\"//g' ; done
 
-#APILIST=`echo "$RESPONSE" | awk 'BEGIN { RS = "[\n\r]+" } ; /revision.*,0,.*name/ {print $2}' | grep -v gateway`
-#debug "\nAPILIST=$APILIST"
-#for a in $APILIST ; do printf "%b\n" $a | sed 's/\"//g' ; done
+# APILIST=`echo "$RESPONSE" | awk 'BEGIN { RS = "[\n\r]+" } ; /name.0/ {print $3}' | grep -v gateway`
+# debug "\nAPILIST=$APILIST"
+# for a in $APILIST ; do printf "%b\n" $a | sed 's/\"//g' ; done
 

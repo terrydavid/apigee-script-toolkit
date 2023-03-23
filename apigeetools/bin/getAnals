@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# getStats
+# getanals
 #
-# gets the analytics stats requested
+# gets the analytics requested
 #
 # usage:
-#   getStats <statistic_diminsion_query_string>
+#   getanals <statistic_diminsion_query_string>
 
 #set -e
 
@@ -17,6 +17,6 @@ checkArgs 1
 
 STATSTR="${ARGS[0]}"
 
-URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/stats${STATSTR}"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/analytics${STATSTR}"
 
 http_get "$URL"

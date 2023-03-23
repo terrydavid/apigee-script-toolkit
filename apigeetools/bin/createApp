@@ -5,23 +5,21 @@
 # creates a Developer App
 #
 # usage:
-#   createApp host_alias app_name display_name api_product
+#   createApp app_name display_name api_product
 
 #set -e
 
-USAGE="host_alias app_name display_name api_product"
+USAGE="app_name api_product [callback_uri]"
 TOOLSDIR="${APITOOLS_HOME}"
 
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 checkArgs 4
 
 APP_NAME=${ARGS[0]}
-#DISPLAY_NAME=${ARGS[1]}
+DISPLAY_NAME=${ARGS[]}
 API_PRODUCT=${ARGS[1]}
-#CALLBACKURL=${ARGS[2]}
+CALLBACKURL=${ARGS[2]}
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/developers/${DEVELOPER}/apps"
 

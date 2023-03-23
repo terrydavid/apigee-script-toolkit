@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# getSFRevisionLatest
+# getApiRevisionLatest
 #
 # returns the revision number of the newest version of a sharedflow
 #

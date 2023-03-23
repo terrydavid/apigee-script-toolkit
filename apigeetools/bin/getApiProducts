@@ -7,34 +7,31 @@
 # usage:
 #   getApiProduct host_alias product_name
 
-#set -e
-
-USAGE="host_alias"
+USAGE=""
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 checkArgs 1
-loadConfig "${ARGS[0]}"
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/apiproducts"
 
 http_get "${URL}"
 
-if [ "$STATUS_CODE" != "200" ]; then
-	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
-fi
+# if [ "$STATUS_CODE" != "200" ]; then
+# 	fail "$(basename "$0") failed with STATUS_CODE: $STATUS_CODE: \n$RESPONSE"
+# fi
 
-debug "Parsing: \n$RESPONSE"
+# debug "Parsing: \n$RESPONSE"
 
-if [ "$FRMT" = "json" ] ; then
-	#APILIST=`echo "$RESPONSE" | awk '/\[[0-9]/ {print $2}'`  # Does not work with "BEGIN { RS = "[\n\r]+" } ; "
-	APILIST=`echo "$RESPONSE" | jsonValueOf '\[[0-9]'`
-else
-	APILIST=`echo "$RESPONSE" | xmlValueOf "Item"`
-fi
+# if [ "$FRMT" = "json" ] ; then
+# 	#APILIST=`echo "$RESPONSE" | awk '/\[[0-9]/ {print $2}'`  # Does not work with "BEGIN { RS = "[\n\r]+" } ; "
+# 	APILIST=`echo "$RESPONSE" | jsonValueOf '\[[0-9]'`
+# else
+# 	APILIST=`echo "$RESPONSE" | xmlValueOf "Item"`
+# fi
 
-debug "APILIST=$APILIST"
-for a in $APILIST ; do printf "%b\n" $a | sed 's/\"//g' ; done
+# debug "APILIST=$APILIST"
+# for a in $APILIST ; do printf "%b\n" $a | sed 's/\"//g' ; done
+
+echo $RESPONSE
+echo $STATUS_CODE
