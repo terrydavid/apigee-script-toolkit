@@ -1,35 +1,30 @@
 #!/bin/bash
  
 #
-# createApps
+# createAppfmFile
 # creates Developer Apps
 #
 # this script reads from standard input. each line is expected to contain the following:
-# 
-#   display_name
-#   api_product
-#   app_name
-#   consumer_key
-#   consumer_secret
 #
 # usage:
-#   createApps host_alias
+#   createApp filename
 
 #set -e
 
-USAGE="host_alias"
+USAGE="file_Name"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 checkArgs 1
+
 jsonfile=${ARGS[0]}
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/developers/${DEVELOPER}/apps"
 
-output=`curl -ns -S --basic -u "$CREDENTIALS" -X POST -H "Accept: application/json" -H "Content-Type: application/json" --data-binary "@${jsonfile}" -w "\n%{http_code}" "${URL}"`
+output=`curl -ns -S --basic -w "\n%{http_code}" -X POST "${URL}" \
+	-H "Accept: application/json" \
+	-H "Content-Type: application/json" \
+	--data-binary "@${jsonfile}"`
 
 RESPONSE=`echo "$output" | sed '$ d'`
 

@@ -28,9 +28,13 @@ puttargets () {
 	echo "TSLIST= ${TSLIST}"
 	for ts in $TSLIST; do
 	    echo "thisTS: ./targets/${ts} "
+
 	    DEBUG=2; echo "-v" >~/.curlrc
+	    
 	    TSLIST=`crtgtsvr ./targets/${ts}`
+	    
 	    DEBUG=0; echo "" >~/.curlrc
+	    
 	    sleep 2  # Debug for TS timeouts
 	done
 }

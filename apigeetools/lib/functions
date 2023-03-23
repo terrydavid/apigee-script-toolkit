@@ -1,5 +1,5 @@
 #!/bin/bash
-APIGEE_TOOLS_VERSION='4b'
+APIGEE_TOOLS_VERSION='5'
 # General approach
 #	"get..." routines will retrieve formatted individual elements of the type
 #	"get...s" routines will retrieve a list of elements of the type (TODO: change these all to "list...")
@@ -111,8 +111,8 @@ debugOpts () {
 		0) echo -n "" > $HOME/.curlrc ; export DEBUG=0 ;;
 		1) echo -n "" > $HOME/.curlrc ; export DEBUG=1 ;;
 		2) echo "-v" > $HOME/.curlrc ; export DEBUG=2 ;;
-		3) echo "-v" > $HOME/.curlrc ; export DEBUG=3 ;;
-		4) echo "-v" > $HOME/.curlrc ; export DEBUG=4 ;;
+		3) echo -n "" > $HOME/.curlrc ; export DEBUG=3 ;;
+		4) echo -n "" > $HOME/.curlrc ; export DEBUG=4 ;;
 		5) export DEBUG=5 ; echo "5 is special true DELETE code" ;;
 		7) echo "--trace" > $HOME/.curlrc ;;
 		8) echo "--trace-ascii -" > $HOME/.curlrc ;;
@@ -134,12 +134,13 @@ debugOpts () {
 parseCommandline() {
 	PPRAMS=""
 	NUMOPTS=0
+	ARGNO=0
 	[[ $DEBUG -eq 4 ]] && debug "PCL[0]: ARGS=${ARGS}; NO=$NUMOPTS; PPRAMS=${PPRAMS}; \$1=$1; \$2=$2"
 
 	while (( "$#" )); do
 		case "$1" in
 
-		-d*|--debug)
+		-d[1-9]|--debug)
 			
 			echo "" > $HOME/.curlrc
 			DEBUG=0
@@ -148,8 +149,7 @@ parseCommandline() {
 			[[ $DEBUG -eq 4 ]] && debug "\${1:2:3}=${1:2:3}"
 			if [[ ${1:2:3} = [0-9] ]]; then
 				FLAGARG=${1:2:3}
-				# [[ $DEBUG -eq 4 ]] && 
-					debug "PCL[-d]: FLAGARG=${FLAGARG}"
+				[[ $DEBUG -eq 4 ]] && debug "PCL[-d]: FLAGARG=${FLAGARG}"
 				NUMOPTS+=1
 				shift 				
 
@@ -165,12 +165,13 @@ parseCommandline() {
 
 			if [[ "$FLAGARG" ]]; then
 				export DEBUG=${FLAGARG}
-				echo '-v' > $HOME/.curlrc
+				[[ $DEBUG -eq 2 ]] && echo '-v' > $HOME/.curlrc
 			fi
 
 			debugOpts
 
-			[[ $DEBUG -ge 2 ]] && debug "PCL[-d]: FLAGARG=$FLAGARG "
+			# [[ $DEBUG -ge 2 ]] && 
+			debug "PCL[-d]: FLAGARG=$FLAGARG "
 			;;
 
 		-e) # set environment
@@ -241,8 +242,10 @@ parseCommandline() {
 			exit 1
 			;;
 
-		*)	# regular ARGS="$ARGS $1"
-			PPRAMS="$PPRAMS $1"
+		*)	PPRAMS="$PPRAMS $1"
+			# ARGS="${ARGS[${ARGNO}]} $1"
+			# ARGNO+=1
+			# [[ $DEBUG -eq 4 ]] && debug "PPRAMS= ${PPRAMS}; ARGS= ${ARGS}"
 			shift
 			;;
 		esac
@@ -251,44 +254,35 @@ parseCommandline() {
 	done
 
 	[[ $DEBUG -eq 4 ]] && 
-		debug "PCL[4a-set] Before eval set -- \$PPRAMS: NO=$NUMOPTS; \$1=$1; \$2=$2 \$@=$@"
+		debug "PCL[4a-set] Before read ARGS -- PPRAMS= $PPRAMS: NO=$NUMOPTS; \$1=$1; \$2=$2 \$@=$@"
 
-	# set positional arguments in their proper place
-	eval set -- "$PPRAMS"
+	# local IFS=', \n\r\t'; read -r -a ARGS <<< "$PPRAMS"
+	read -r -a ARGS <<< "$PPRAMS";
 
-	[[ $DEBUG -eq 4 ]] && 
-		debug "PCL[4b-set] After eval set -- \$PPRAMS: NO=$NUMOPTS; \$1=$1; \$2=$2 \$@=$@"
-
-	# OFS=$IFS; IFS=', \n\r\t'; read -r ARGS <<< "$PPRAMS"; IFS=$OFS
-	# OFS=$IFS; IFS=', \r\t'; read -r ARGS <<< "$PPRAMS"; IFS=$OFS
-	read -r ARGS <<< "$PPRAMS";
-
-	[[ $DEBUG -eq 4 ]] && debug "PCL[end]: PPrams=${PPRAMS}; ARGS=${ARGS}; \$@=$@"
-
-	return $NUMOPTS
+	[[ $DEBUG -eq 4 ]] && debug "PCL[end]: NOPTS=${NUMOPTS} PPrams=${PPRAMS}; ARGS=${ARGS}; \$@=$@"
 }
-
-	# OFS=$IFS; IFS=', \n\r\t'; read -r -a ARGS <<< "$ARGS"; IFS=$OFS
-	# local IFS=', '; read -r -a ARGS <<< "$ARGS"
-	# OFS=$IFS; IFS=', \n\r\t'; read -r -a ARGS <<< "$PPRAMS"; IFS=$OFS
-	# local IFS=', '; read -r -a ARGS <<< "$PPRAMS"
 
 rest() {
 	# All calls to rest must supply a Verb and a fully qualified URL 
 	#   (Headers, output format; and curl options are specified in caller routine)
-	#   (Output includes response and status code)
+	#   (Output includes RESPONSE and STATUS_CODE)
+
 	local VERB=$1
 	local URL=$2
+	STATUS_CODE=0
+	RESPONSE=""
+
 	if [ "$FRMT" != "xml" -a "$FRMT" != "json" ] ; then
 		FRMT=json
 		[[ $DEBUG -eq 4 ]] && debug "rest: No FRMT [$FRMT] - setting to 'json'"
 	fi
+	
 	local ACCPT="application/$FRMT"
 	# local ACCPT="*/*"
 
-	[[ $DEBUG -eq 4 ]] && debug "rest[1] VERB=$VERB; URL=$URL; Headers: $HDRS ; curlOPTS: $curlOPTS ; ~/.curlrc = [`cat $HOME/.curlrc`]"
+	[[ $DEBUG -ge 3 ]] && debug "rest[1] VERB=$VERB; URL=$URL; Headers: $HDRS ; curlOPTS: $curlOPTS ; ~/.curlrc = [`cat $HOME/.curlrc`]"
 
-	# set -x
+	[[ $DEBUG -ge 6 ]] && set -x
 
 	case $VERB in
 		"DELETE") ;;
@@ -306,7 +300,7 @@ rest() {
 
 	SHOWCURL="false"
 	[[ $DEBUG -ge 1 ]] && SHOWCURL=true
-	[[ $DEBUG -ge 4 ]] && echo "rest[4] SHOWCURL= $SHOWCURL ; DEBUG= $DEBUG"
+	[[ $DEBUG -ge 4 ]] && debug "rest[4] SHOWCURL= $SHOWCURL ; DEBUG= $DEBUG"
 
 	# MAKE THE CURL CALL!
 
@@ -325,7 +319,7 @@ rest() {
 	echo "" >~/.curlrc
 
 	if [ "$output" != "" ] ; then
-		[[ $DEBUG -ge 2 ]] && debug "[rest]: Output= \n$output"
+		[[ $DEBUG -ge 4 ]] && debug "[rest]: Output= \n$output"
 
 		STATUS_CODE=`echo "$output" | tail -n 1`
 		rawRESPONSE=`echo "$output" | sed '$ d'`
@@ -334,30 +328,30 @@ rest() {
 			"200"|"201")  # TODO: Need to do this as a "SUCCESS_CODES" list
 				if [ "$FRMT" = "json" ] && [ "$rawResponse" != "" ] ; then
 					RESPONSE=`echo "$rawRESPONSE" | "$TOOLSDIR/lib/jp.sh"`
-					[[ $DEBUG -ge 2 ]] && debug "rest: \n\tRESPONSE= \n$RESPONSE\n\t"
+					[[ $DEBUG -ge 4 ]] && debug "rest: \n\tRESPONSE= \n$RESPONSE\n\t"
 				else
 					RESPONSE=`echo "$rawRESPONSE"`
-					[[ $DEBUG -ge 2 ]] && debug "rest: \n\tRESPONSE= \n$RESPONSE\n\t"
+					[[ $DEBUG -ge 4 ]] && debug "rest: \n\tRESPONSE= \n$RESPONSE\n\t"
 				fi
-				[[ $DEBUG -ge 2 ]] && debug "CURL call Succeeded: "
+				[[ $DEBUG -ge 4 ]] && debug "CURL call Succeeded: "
 				;;
+
 			*) 	echo $output > ~/tmp/fail.out
 				fail "CURL call failed: STATUS_CODE= [$STATUS_CODE]"
-				# echo -n "CURL call failed: "
 				;;
 		esac
 	else
 		fail "CURL call failed: Output= {$output} N/A"
 	fi
 
-	[[ $DEBUG -eq 4 ]] && debug "\n\tRawOutput= \n$output\n\t"
+	[[ $DEBUG -ge 3 ]] && debug "rest: \n\tRawOutput= \n$output\n\t"
 
 	# echo "$STATUS_CODE"
-	return "$STATUS_CODE"
+	# return "$STATUS_CODE"
 }
 
 http_get() {
-	return `rest GET $@`
+	rest GET $@
 }
 
 http_post() {
@@ -401,17 +395,17 @@ xmlValueOf() {
 
 jsonValueOf() {
 	local field=$1
-	echo "BEGIN { RS = \"[\\n\\r]+\" } ; /${field}/ {print \$2}" >awk.inf
-	[[ $DEBUG -eq 4 ]] && debug "jsonValueOf ${field} from stream `cat awk.inf`"
-	awk -f awk.inf -
+	echo "BEGIN { RS = \"[\\n\\r]+\" } ; /${field}/ {print \$2}" > ~/tmp/awk.inf
+	[[ $DEBUG -eq 4 ]] && debug "jsonValueOf ${field} from stream `cat ~/tmp/awk.inf`"
+	awk -f ~/tmp/awk.inf -
 }
 
 jsonValueSet() {
 	local field=$1
 	local value=$2
-	echo "BEGIN { RS = \"[\\n\\r]+\" } ; /${field}/ {print \$2}" >awk.inf
-	[[ $DEBUG -ge 4 ]] && debug "jsonValueOf $field from stream `cat awk.inf`"
-	awk -f awk.inf -
+	echo "BEGIN { RS = \"[\\n\\r]+\" } ; /${field}/ {print \$2}" > ~/tmp/awk.inf
+	[[ $DEBUG -ge 4 ]] && debug "jsonValueOf $field from stream `cat ~/tmp/awk.inf`"
+	awk -f ~/tmp/awk.inf -
 	sed 's/\("name"[:, "]*$field'
 }
 

@@ -35,4 +35,4 @@ export MOST="${APIGEE_HOST}"
 
 source $HOME/.aliases
 
-echo "APITOOLS ${APITOOLS_HOME} is set to `ls -l apigee | awk '{print \$15}'` for ${ORGANIZATION}:${ENVIRONMENT}"
+echo "APITOOLS ${APITOOLS_HOME} is set to `ls -l ~/apigee | awk '{print \$15}'` for ${ORGANIZATION}:${ENVIRONMENT}"

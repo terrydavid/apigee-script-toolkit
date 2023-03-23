@@ -17,6 +17,6 @@ checkArgs 1
 
 STATSTR="${ARGS[0]}"
 
-URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/stats/${STATSTR}"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/stats${STATSTR}"
 
 http_get "$URL"
