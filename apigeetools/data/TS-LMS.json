@@ -1,0 +1,13 @@
+{
+  "host" : "ipxapi-dev.azurewebsites.us",
+  "isEnabled" : true,
+  "name" : "TS-LMS",
+  "port" : 443,
+  "sSLInfo" : {
+    "ciphers" : [], 
+    "clientAuthEnabled" : false,
+    "enabled" : true,
+    "ignoreValidationErrors" : false,
+    "protocols" : [] 
+  }
+}

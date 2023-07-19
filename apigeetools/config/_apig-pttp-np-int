@@ -1,0 +1,38 @@
+#!/bin/bash
+
+[[ -f "${HOME}/apigee/../README.md" ]] && export APITOOLS_HOME="${HOME}/apigee"
+
+export DEBUG=0
+chmod 600 $HOME/.curlrc
+echo -n "" >$HOME/.curlrc
+export FRMT="json"
+
+if [ ${APITOOLS_HOME} ] ; then
+
+	# export HOST_ALIAS="${ORGANIZATION}-${ENVIRONMENT}"; export PORT=":8080"
+
+	export ORGANIZATION="pttportal-nonprod"
+	export ENVIRONMENT="api-int"
+	export DEVELOPER="terry.david@diuptt.com"
+	export SCHEME="https"
+	export HOST_ALIAS="mgmt.api"
+	export DOMAIN=".dev.pttportal.com"
+	export PORT=""
+
+else
+	echo "NO APITOOLS_HOME Directory: [${APITOOLS_HOME}]"
+	exit 1
+fi
+
+export TOOLSDIR="${APITOOLS_HOME}"
+export APISDIR="${HOME}/Projects/ptt/${ORGANIZATION}/${ENVIRONMENT}/apis"
+export APIGEE_HOST="${SCHEME}://${HOST_ALIAS}${DOMAIN}${PORT}/v1"
+export ORG=${ORGANIZATION}
+export ENV=${ENVIRONMENT}
+export PATH="${PATH}:${APITOOLS_HOME}/bin"
+export CDPATH="${CDPATH}:${APISDIR}"
+export MOST="${APIGEE_HOST}"
+
+source $HOME/.aliases
+
+echo "APITOOLS ${APITOOLS_HOME} is set @ `ls -l ~/apigee` for ${ORGANIZATION}:${ENVIRONMENT}"

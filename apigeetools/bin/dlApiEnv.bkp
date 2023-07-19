@@ -1,0 +1,211 @@
+#!/bin/bash
+# mvApiEnv
+# 
+# 1st half of moving an API Env
+#	Captures all ENV specific artifacts into dir structure
+#
+#	TODO:
+#		Add "clean old stuff" for each section
+#
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/lib/functions"
+parseCommandline "$@"
+checkArgs 2 4
+
+OUTFILE="APIRevList.out"
+SFOUTFILE="SFRevList.out"
+KVMOUTFILE="KVMList.out"
+
+# addnl functions:
+gettargets () {
+	DIR=$1
+	[[ ! -d ${DIR}/targets ]] && mkdir "${DIR}/targets";
+
+	# Scan for target serverss
+	TSLIST=`getTargetServers`
+	for ts in $TSLIST; do
+	    echo "thisTS: ${ts} "
+	    # DEBUG=2
+	    TSLIST=`getTargetServer ${ts} | sed -e 's/[",\[]//g' -e 's/\]//g' > ${DIR}/targets/${ts}.json`
+	    # DEBUG=0
+	    sleep 2  # Debug for TS timeouts
+	done
+}
+
+getvhosts () {
+	DIR=$1
+	[[ ! -d ${DIR}/vhosts ]] && mkdir "${DIR}/vhosts";
+
+	# get the list of virtual hosts
+	VHLIST=`getVirtualHosts`
+	for vh in $VHLIST; do
+	    echo "thisVH: ${vh}"
+	    VHOST=`getVirtualHost ${vh} | sed -e 's/[",\[]//g' -e 's/\]//g' > ${DIR}/vhosts/${vh}.json`
+	done
+}
+
+# KVMs come in 2 flavors; 
+#	configuration that is for the specific environment but does not change during 
+#	functional operation (we create as needed the directory and the JSON file of the results),
+#	and operational KVMS that hold variable information across multiple requests
+#	(we only create as needed the directory. Its name will create KVM at upload time)
+#
+#				TODO: 	Fix Config KVMs!!!
+getkvms() {
+	DIR=$1
+	kvmDIR="$DIR/kvms"
+	[[ ! -d ${kvmDIR} ]] && mkdir ${kvmDIR}
+
+	# Scan for KVMs
+	find "${DIR}" -name '*.xml' -exec grep mapIdentifier= '{}' ';' |
+			sed -a -e 's/^.*mapIdentifier=\"//g' -e 's/\".*$/ /g' | sort -u > $KVMOUTFILE
+	
+	KLIST=`cat $KVMOUTFILE | sort -u`
+	debug "KLIST= $KLIST"
+	for k in $KLIST; do 
+
+	    echo "thisKVM: ${k}"
+	    KVM="$(getKeyValueMap ${k})" 
+
+	    KDIR="${kvmDIR}/${k}";
+	    [[ ! -d ${KDIR} ]] && mkdir "${KDIR}";
+
+	    CFG=""; [[ `echo "$k" | grep "PTT-"` ]] && CFG=true;
+	    [[ ${CFG} ]] && [[ -d ${KDIR} ]] && echo "$KVM" > $KDIR/$k.json;
+	done
+}
+
+getsharedflows() {
+	DIR="$1"
+	shDIR="$DIR/../shFlows"
+	[[ ! -d ${shDIR} ]] && mkdir ${shDIR}
+
+	# Scan for SharedFlows used by this proxy
+	echo ' ' > $SFOUTFILE
+	find ${DIR}/apis -name "*.xml" -exec grep 'Bundle>sf_' {} \; | 
+			sed -a -e 's/^.*Bundle>sf_/sf_/g' -e 's/<.*$/ /g' | sort -u > ${SFOUTFILE}
+
+	SFLIST=`cat $SFOUTFILE`
+	# SFLIST='sf_ptt-verifyToken sf_gcp-srvcAuth'
+	debug "SFLIST=$SFLIST"
+
+	echo -en "\n\n SFLIST=$SFLIST \n\n"
+
+	for sf in $SFLIST ; do
+		echo -n "thisSF: ${sf} " # for each SF, download the revision deployed for that environment
+		SFREV=`getSFRevisionDeployed ${sf} 2>/dev/null`
+
+		if [ "_${SFREV}" != "_" ] ; then
+			debug "dlSFlow ${sf} $SFREV "
+			echo "SFREV= ${SFREV}"
+			dlSFlow ${sf} $SFREV
+		
+			SFDIR="${shDIR}/${sf}_${SFREV}"
+			[[ ! -d "${SFDIR}" ]] && mkdir "${SFDIR}"
+
+			if [[ -f ${shDIR}/${sf}-${SFREV}.zip ]] ; then
+				debug "unzip -oqu ${DIR}/${sf}-${SFREV}.zip -d ${SFDIR}"
+				unzip -oqu ${shDIR}/${sf}-${SFREV}.zip -d ${SFDIR}
+				mv ${shDIR}/${sf}-${SFREV}.zip ${SFDIR}
+			else
+				echo "${shDIR}/${sf}-${SFREV}.zip Not Found"
+			fi
+		else
+			echo ": [404] A Deployed Revision ${SFREV} of SharedFlow ${sf} is Not Found"
+		fi
+	done
+}
+
+getapiproxies () {
+	DIR="$1"
+	# DIR="$DIR/apis"
+	[[ ! -d ${DIR} ]] && mkdir ${DIR}
+
+	ALIST=`getApis` # retrieves list of apis in this ENV
+	# ALIST="ptt-auth" # Unit test only
+	debug "ALIST=$ALIST"
+
+	for a in $ALIST ; do
+		# debug 
+		echo -en "thisAPI: ${a} " # for each API Proxy, download the revision deployed for that environment
+
+		# find the deployed revision
+		AREV=`getApiRevisionDeployed ${a} 2>/dev/null` 
+		
+		# If there is a deployed revision, then do work
+		if [ "_${AREV}" != "_" ] ; then
+			echo "AREV= ${AREV}"
+			echo "${a}:${AREV}" >> ${APISDIR}/$OUTFILE
+			ADIR="${DIR}/${a}_${AREV}"
+			[[ ! -d "${ADIR}" ]] && mkdir ${ADIR}
+
+			# download the deployed revision"
+			debug "dlApi ${ADIR} ${a} ${AREV}"
+			dlApi ${a} ${AREV}   # download the deployed revision
+			if [[ -f ${DIR}/${a}-${AREV}.zip ]] ; then
+				# explode the zip and store in the top subdir
+				debug "unzip -oqu ${DIR}/${a}-${AREV}.zip -d ${ADIR}"
+				unzip -oqu ${DIR}/${a}-${AREV}.zip -d "${ADIR}"
+				mv ${DIR}/${a}-${AREV}.zip ${ADIR}
+			else
+				echo "`pwd`/${a}-${AREV}.zip Not Found"
+			fi
+		else
+			echo ": [404] A Deployed Revision ${AREV} of API ${a} is Not Found"
+		fi
+	done
+}
+
+# MAIN starts here; ENV is controlled by .apigee file
+# MAIN starts here; ENV is controlled by .apigee file
+# MAIN starts here; ENV is controlled by .apigee file
+# MAIN starts here; ENV is controlled by .apigee file
+
+[[ $DEBUG -ge 3 ]] && set -x
+
+echo -en "\n\n\t***** Downloading the ${ENV} environment to directory ${APISDIR} *****\n\n\n"
+
+if [[ ! -d ${APISDIR} && ! -d ${APISDIR}/apis ]] ; then
+	echo -en '${APISDIR}= '${APISDIR}' is not found [404]'
+	exit
+
+else
+	cd ${APISDIR}; cd ..
+	APISDIR=`pwd`
+	BZF="${APISDIR}/${ORG}-${ENV}.bkp.zip"
+	echo -en "Backing up: ${APISDIR}/* to ${BZF} \n\n"
+	zip -r ${APISDIR}/${ORG}-${ENV}.bkp.zip ${APISDIR}
+	echo "done $?"
+	[[ $? != 0 ]] && exit
+	mv ${APISDIR}/${ORG}-${ENV}.bkp.zip ..
+	rm -fr *
+fi
+
+
+echo -en "\n\tGetting Proxies\n"
+getapiproxies ${APISDIR}
+
+echo -en "\n\tGetting SharedFlows\n"
+# Scan for SharedFlows used by this proxy
+getsharedflows ${APISDIR}
+# TODO? loop to check SFs for embedded SFs
+
+# Scan for KVMs and download info
+echo -en "\n\tGetting KVMS\n"
+getkvms ${APISDIR}
+
+# Scan for TargetServers & download
+echo -en "\n\tGetting TargetServers\n"
+gettargets ${APISDIR}
+
+# Scan for VirtualHosts & download
+echo -en "\n\tGetting VirtualHosts\n"
+getvhosts ${APISDIR}
+
+# Scan for 'caches' & download
+# TODO
+
+echo -en "\n\n\t************ End of processing `basename $0` **********\n\n\n"
+
+cd -
+set -

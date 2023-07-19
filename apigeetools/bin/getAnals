@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# getanals
+#
+# gets the analytics requested
+#
+# usage:
+#   getanals <statistic_diminsion_query_string>
+
+#set -e
+
+USAGE="<statistic_diminsion_query_string>  # ouput is simple list"
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/lib/functions"
+parseCommandline "$@"
+checkArgs 1
+
+STATSTR="${ARGS[0]}"
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/analytics${STATSTR}"
+
+http_get "$URL"

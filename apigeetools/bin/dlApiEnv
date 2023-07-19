@@ -17,23 +17,8 @@ SFOUTFILE="SFRevList.out"
 KVMOUTFILE="KVMList.out"
 
 # addnl functions:
-gettargets () {
-	DIR=$1
-	[[ ! -d ${DIR}/targets ]] && mkdir "${DIR}/targets";
-
-	# Scan for target serverss
-	TSLIST=`getTargetServers`
-	for ts in $TSLIST; do
-	    echo "thisTS: ${ts} "
-	    DEBUG=2
-	    TSLIST=`getTargetServer ${ts} | sed -e 's/[",\[]//g' -e 's/\]//g' > ${DIR}/targets/${ts}.json`
-	    DEBUG=0
-	    sleep 2  # Debug for TS timeouts
-	done
-}
-
 getvhosts () {
-	DIR=$1
+	local DIR=$1
 	[[ ! -d ${DIR}/vhosts ]] && mkdir "${DIR}/vhosts";
 
 	# get the list of virtual hosts
@@ -41,6 +26,21 @@ getvhosts () {
 	for vh in $VHLIST; do
 	    echo "thisVH: ${vh}"
 	    VHOST=`getVirtualHost ${vh} | sed -e 's/[",\[]//g' -e 's/\]//g' > ${DIR}/vhosts/${vh}.json`
+	done
+}
+
+gettargets () {
+	local DIR=$1
+	[[ ! -d ${DIR}/targets ]] && mkdir "${DIR}/targets";
+
+	# Scan for target serverss
+	TSLIST=`getTargetServers`
+	for ts in $TSLIST; do
+	    echo "thisTS: ${ts} "
+	    # DEBUG=2
+	    TSLIST=`getTargetServer ${ts} | sed -e 's/[",\[]//g' -e 's/\]//g' > ${DIR}/targets/${ts}.json`
+	    # DEBUG=0
+	    sleep 2  # Debug for TS timeouts
 	done
 }
 
@@ -52,8 +52,8 @@ getvhosts () {
 #
 #				TODO: 	Fix Config KVMs!!!
 getkvms() {
-	DIR=$1
-	kvmDIR="$DIR/kvms"
+	local DIR=$1
+	local kvmDIR="$DIR/kvms"
 	[[ ! -d ${kvmDIR} ]] && mkdir ${kvmDIR}
 
 	# Scan for KVMs
@@ -76,18 +76,19 @@ getkvms() {
 }
 
 getsharedflows() {
-	DIR=$1
-	shDIR="$DIR/shFlows"
+	local DIR="$1"
+	local shDIR="$DIR/shFlows"
+	debug "\n\n\t\t DIR= ${DIR}\n\t\t shDIR= ${shFlows}"
 	[[ ! -d ${shDIR} ]] && mkdir ${shDIR}
 
 	# Scan for SharedFlows used by this proxy
-	echo ' ' > $SFOUTFILE
-	find "${DIR}/apis" -name "*.xml" -exec grep 'Bundle>sf_' {} \; | 
-			sed -a -e 's/^.*Bundle>sf_/sf_/g' -e 's/<.*$/ /g' | sort -u > ${SFOUTFILE}
+	echo ' ' > ${DIR}/$SFOUTFILE
+	find ${DIR}/apis -name "*.xml" -exec grep 'Bundle>sf_' {} \; | 
+			sed -a -e 's/^.*Bundle>sf_/sf_/g' -e 's/<.*$/ /g' | sort -u > ${DIR}/${SFOUTFILE}
 
-	SFLIST=`cat $SFOUTFILE`
+	SFLIST=`cat ${DIR}/$SFOUTFILE`
 	# SFLIST='sf_ptt-verifyToken sf_gcp-srvcAuth'
-	debug "SFLIST=$SFLIST"
+	debug "cwd= `pwd`; ls -al; SFLIST=$SFLIST"
 
 	for sf in $SFLIST ; do
 		echo -n "thisSF: ${sf} " # for each SF, download the revision deployed for that environment
@@ -96,31 +97,35 @@ getsharedflows() {
 		if [ "_${SFREV}" != "_" ] ; then
 			debug "dlSFlow ${sf} $SFREV "
 			echo "SFREV= ${SFREV}"
+
 			dlSFlow ${sf} $SFREV
 		
-			SFDIR="${shDIR}/${sf}_${SFREV}"
+			local SFDIR="${shDIR}/${sf}_${SFREV}"
 			[[ ! -d "${SFDIR}" ]] && mkdir "${SFDIR}"
 
-			debug "unzip -oqu ${sf}-${SFREV}.zip -d ${SFDIR}"
-			if [[ -f ${sf}-${SFREV}.zip ]] ; then
-				unzip -oqu ${sf}-${SFREV}.zip -d ${SFDIR}
-				mv ${sf}-${SFREV}.zip ${SFDIR}
+			if [[ -f ${shDIR}/${sf}-${SFREV}.zip ]] ; then
+				debug "unzip -oqu ${DIR}/${sf}-${SFREV}.zip -d ${SFDIR}"
+
+				unzip -oqu ${shDIR}/${sf}-${SFREV}.zip -d ${SFDIR}
+				mv ${shDIR}/${sf}-${SFREV}.zip ${SFDIR}
+
 			else
-				echo "${sf}-${SFREV}.zip Not Found"
+				echo "${shDIR}/${sf}-${SFREV}.zip Not Found"
 			fi
 		else
-			echo ": [404] A Deployed Revision ${SFREV} of SharedFlow ${sf} is Not Found"
+			echo "[404] A Deployed Revision ${SFREV} of SharedFlow ${sf} is Not Found"
 		fi
 	done
 }
 
 getapiproxies () {
-	DIR="$1/apis"
+	local DIR="$1"
+	DIR="$DIR/apis"
 	[[ ! -d ${DIR} ]] && mkdir ${DIR}
 
 	ALIST=`getApis` # retrieves list of apis in this ENV
 	# ALIST="ptt-auth" # Unit test only
-	debug "ALIST=$ALIST"
+	debug "cwd= `pwd`; `ls -al`; ALIST=$ALIST"
 
 	for a in $ALIST ; do
 		# debug 
@@ -132,23 +137,27 @@ getapiproxies () {
 		# If there is a deployed revision, then do work
 		if [ "_${AREV}" != "_" ] ; then
 			echo "AREV= ${AREV}"
-			echo "${a}:${AREV}" >> ${APISDIR}/$OUTFILE
-			ADIR="${DIR}/${a}_${AREV}"
+			echo "${a}:${AREV}" >> ${ADIR}/$OUTFILE
+
+			local ADIR="${DIR}/${a}_${AREV}"
 			[[ ! -d "${ADIR}" ]] && mkdir ${ADIR}
 
 			# download the deployed revision"
-			debug "dlApi ${a} ${AREV}"
+			debug "dlApi ${ADIR} ${a} ${AREV}"
 			dlApi ${a} ${AREV}   # download the deployed revision
-			if [[ -f ${a}-${AREV}.zip ]] ; then
+
+			if [[ -f ${DIR}/${a}-${AREV}.zip ]] ; then
 				# explode the zip and store in the top subdir
-				debug "unzip -oqu ${a}-${AREV}.zip -d ${ADIR}"
-				unzip -oqu ${a}-${AREV}.zip -d "${ADIR}"
-				mv ${a}-${AREV}.zip ${ADIR}
+				debug "unzip -oqu ${DIR}/${a}-${AREV}.zip -d ${ADIR}"
+
+				unzip -oqu ${DIR}/${a}-${AREV}.zip -d "${ADIR}"
+				mv ${DIR}/${a}-${AREV}.zip ${ADIR}
+
 			else
-				echo "${a}-${AREV}.zip Not Found"
+				echo "${DIR}/${a}-${AREV}.zip Not Found"
 			fi
 		else
-			echo ": [404] A Deployed Revision ${AREV} of API ${a} is Not Found"
+			echo "[404] A Deployed Revision ${AREV} of API ${a} is Not Found"
 		fi
 	done
 }
@@ -163,40 +172,43 @@ getapiproxies () {
 echo -en "\n\n\t***** Downloading the ${ENV} environment to directory ${APISDIR} *****\n\n\n"
 
 if [[ ! -d ${APISDIR} ]] ; then
-	echo -en '${APISDIR}= '${APISDIR}' is not found [404]'
+	echo -en '[404] ${APISDIR}= '${APISDIR}' is not found.'
 	exit
+
 else
 	cd ${APISDIR}; cd ..
-	APISDIR=`pwd`
-	BZF="${APISDIR}/${ORG}-${ENV}.bkp.zip"
-	echo -en "Backing up: ${APISDIR}/* to ${BZF} \n\n"
-	zip -r ${APISDIR}/${ORG}-${ENV}.bkp.zip ${APISDIR}
+	ADIR=`pwd`
+
+	# Make a backup dir
+	BZF="${ADIR}/${ORG}-${ENV}.bkp.zip"
+	echo -en "Backing up: ${ADIR}/* to ${BZF} \n\n"
+	zip -r ${ADIR}/${ORG}-${ENV}.bkp.zip ${ADIR}
 	echo "done $?"
 	[[ $? != 0 ]] && exit
-	mv ${APISDIR}/${ORG}-${ENV}.bkp.zip ..
-	rm -fr *
+	mv ${ADIR}/${ORG}-${ENV}.bkp.zip ..
+	rm -fr */*
 fi
 
 
 echo -en "\n\tGetting Proxies\n"
-getapiproxies ${APISDIR}
+getapiproxies ${ADIR}
 
 echo -en "\n\tGetting SharedFlows\n"
 # Scan for SharedFlows used by this proxy
-getsharedflows ${APISDIR}
+getsharedflows ${ADIR}
 # TODO? loop to check SFs for embedded SFs
 
 # Scan for KVMs and download info
 echo -en "\n\tGetting KVMS\n"
-getkvms ${APISDIR}
+getkvms ${ADIR}
 
 # Scan for TargetServers & download
 echo -en "\n\tGetting TargetServers\n"
-gettargets ${APISDIR}
+gettargets ${ADIR}
 
 # Scan for VirtualHosts & download
 echo -en "\n\tGetting VirtualHosts\n"
-getvhosts ${APISDIR}
+getvhosts ${ADIR}
 
 # Scan for 'caches' & download
 # TODO

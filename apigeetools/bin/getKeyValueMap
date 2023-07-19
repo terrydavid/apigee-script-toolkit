@@ -11,7 +11,7 @@
 #  {"entry" : [ {"name" : "dev","value" : "user1"} ],"name" : "prodmap"} \
 #  -u myname:mypass https://api.enterprise.apigee.com/o/{org_name}/environments/{env_name}/keyvaluemaps
 #
-# bldBody gets additonal of these: "${names[1]}:${ARGS[2]}"
+# bldBody gets additional of these: "${names[1]}:${ARGS[2]}"
 # names[0]="keyvaluemap_name"
 # names[1]="display_name" 
 #  etc.
