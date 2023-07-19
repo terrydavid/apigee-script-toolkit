@@ -7,23 +7,19 @@
 # usage:
 #   getApp host_alias app_name
 
-#set -e
 
-USAGE="host_alias app_name"
+USAGE="app_name [developer]"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 checkArgs 2
-#DEVELOPER=${ARGS[0]}
+
 APP_NAME=${ARGS[0]}
+[[ ${ARGS[1]} ]] && DEVELOPER=${ARGS[1]}
 
-URL="/o/${ORGANIZATION}/developers/${DEVELOPER}/apps/$(uri_escape "$APP_NAME")"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/developers/${DEVELOPER}/apps/$APP_NAME"
 
-if [ "$FRMT" = "xml" ] ; then
-	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL"
-else
-	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL"
-fi
+http_get "$URL"
+
+echo $RESPONSE
+echo $STATUS_CODE

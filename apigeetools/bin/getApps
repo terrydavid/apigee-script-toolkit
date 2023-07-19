@@ -10,7 +10,6 @@
 # usage:
 #   getApps host_alias
 
-#set -e
 
 USAGE="[developer|product]"
 TOOLSDIR="${APITOOLS_HOME}"
@@ -21,3 +20,6 @@ checkArgs 1
 URL="$APIGEE_HOST/o/${ORGANIZATION}/apps"
 
 http_get ${OPTS[@]} "$URL"
+
+echo $RESPONSE
+echo $STATUS_CODE

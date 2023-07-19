@@ -8,21 +8,17 @@
 #   createDeveloper host_alias
 #,\"password\":{\"type\":\"plain\",\"value\":\"${password}\"
 
-
-#set -e
-
 USAGE="host_alias dvlpr_email dvlpr_user_name password [dvlpr_first_name [dvlpr_last_name]]"
 TOOLSDIR="${APITOOLS_HOME}"
 . "$TOOLSDIR/lib/functions"
 parseCommandline "$@"
-#checkArgs 4 6
-#loadConfig "${ARGS[0]}"
+checkArgs 4
 
 email="${ARGS[0]}"
 userName="${ARGS[1]}"
-#password="${ARGS[2]}"
-firstName="${ARGS[2]}"
-lastName="${ARGS[3]}"
+password="${ARGS[2]}"
+firstName="${ARGS[3]}"
+lastName="${ARGS[4]}"
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/developers"
 BODY="{\"email\":\"${email}\",\"firstName\":\"${firstName}\",\"lastName\":\"${lastName}\",\"userName\":\"${userName}\"}"

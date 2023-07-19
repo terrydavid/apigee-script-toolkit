@@ -6,19 +6,16 @@
 #
 # usage:
 #   dlApi host_alias api [zip_file]
-#       host_alias the host alias
 #       api the name of the api
 #       zip_file the name of the apiproxy zip file (default is ./apiproxy.zip) to create
 
-[[ ${DEBUG} -ge 3 ]] && set -x
-
 USAGE="api [revision] [zip_file] # 'download (export)' a .zip file as the name 'api'"
 TOOLSDIR="${APITOOLS_HOME}"
-
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 checkArgs 2 4
+
+[[ ${DEBUG} -ge 4 ]] && set -x
 
 APINAME="${ARGS[0]}"
 REV="${ARGS[1]}"
@@ -26,22 +23,19 @@ FNAME="${ARGS[2]}"
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis/${APINAME}/revisions/${REV}?format=bundle"
 
-# echo "Downloading API ${APISDIR}/${APINAME}-${REV}.zip via ${URL}"
-debug "downloading API ${APINAME}-${REV}.zip via ${URL}"
+debug "Downloading API ${APINAME}-${REV}.zip via ${URL}"
 
 FRMT=json
 
 #HDRS="-H Content-Type:application/octet-stream"
-#curlOPTS="--data-binary @${APIPROXYZIP}"
-#curlOPTS=" -o ${APINAME}-${REV}.zip "
-
 # No need for version # if using git
 if [ "$REV" != "" ] ; then
-	curlOPTS=" -o ${APISDIR}/${APINAME}-${REV}.zip "
+	curlOPTS=" --output ${APISDIR}/${APINAME}-${REV}.zip "
 else
-	curlOPTS=" -o ${APISDIR}/${APINAME}.zip "
+	curlOPTS=" --output ${APISDIR}/${APINAME}.zip "
 fi
 
+debug "curlOPTS= $curlOPTS"
 http_get "$URL"
 
 #echo -e "\tDownloaded version $REV of API $APINAME to ${APISDIR}/${APINAME}-${REV}.zip"

@@ -1,0 +1,29 @@
+#/bin/bash
+
+API="$1"
+
+curl -nw '\n[%{http_code}]\n' http://localhost:8080/self/up
+curl -nw '\n[%{http_code}]\n' http://localhost:8081/self/up
+curl -nw '\n[%{http_code}]\n' http://localhost:8082/self/up
+
+curl -nw '\n[%{http_code}]\n' http://localhost:8081/runtime
+curl -nw '\n[%{http_code}]\n' http://localhost:8082/runtime/o/$ORG/e/$ENV/apis/$API
+curl -nw '\n[%{http_code}]\n' http://localhost:8081/runtime/o/$ORG/e/$ENV/apis/$API
+curl -nw '\n[%{http_code}]\n' http://localhost:8081/runtime/o
+
+curl -nw '\n[%{http_code}]\n' http://localhost:8082/o/$ORG/e/$ENV/apis/$API
+curl -nw '\n[%{http_code}]\n' http://localhost:8082/o/$ORG/e/$ENV/apis/$API
+curl -nw '\n[%{http_code}]\n' http://localhost:8082/o/$ORG/e/$ENV/apis
+curl -nw '\n[%{http_code}]\n' http://localhost:8082/o/$ORG/apis
+curl -nw '\n[%{http_code}]\n' http://localhost:8082/o/$ORG/apis/$API
+
+curl -nw '\n[%{http_code}]\n' http://localhost:8081/servers/self/up
+curl -nw '\n[%{http_code}]\n' http://localhost:8081/servers/self
+curl -nw '\n[%{http_code}]\n' http://localhost:8082/servers/self
+curl -nw '\n[%{http_code}]\n' http://localhost:8082/servers/self/up
+
+curl -nw '\n[%{http_code}]\n' http://localhost:8081/classification/tree
+curl -nw '\n[%{http_code}]\n' http://localhost:8081/classification/tree
+curl -nw '\n[%{http_code}]\n' http://localhost:8082/classification/tree
+
+curl -nw '\n[%{http_code}]\n' http://localhost:8082/runtime/o/$ORG/e/$ENV/apis
