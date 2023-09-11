@@ -40,7 +40,6 @@ printf "%-35s%6s%10s%s\n" "$SFLOW" "$REVA" "$REVB" "$TAG"
 
 # set -x
 cd "${APISDIR}/../shFlows"
-pwd
 
 dlSFlow "$SFLOW" "$REVA" "$SFLOW"-"$REVA".zip # 2>/dev/null
 unzip -oq $SFLOW-$REVA.zip -d $SFLOW-$REVA # 2>&1 >/dev/null
