@@ -39,7 +39,6 @@ printf "%-35s%6s%10s\n" "API" "RevOlder" "RevYounger"
 printf "%-35s%6s%10s%s\n" "$API" "$REVA" "$REVB" "$TAG"
 
 cd ${APISDIR}
-debug "[cmpAPIVers]: cd ${APISDIR}"
 
 dlApi "$API" "$REVA" "$API"-"$REVA".zip # 2>/dev/null
 unzip -oq $API-$REVA.zip -d $API-$REVA # 2>&1 >/dev/null

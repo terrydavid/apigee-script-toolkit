@@ -30,9 +30,9 @@ FRMT=json
 #HDRS="-H Content-Type:application/octet-stream"
 # No need for version # if using git
 if [ "$REV" != "" ] ; then
-	curlOPTS=" --output ${APISDIR}/${APINAME}-${REV}.zip "
+	curlOPTS=" --output ${APISDIR}/apis/${APINAME}-${REV}.zip "
 else
-	curlOPTS=" --output ${APISDIR}/${APINAME}.zip "
+	curlOPTS=" --output ${APISDIR}/apis/${APINAME}.zip "
 fi
 
 debug "curlOPTS= $curlOPTS"
