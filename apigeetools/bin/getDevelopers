@@ -17,15 +17,10 @@ TOOLSDIR="${APITOOLS_HOME}"
 parseCommandline "$@"
 checkArgs 1
 
-URL="/o/${ORGANIZATION}/developers"
-#URL="${APIGEE_HOST}/o/${ORGANIZATION}/developers"
+QUERY="$2"
+
+URL="/o/${ORGANIZATION}/developers${QUERY}"
 
 http_get "$APIGEE_HOST$URL" "$FRMT"
-
-# if [ "$FRMT" = "xml" ] ; then
-# 	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL"
-# else
-# 	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL"
-# fi
 
 echo $RESPONSE
