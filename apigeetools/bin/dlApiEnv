@@ -57,9 +57,10 @@ getkvms() {
 	[[ ! -d ${kvmDIR} ]] && mkdir ${kvmDIR}
 
 	# Scan for KVMs
-	find "${DIR}" -name '*.xml' -exec grep mapIdentifier= '{}' ';' |
-			sed -a -e 's/^.*mapIdentifier=\"//g' -e 's/\".*$/ /g' | sort -u > $KVMOUTFILE
-	
+	# find "${DIR}" -name '*.xml' -exec grep mapIdentifier= '{}' ';' |
+	# 		sed -a -e 's/^.*mapIdentifier=\"//g' -e 's/\".*$/ /g' | sort -u > $KVMOUTFILE
+	getKeyValueMaps | sort -u > $KVMOUTFILE
+
 	KLIST=`cat $KVMOUTFILE | sort -u`
 	debug "KLIST= $KLIST"
 	for k in $KLIST; do 
@@ -128,7 +129,9 @@ getapiproxies () {
 		echo -en "thisAPI: ${a} " # for each API Proxy, download the revision deployed for that environment
 
 		# find the deployed revision
-		AREV=`getApiRevisionDeployed ${a} 2>/dev/null` 
+		# AREV=`getApiRevisionDeployed ${a} 2>/dev/null` 
+		# find the latest revision
+		AREV=`getApiRevisionLatest ${a} 2>/dev/null` 
 		
 		# If there is a deployed revision, then do work
 		if [ "_${AREV}" != "_" ] ; then

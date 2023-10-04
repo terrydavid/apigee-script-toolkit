@@ -11,12 +11,12 @@ if [ ${APITOOLS_HOME} ] ; then
 
 	# export HOST_ALIAS="${ORGANIZATION}-${ENVIRONMENT}"; export PORT=":8080"
 
-	export ORGANIZATION="pttportal-nonprod"
-	export ENVIRONMENT="api-test"
-	export DEVELOPER="terry.david@diuptt.com"
+	export ORGANIZATION="adv2"
+	export ENVIRONMENT="dev"
+	export DEVELOPER="terry.david@540.co"
 	export SCHEME="https"
-	export HOST_ALIAS="mgmt.api"
-	export DOMAIN=".dev.pttportal.com"
+	export HOST_ALIAS="api.adv2"
+	export DOMAIN=".advana.540.co"
 	export PORT=""
 
 else
@@ -25,7 +25,7 @@ else
 fi
 
 export TOOLSDIR="${APITOOLS_HOME}"
-export APISDIR="${HOME}/Projects/ptt/${ORGANIZATION}/${ENVIRONMENT}/apis"
+export APISDIR="${HOME}/Projects/advana/${ORGANIZATION}/${ENVIRONMENT}/apis"
 export APIGEE_HOST="${SCHEME}://${HOST_ALIAS}${DOMAIN}${PORT}/v1"
 export ORG=${ORGANIZATION}
 export ENV=${ENVIRONMENT}
