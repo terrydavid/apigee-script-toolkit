@@ -129,7 +129,8 @@ getapiproxies () {
 		echo -en "thisAPI: ${a} " # for each API Proxy, download the revision deployed for that environment
 
 		# find the deployed revision
-		# AREV=`getApiRevisionDeployed ${a} 2>/dev/null` 
+		# AREV=`getApiRevisionDeployed ${a} 2>/dev/null`
+		 
 		# find the latest revision
 		AREV=`getApiRevisionLatest ${a} 2>/dev/null` 
 		

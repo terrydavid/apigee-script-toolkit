@@ -22,6 +22,8 @@ checkArgs 2 2
 
 APIPROXYZIP=${ARGS[0]}
 
+debug "APIPROXYZIP= ${APIPROXYZIP}"
+
 if [ ! -f "$APIPROXYZIP" ]; then
 	usefail "file not found: $APIPROXYZIP"
 fi

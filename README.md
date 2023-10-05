@@ -6,35 +6,15 @@ Source of record for all code, configurations, management scripts, etc. are loca
 
 
 ### Setup your environment variables:
-```
 
-#!/bin/bash
+Please refer to the sample scripts in apigee-script-toolkit/apigeetools/config
 
-# Set the Management Host (IMPORTANT: This determines "which" management server is accessed) <br>
-export MOST="http://<yourmgmhost>.<yourdomain>:8080/v1"
+You will also need to add apigee-script-toolkit/apigeetools/bin to your PATH
 
-# Set the Tools Home directory <br>
-export APITOOLS_HOME="$HOME/<wkspace.dir>"
-
-# Set the Tools bin Path <br>
-export PATH="$APITOOLS_HOME/bin:$PATH"
-
-:wq
-```
-### Source this into your environment: 
-> source .<yourapigeeorgname>
-
-### Configure your orgs/environments so the tools knows about them: 
-> source ${APITOOLS_HOME}/bin/setOrg <yourOrgname> <yourEnv>
-
-OR
-# Make changes to setup.sh and options.sh file after making changes to it.
->source setup.sh
->source options.sh
 ####Addn'l Notes:
 1. These tools use .netrc file for credentials
 
-## You are now SET UP to use the ApigeeToolKit!
+## You should now be set up to use the ApigeeToolKit!
 
 By default, all commands issued with no Args will get the Usage and Switches, e.g.:
 ```shell
