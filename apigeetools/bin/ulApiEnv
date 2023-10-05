@@ -121,43 +121,29 @@ getsharedflows() {
 	done
 }
 
-getapiproxies () {
-	DIR="$1/apis"
-	[[ ! -d ${DIR} ]] && mkdir ${DIR}
+putapiproxies () {
+	DIR="$1"
+	[[ ! -d ${DIR} ]] && exit 1 "No APISDIR found"
 
-	ALIST=`getApis` # retrieves list of apis in this ENV
+	cd $DIR
+	ALIST=`ls .` # retrieves list of apis in this ENV
 	# ALIST="ptt-auth" # Unit test only
 	debug "ALIST=$ALIST"
 
 	for a in $ALIST ; do
 		# debug 
-		echo -en "thisAPI: ${a} " # for each API Proxy, download the revision deployed for that environment
+		echo -en "thisAPI: ${a} " # for each API Proxy, upload the revision deployed for that environment
 
-		# find the deployed revision
-		AREV=`getApiRevisionDeployed ${a} 2>/dev/null` 
-		
-		# If there is a deployed revision, then do work
-		if [ "_${AREV}" != "_" ] ; then
-			echo "AREV= ${AREV}"
-			echo "${a}:${AREV}" >> ${APISDIR}/$OUTFILE
-			ADIR="${DIR}/${a}_${AREV}"
-			[[ ! -d "${ADIR}" ]] && mkdir ${ADIR}
+		# date="${file#*-}" # Use Parameter Expansion to strip off the part before '-'
+		rev="${a#*_}"
+		b=$(echo ${a} | cut -d'_' -f 1)
+		debug "b= ${b}; rev= ${rev}"
+		ZIP="${DIR}/${a}/${b}-${rev}.zip"
+		debug "ZIP= ${ZIP}"
 
-			# download the deployed revision"
-			debug "dlApi ${a} ${AREV}"
-			dlApi ${a} ${AREV}   # download the deployed revision
-			if [[ -f ${a}-${AREV}.zip ]] ; then
-				# explode the zip and store in the top subdir
-				debug "unzip -oqu ${a}-${AREV}.zip -d ${ADIR}"
-				unzip -oqu ${a}-${AREV}.zip -d "${ADIR}"
-				mv ${a}-${AREV}.zip ${ADIR}
-			else
-				echo "${a}-${AREV}.zip Not Found"
-			fi
-		else
-			echo ": [404] A Deployed Revision ${AREV} of API ${a} is Not Found"
-		fi
+		importBundle ${ZIP}
 	done
+	cd -
 }
 
 # MAIN starts here; ENV is controlled by .apigee file
@@ -188,7 +174,7 @@ fi
 
 
 # echo -en "\n\tGetting Proxies\n"
-# getapiproxies ${APISDIR}
+putapiproxies ${APISDIR}
 
 # echo -en "\n\tGetting SharedFlows\n"
 # # Scan for SharedFlows used by this proxy
@@ -200,9 +186,9 @@ fi
 # getkvms ${APISDIR}
 
 # Scan for TargetServers & download
-echo -en "\n\tPutting TargetServers\n"
+# echo -en "\n\tPutting TargetServers\n"
 # puttargets ${APISDIR}
-puttargets .
+# puttargets .
 
 # # Scan for VirtualHosts & download
 # echo -en "\n\tGetting VirtualHosts\n"
