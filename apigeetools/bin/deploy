@@ -13,35 +13,39 @@
 
 #set -e
 
-USAGE="host-env_alias api version"
+USAGE="api_name version"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 
-loadConfig "${ARGS[0]}"
-
-APINAME=${ARGS[1]}
+APINAME=${ARGS[0]}
 if [ "$APINAME" = "" ]; then
 	usefail "no API name specified"
 fi
 
-VERSION=${ARGS[2]}
+VERSION=${ARGS[1]}
 if [ "$VERSION" = "latest" ]; then
-	VERSION=`getApiVersionLatest ${OPTS[@]} "$HOST_ALIAS" "$APINAME"`
+	VERSION=`getApiVersionLatest ${OPTS[@]} "$APINAME"`
 	if [ "$VERSION" = "" ]; then
-		fail "no versions of API $APINAME in environment $ENVIRONMENT"
+		usefail "no versions of API $APINAME in environment $ENVIRONMENT"
 	fi
 fi
 if [ "$VERSION" = "" ]; then
 	usefail "no version specified"
 fi
 
-URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis/${APINAME}/deployments?action=deploy&env=${ENVIRONMENT}&revision=${VERSION}"
-echo "deploying version $VERSION of API $APINAME in environment $ENVIRONMENT"
+#HDRS="-HContent-Type:multipart/form-data"
+HDRS="-HContent-Type:application/x-www-form-urlencoded"
+#curlOPTS="-F file=@${APIPROXYZIP}"
+
+#URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis/${APINAME}/deployments?action=deploy&env=${ENVIRONMENT}&revision=${VERSION}"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/apis/${APINAME}/revisions/${VERSION}/deployments?override=true"
+
+debug "deploying version $VERSION of API $APINAME in environment $ENVIRONMENT"
 http_post "$URL"
-if [ "$STATUS_CODE" != "200" ]; then
-	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
-fi
+
+# if [ "${STATUS_CODE}" != "200" ]; then
+# 	fail "$(basename "$0") failed with status ${STATUS_CODE}: ${RESPONSE}"
+# else
+# 	echo "Version $VERSION of API $APINAME now deployed in environment $ENVIRONMENT"
+# fi

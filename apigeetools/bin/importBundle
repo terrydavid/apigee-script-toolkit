@@ -9,7 +9,6 @@
 #
 # usage:
 #   importBundle host_alias zip_file
-#       host_alias the host alias
 #       zip_file the name of the zip file
 
 #set -e

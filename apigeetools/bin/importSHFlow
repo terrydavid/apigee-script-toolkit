@@ -1,0 +1,46 @@
+#!/bin/bash
+ 
+# import
+#
+# imports a sharedflow bundle
+#
+# usage:
+#   import api [zip_file]
+#       api the name of the api
+#       zip_file the name of the apiproxy zip file (default is ./apiproxy.zip)   
+
+USAGE="shflow [zip_file] # 'import' a .zip file as the name 'shflow'"
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/lib/functions"
+parseCommandline "$@"
+checkArgs 2 3
+
+SHFNAME=${ARGS[0]}
+SHFPROXYZIP=${ARGS[1]} # zip file was passed in
+
+if [[ ! -f "${SHFPROXYZIP}" ]] ; then
+	fail "${SHFPROXYZIP} File Not Found"
+fi
+
+URL="${MOST}/o/${ORGANIZATION}/apis?action=import&name=${SHFNAME}"
+debug "importing SHF ${SHFNAME} via ${URL}"
+
+FRMT=json
+
+#HDRS="-HContent-Type:application/octet-stream"
+#curlOPTS="--data-binary \'@${SHFPROXYZIP}\'"
+HDRS="-HContent-Type:multipart/form-data"
+curlOPTS="-F file=@${SHFPROXYZIP}"
+
+http_post "$URL"
+
+JSON_OUTPUT=`echo "$RESPONSE" | "$TOOLSDIR/lib/jp.sh" -b`
+debug "JSON_OUTPUT=$JSON_OUTPUT"
+
+SHF_REVISION=`echo "$JSON_OUTPUT" | awk '/\[\"revision\"\,?([0-9])*/ {print $2}' | sed 's/\"//g'`
+debug "SHF_REVISION = $SHF_REVISION"
+
+SHF_NAME=`echo "$JSON_OUTPUT" | awk '/\[\"name\"\,?([0-9])*/ {print $2}' | sed 's/\"//g'`
+debug "SHF_NAME = $SHF_NAME"
+
+echo "imported version $SHF_REVISION of SHF $SHF_NAME"

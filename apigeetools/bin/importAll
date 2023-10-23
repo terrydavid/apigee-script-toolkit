@@ -13,15 +13,11 @@
 
 USAGE="host_alias [directory] # Uploads all apiproxy.zip files in a directory"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 checkArgs 1 2
-loadConfig "${ARGS[0]}"
 
-DIRECTORY=${ARGS[1]}
+DIRECTORY=${ARGS[0]}
 if [ "$DIRECTORY" = "" ]; then
 	DIRECTORY="$APISDIR"
 fi

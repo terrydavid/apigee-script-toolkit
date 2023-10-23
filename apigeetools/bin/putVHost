@@ -1,0 +1,20 @@
+#!/bin/bash
+
+VHNAME=$1
+VHALIASES=$2
+VHPORT=$3
+
+VHSSL="{
+    		"sSLInfo":{
+			"enabled":true,
+			"ClientAuthEnabled":false,
+			"keyStore":"KS_securePEP",
+			"keyAlias":"KeyName_secure",
+			"ignoreValidationErrors":true
+		}"
+
+BODY="{\"name\":\"${VHNAME}\",\"hostAliases\":[\"${VHALIASES}\"],\"interfaces\":[],\"port\":\"${VHPORT}\"}"
+
+
+curl -nsSv -X POST "${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/virtualhosts" -w '\n%{http_code}\n' \
+	-HAccept:application/json -HContent-Type:application/json --data "${BODY}"

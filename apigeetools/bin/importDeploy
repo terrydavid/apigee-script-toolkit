@@ -5,7 +5,7 @@
 # creates an API bundle zip file, imports it, and deploys it to an environment
 #
 # usage:
-#   importDeploy environment api_name
+#   importDeploy api_name
 #
 # NOTE: now using <name>".d" ("dot d") for directories
 
@@ -18,8 +18,8 @@ checkArgs 3 3
 
 [ "_$DEBUG" >= "_4" ] && set -x
 
-API_NAME="${ARGS[1]}"
-API_DIRECTORY="${ARGS[2]}"
+API_NAME="${ARGS[0]}"
+API_DIRECTORY="${ARGS[1]}"
 
 if [ ! -d "$API_DIRECTORY" ]; then
 	fail "Unable to find api directory: $API_DIRECTORY"
@@ -27,12 +27,12 @@ fi
 
 if [ ! -f "$API_DIRECTORY/$API_NAME.zip" ] ; then
 	debug "Creating Zip of $API_DIRECTORY"
-	createApiProxyZip ${OPTS[@]} "$HOST_ALIAS" "$API_NAME" "$API_DIRECTORY"
+	createApiProxyZip ${OPTS[@]} "$API_NAME" "$API_DIRECTORY"
 fi
 
 debug "Importing $API_NAME to $HOST_ALIAS"
-importApi ${OPTS[@]} "$HOST_ALIAS" "$API_NAME" "$API_DIRECTORY/$API_NAME.zip"
+importApi ${OPTS[@]} "$API_NAME" "$API_DIRECTORY/$API_NAME.zip"
 
 debug "Deploying Latest version of $API_NAME to $ENVIRONMENT"
-deployLatest ${OPTS[@]} "$HOST_ALIAS" "$API_NAME"
+deployLatest ${OPTS[@]} "$API_NAME"
 

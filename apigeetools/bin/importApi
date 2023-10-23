@@ -31,8 +31,10 @@ debug "importing API ${APINAME} via ${URL}"
 
 FRMT=json
 
-HDRS="-H Content-Type:application/octet-stream"
-curlOPTS="--data-binary @${APIPROXYZIP}"
+#HDRS="-HContent-Type:application/octet-stream"
+#curlOPTS="--data-binary \'@${APIPROXYZIP}\'"
+HDRS="-HContent-Type:multipart/form-data"
+curlOPTS="-F file=@${APIPROXYZIP}"
 
 http_post "$URL"
 
