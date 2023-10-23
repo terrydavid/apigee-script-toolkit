@@ -11,33 +11,32 @@
 USAGE="virtual_host_name { <vh_config.json file> | [port [host_alias]* ...]}"
 TOOLSDIR="${APITOOLS_HOME}"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
-checkArgs 1
+checkArgs 1 4
 
-VH_CONFIG=""
-VH_NAME="$1"
-#VH_NAME=`trims "${ARGS[0]}"`
-PORT="${ARGS[1]}"
+[[ $DEBUG -ge 2 ]] && set -x
+VH_FoP="${ARGS[0]}"
+VH_CONFIG="${VH_FoP}"
+VH_PORT=""
 
-debug "VH_NAME=${VH_NAME}; PORT=$PORT; ARGS=${ARGS}; \$\@=$@"
-debug "OPTS[@]=${OPTS[@]}; ARGS[@]=${ARGS[@]}; \n\tARGS[0]=${ARGS[0]}; \n\tARGS[1]=${ARGS[1]}; \n\tARGS[2]=${ARGS[2]}"
+if [[ ! -f ${VH_CONFIG} ]] ; then
+	VH_CONFIG=""
+	VH_PORT="${VH_FoP}"
+	VH_NAME="${ARGS[1]}"
+fi
 
-VH_CONFIG=$PORT
-[[ -f $PORT ]] && VH_CONFIG=$PORT
-
-debug "VH_NAME=${VH_NAME}; PORT=$PORT; ARGS=${ARGS}; \$\@=$@"
+debug "VH_CONFIG= ${VH_CONFIG}; VH_NAME=${VH_NAME}; PORT=$PORT; ARGS=${ARGS}; \$\@=$@"
 debug "OPTS[@]=${OPTS[@]}; ARGS[@]=${ARGS[@]}; \n\tARGS[0]=${ARGS[0]}; \n\tARGS[1]=${ARGS[1]}; \n\tARGS[2]=${ARGS[2]}"
 
 if [ "_$VH_CONFIG" == "_" ] ; then
 	HOST_ALIASES=""
 
 	for ((i=${#ARGS[@]};i>1;i--)); do
-		# debug 1 "$HOST_ALIASES= $HOST_ALIASES" "i= $i" "Arg[i]= ${ARGS[$i]}" 
+		debug 1 "$HOST_ALIASES= $HOST_ALIASES" "i= $i" "Arg[i]= ${ARGS[$i]}" 
 		if [[ "${ARGS[$i]}" != "" ]] ; then
 			[[ "$HOST_ALIASES" != "" ]] && HOST_ALIASES+=","
 			HOST_ALIASES+="\"${ARGS[$i]}\""
-			# debug 2 "$HOST_ALIASES= $HOST_ALIASES" "i= $i" "Arg[i]= ${ARGS[$i]}"
+			debug 2 "$HOST_ALIASES= $HOST_ALIASES" "i= $i" "Arg[i]= ${ARGS[$i]}"
 		fi
 	done
 fi
@@ -49,7 +48,7 @@ debug "$URL"
 if [ "_${VH_CONFIG}" == "_" ] ; then
 	BODY="{\"name\":\"${VH_NAME}\",\"hostAliases\":[${HOST_ALIASES}],\"interfaces\":[],\"port\":${PORT}}"
 else 
-	BODY="@${VH_CONFIG}"
+	BODY=`cat ${VH_CONFIG}`
 fi
 
 debug "BODY= $BODY"
@@ -66,3 +65,4 @@ fi
 
 echo -en "\nStatusCode: [$STATUS_CODE]\n\tResponse is \n$RESPONSE"
 
+set -

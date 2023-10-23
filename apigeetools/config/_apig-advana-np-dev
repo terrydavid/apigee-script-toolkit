@@ -30,7 +30,7 @@ export APIGEE_HOST="${SCHEME}://${HOST_ALIAS}${DOMAIN}${PORT}/v1"
 export ORG=${ORGANIZATION}
 export ENV=${ENVIRONMENT}
 export PATH="${PATH}:${APITOOLS_HOME}/bin"
-export CDPATH="${CDPATH}:${APISDIR}"
+export CDPATH="${CDPATH}:${APISDIR}/.."
 export MOST="${APIGEE_HOST}"
 
 source $HOME/.aliases

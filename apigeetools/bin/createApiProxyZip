@@ -10,20 +10,16 @@
 #       zip_file the name of the zip file to create (default is ./apiproxy.zip)   
 
 
-USAGE="org-env apiname api_directory [zip_file]"
+USAGE="apiname api_directory [zip_file]"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 checkArgs 3 4
-loadConfig "${ARGS[0]}"
 
 [ "_$DEBUG" == "_1" ] && set -e
 
-APINAME="${ARGS[1]}"
-APIDIR="${ARGS[2]}"
+APINAME="${ARGS[0]}"
+APIDIR="${ARGS[1]}"
 
 if [ "_$APIDIR" == "_" ]; then
 	usefail "No API directory specified"
@@ -42,7 +38,8 @@ fi
 
 #ZIPFILE=`cd $(dirname "$ZIPFILE"); pwd`/$(basename "$ZIPFILE")
 
-ZIPQUIET=-q
+#ZIPQUIET=-q
+ZIPQUIET=-v
 [ "_$DEBUG" != "_false" ] && ZIPQUIET=
 [ "_$DEBUG" == "_1" ] && ZIPQUIET=-v	
 

@@ -82,42 +82,33 @@ getkvms() {
 	done
 }
 
-getsharedflows() {
+putsharedflows() {
 	DIR=$1
-	shDIR="$DIR/shFlows"
-	[[ ! -d ${shDIR} ]] && mkdir ${shDIR}
+	shDIR="$DIR/../shFlows"
+	[[ ! -d ${shDIR} ]] && exit 1 "No SharedFlows found"
 
 	# Scan for SharedFlows used by this proxy
-	echo ' ' > $SFOUTFILE
-	find "${DIR}/apis" -name "*.xml" -exec grep 'Bundle>sf_' {} \; | 
-			sed -a -e 's/^.*Bundle>sf_/sf_/g' -e 's/<.*$/ /g' | sort -u > ${SFOUTFILE}
+	cd ${shDIR}
+	ls  > $SFOUTFILE
+	# find "${DIR}/apis" -name "*.xml" -exec grep 'Bundle>sf_' {} \; | 
+			# sed -a -e 's/^.*Bundle>sf_/sf_/g' -e 's/<.*$/ /g' | sort -u > ${SFOUTFILE}
 
 	SFLIST=`cat $SFOUTFILE`
 	# SFLIST='sf_ptt-verifyToken sf_gcp-srvcAuth'
 	debug "SFLIST=$SFLIST"
 
 	for sf in $SFLIST ; do
-		echo -n "thisSF: ${sf} " # for each SF, download the revision deployed for that environment
-		SFREV=`getSFRevisionDeployed ${sf} 2>/dev/null`
+		echo -n "thisSF: ${sf} " # for each SF, upload the zip file 
 
-		if [ "_${SFREV}" != "_" ] ; then
-			debug "dlSFlow ${sf} $SFREV "
-			echo "SFREV= ${SFREV}"
-			dlSFlow ${sf} $SFREV
-		
-			SFDIR="${shDIR}/${sf}_${SFREV}"
-			[[ ! -d "${SFDIR}" ]] && mkdir "${SFDIR}"
+		# date="${file#*-}" # Use Parameter Expansion to strip off the part before '-'
+		rev="${sf#*_}"
+		b=$(echo ${sf} | cut -d'_' -f 1)
+		debug "b= ${b}; rev= ${rev}"
+		ZIP="${DIR}/${sf}/${b}-${rev}.zip"
+		debug "ZIP= ${ZIP}"
 
-			debug "unzip -oqu ${sf}-${SFREV}.zip -d ${SFDIR}"
-			if [[ -f ${sf}-${SFREV}.zip ]] ; then
-				unzip -oqu ${sf}-${SFREV}.zip -d ${SFDIR}
-				mv ${sf}-${SFREV}.zip ${SFDIR}
-			else
-				echo "${sf}-${SFREV}.zip Not Found"
-			fi
-		else
-			echo ": [404] A Deployed Revision ${SFREV} of SharedFlow ${sf} is Not Found"
-		fi
+		# importBundle ${ZIP}
+		importSHFlow ${b} ${ZIP}
 	done
 }
 
@@ -132,7 +123,7 @@ putapiproxies () {
 
 	for a in $ALIST ; do
 		# debug 
-		echo -en "thisAPI: ${a} " # for each API Proxy, upload the revision deployed for that environment
+		echo -en "thisAPI: ${a} " # for each API Proxy, upload the file
 
 		# date="${file#*-}" # Use Parameter Expansion to strip off the part before '-'
 		rev="${a#*_}"
@@ -141,7 +132,8 @@ putapiproxies () {
 		ZIP="${DIR}/${a}/${b}-${rev}.zip"
 		debug "ZIP= ${ZIP}"
 
-		importBundle ${ZIP}
+		# importBundle ${ZIP}
+		importApi ${b} ${ZIP}
 	done
 	cd -
 }
@@ -156,8 +148,8 @@ OPWD=`pwd`
 
 echo -en "\n\n\t***** Uploading the directory ${OPWD} to environment ${ORG}:${ENV} *****\n\n\n"
 
-if [[ ! -d ./apis ]] ; then
-	echo -en "${PWD}/apis= `pwd`/apis is not found [404]"
+if [[ ! -d ${APISDIR} ]] ; then
+	echo -en "APISDIR= ${APISDIR} is not found [404]"
 	exit
 # else
 # 	cd ${APISDIR}; cd ..
@@ -173,12 +165,12 @@ if [[ ! -d ./apis ]] ; then
 fi
 
 
-# echo -en "\n\tGetting Proxies\n"
-putapiproxies ${APISDIR}
+# echo -en "\n\tPutting Proxies\n"
+# putapiproxies ${APISDIR}
 
-# echo -en "\n\tGetting SharedFlows\n"
+echo -en "\n\tPutting SharedFlows\n"
 # # Scan for SharedFlows used by this proxy
-# getsharedflows ${APISDIR}
+putsharedflows ${APISDIR}
 # # TODO? loop to check SFs for embedded SFs
 
 # # Scan for KVMs and download info

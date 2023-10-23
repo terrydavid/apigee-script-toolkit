@@ -38,4 +38,4 @@ fi
 debug "curlOPTS= $curlOPTS"
 http_get "$URL"
 
-#echo -e "\tDownloaded version $REV of API $APINAME to ${APISDIR}/${APINAME}-${REV}.zip"
+echo -e "\tDownloaded version $REV of API $APINAME to ${APISDIR}/${APINAME}-${REV}.zip"

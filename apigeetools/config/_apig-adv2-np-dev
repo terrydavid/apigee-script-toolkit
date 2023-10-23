@@ -15,7 +15,7 @@ if [ ${APITOOLS_HOME} ] ; then
 	export ENVIRONMENT="dev"
 	export DEVELOPER="terry.david@540.co"
 	export SCHEME="https"
-	export HOST_ALIAS="api.adv2"
+	export HOST_ALIAS="api.apigee"
 	export DOMAIN=".advana.540.co"
 	export PORT=""
 
