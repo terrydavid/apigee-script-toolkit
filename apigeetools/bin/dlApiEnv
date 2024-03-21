@@ -59,9 +59,9 @@ getkvms() {
 	# Scan for KVMs
 	# find "${DIR}" -name '*.xml' -exec grep mapIdentifier= '{}' ';' |
 	# 		sed -a -e 's/^.*mapIdentifier=\"//g' -e 's/\".*$/ /g' | sort -u > $KVMOUTFILE
-	getKeyValueMaps | sort -u > $KVMOUTFILE
+	# getKeyValueMaps | sort -u > $KVMOUTFILE
 
-	KLIST=`cat $KVMOUTFILE | sort -u`
+	KLIST=`getKeyValueMaps | sort -u`
 	debug "KLIST= $KLIST"
 	for k in $KLIST; do 
 
@@ -70,8 +70,9 @@ getkvms() {
 
 	    KDIR="${kvmDIR}/${k}";
 	    [[ ! -d ${KDIR} ]] && mkdir "${KDIR}";
+		debug "KVM: $KVM \n KDIR; $KDIR"
 
-	    CFG=""; [[ `echo "$k" | grep "PTT-"` ]] && CFG=true;
+	    CFG=""; [[ `echo "$k"` ]] && CFG=true;
 	    [[ ${CFG} ]] && [[ -d ${KDIR} ]] && echo "$KVM" > $KDIR/$k.json;
 	done
 }
@@ -81,12 +82,13 @@ getsharedflows() {
 	shDIR="$DIR/shFlows"
 	[[ ! -d ${shDIR} ]] && mkdir ${shDIR}
 
-	# Scan for SharedFlows used by this proxy
-	echo ' ' > $SFOUTFILE
-	find ${DIR}/apis -name "*.xml" -exec grep 'Bundle>sf_' {} \; | 
-			sed -a -e 's/^.*Bundle>sf_/sf_/g' -e 's/<.*$/ /g' | sort -u > ${SFOUTFILE}
+	# # Scan for SharedFlows used by this proxy
+	# echo ' ' > $SFOUTFILE
+	# find ${DIR}/apis -name "*.xml" -exec grep 'Bundle>sf[-_]' {} \; | 
+	# 		sed -a -e 's/^.*Bundle>sf_/sf_/g' -e 's/<.*$/ /g' | sort -u > ${SFOUTFILE}
 
-	SFLIST=`cat $SFOUTFILE`
+	SFLIST=`getSFs`
+	# SFLIST=`cat $SFOUTFILE`
 	# SFLIST='sf_ptt-verifyToken sf_gcp-srvcAuth'
 	debug "SFLIST=$SFLIST"
 

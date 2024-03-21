@@ -14,7 +14,7 @@ parseCommandline "$@"
 checkArgs 0
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/sharedflows"
-debug "Retrieving SFs from ${URL}"
+debug "Retrieving SharedFlows from ${URL}"
 
 http_get "$URL"
 
