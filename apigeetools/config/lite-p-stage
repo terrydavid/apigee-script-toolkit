@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ ${APITOOLS_HOME} ] ; then
+
+    export APRJCT="rso"
+	export ORGANIZATION="lite"
+	export ENVIRONMENT="stage"
+	export DEVELOPER="terry.david@540.co"
+	export SCHEME="https"
+	export HOST_ALIAS="mgmt-api.prod"
+	#export HOST_ALIAS="${ORGANIZATION}-${ENVIRONMENT}"; export PORT=":8080"
+	export DOMAIN=".lite-portal.com"
+	export PORT=""
+
+else
+	echo "NO APITOOLS_HOME Directory: [${APITOOLS_HOME}]"
+	exit 1
+fi
+
