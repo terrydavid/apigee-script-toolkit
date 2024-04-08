@@ -5,7 +5,7 @@
 # downloads an API bundle
 #
 # usage:
-#   dlApi host_alias api [zip_file]
+#   dlApi api [zip_file]
 #       api the name of the api
 #       zip_file the name of the apiproxy zip file (default is ./apiproxy.zip) to create
 
@@ -30,9 +30,9 @@ FRMT=json
 #HDRS="-H Content-Type:application/octet-stream"
 # No need for version # if using git
 if [ "$REV" != "" ] ; then
-	curlOPTS=" --output ${APISDIR}/apis/${APINAME}-${REV}.zip "
+	curlOPTS=" --output ${APISDIR}/${APINAME}-${REV}.zip "
 else
-	curlOPTS=" --output ${APISDIR}/apis/${APINAME}.zip "
+	curlOPTS=" --output ${APISDIR}/${APINAME}.zip "
 fi
 
 debug "curlOPTS= $curlOPTS"

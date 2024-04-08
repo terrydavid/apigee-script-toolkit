@@ -50,4 +50,6 @@ export MOST="${APIGEE_HOST}"
 source $HOME/.aliases
 
 echo -en "APITOOLS ${APITOOLS_HOME} is set @\n\t${APISDIR}\n"
+cd ${APISDIR}
+
 set -
