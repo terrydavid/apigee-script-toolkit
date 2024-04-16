@@ -121,9 +121,10 @@ getapiproxies () {
 	# DIR="$1"
 	DIR="$1/apis"
 	[[ ! -d ${DIR} ]] && mkdir ${DIR}
+	cd ${DIR}
 
 	ALIST=`getApis` # retrieves list of apis in this ENV
-	# ALIST="ptt-auth" # Unit test only
+	# ALIST="v2-airs" # Unit test only
 	debug "ALIST=$ALIST"
 
 	for a in $ALIST ; do
@@ -138,21 +139,20 @@ getapiproxies () {
 		
 		# If there is a deployed revision, then do work
 		if [ "_${AREV}" != "_" ] ; then
-			echo "AREV= ${AREV}"
 			echo "${a}:${AREV}" >> ${APISDIR}/$OUTFILE
 			ADIR="${DIR}/${a}_${AREV}"
 			[[ ! -d "${ADIR}" ]] && mkdir ${ADIR}
 
 			# download the deployed revision"
-			debug "dlApi ${ADIR} ${a} ${AREV}"
+			debug "\nDownloading Proxy= ${a}; AREV= ${AREV}; APISDIR= ${APISDIR}; DIR= ${DIR}; ADIR= ${ADIR}; PWD= `pwd`;\n"
 			dlApi ${a} ${AREV}   # download the deployed revision
-			if [[ -f ${DIR}/${a}-${AREV}.zip ]] ; then
+			if [[ -f ${APISDIR}/${a}-${AREV}.zip || ${DIR}/${a}-${AREV}.zip ]] ; then
 				# explode the zip and store in the top subdir
+				mv ${APISDIR}/${a}-${AREV}.zip ${ADIR} || mv ${DIR}/${a}-${AREV}.zip ${ADIR}
 				debug "unzip -oqu ${DIR}/${a}-${AREV}.zip -d ${ADIR}"
-				unzip -oqu ${DIR}/${a}-${AREV}.zip -d "${ADIR}"
-				mv ${DIR}/${a}-${AREV}.zip ${ADIR}
+				unzip -oqu ${ADIR}/${a}-${AREV}.zip -d "${ADIR}"
 			else
-				echo "`pwd`/${a}-${AREV}.zip Not Found"
+				echo "${DIR}/${a}-${AREV}.zip Not Found"
 			fi
 		else
 			echo ": [404] A Deployed Revision ${AREV} of API ${a} is Not Found"
@@ -160,7 +160,6 @@ getapiproxies () {
 	done
 }
 
-# MAIN starts here; ENV is controlled by .apigee file
 # MAIN starts here; ENV is controlled by .apigee file
 # MAIN starts here; ENV is controlled by .apigee file
 # MAIN starts here; ENV is controlled by .apigee file
@@ -190,23 +189,23 @@ getapiproxies ${APISDIR}
 
 echo -en "\n\tGetting SharedFlows\n"
 # Scan for SharedFlows used by this proxy
-getsharedflows ${APISDIR}
-# TODO? loop to check SFs for embedded SFs
+# getsharedflows ${APISDIR}
+# # TODO? loop to check SFs for embedded SFs
 
-# Scan for KVMs and download info
-echo -en "\n\tGetting KVMS\n"
-getkvms ${APISDIR}
+# # Scan for KVMs and download info
+# echo -en "\n\tGetting KVMS\n"
+# getkvms ${APISDIR}
 
-# Scan for TargetServers & download
-echo -en "\n\tGetting TargetServers\n"
-gettargets ${APISDIR}
+# # Scan for TargetServers & download
+# echo -en "\n\tGetting TargetServers\n"
+# gettargets ${APISDIR}
 
-# Scan for VirtualHosts & download
-echo -en "\n\tGetting VirtualHosts\n"
-getvhosts ${APISDIR}
+# # Scan for VirtualHosts & download
+# echo -en "\n\tGetting VirtualHosts\n"
+# getvhosts ${APISDIR}
 
-# Scan for 'caches' & download
-# TODO
+# # Scan for 'caches' & download
+# # TODO
 
 echo -en "\n\n\t************ End of processing `basename $0` **********\n\n\n"
 
