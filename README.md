@@ -13,7 +13,7 @@ Source of record for all code, configurations, management scripts, etc. are loca
 #       the Apigee Management APIs
 #
 #   The lines below referencing the environment variable "ENVARS" will source a second script that 
-#       handles the setup of the environment variables for the Apigee Organization & Environment
+#       handle the setup of the environment variables for the Apigee Organization & Environment
 #
 # set -x
 
