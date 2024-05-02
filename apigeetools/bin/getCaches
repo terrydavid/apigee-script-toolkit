@@ -17,11 +17,6 @@ checkArgs 1
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/caches"
 
-# if [ "$FRMT" = "xml" ] ; then
-# 	getApigeeXml ${OPTS[@]} "$HOST_ALIAS" "$URL"
-# else
-# 	getApigeeJson ${OPTS[@]} "$HOST_ALIAS" "$URL"
-# fi
  http_get $URL
 
  echo "$RESPONSE"

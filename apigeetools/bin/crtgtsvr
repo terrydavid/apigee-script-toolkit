@@ -12,17 +12,14 @@ TOOLSDIR="${APITOOLS_HOME}"
 . "$TOOLSDIR/lib/functions"
 
 parseCommandline "$@"
-
 # NO=$(parseCommandline "$@")
 # for ((n=0; n -lt ${NO}; n++)); do debug $n; shift; done
 checkArgs $NO
-
 debug "[crtgtsvr-d]: ARGS=$ARGS NO=$NO; \$@=$@; \$*=$*; \$1=$1; \$2=$2"
-
 # echo "[crtgtsvr-e]: ARGS=$ARGS NO=$NO; \$@=$@; \$*=$*; \$1=$1; \$2=$2"
-
 # TSfile=$1
 # TSfile=$*
+
 TSfile=${ARGS[0]}
 
 URL="${MOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers"
