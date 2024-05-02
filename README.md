@@ -158,10 +158,10 @@ A typical development session might use commands in this sequence:
 2. Extract the latest known good version from your SCM as your starting point (or verify current working version) <br>
 
 3. Download a version of the API <br>
-4. dlApi myApi myApiRev <br>
+    > dlApi myApi myApiRev <br>
 
 5. Explode the zip file <br>
-6. unzip myApi.zip -d myApi <br>
+    > unzip myApi.zip -d myApi <br>
 
 7. Use your editing tools (e.g., Sublime, Eclipse, etc.) to modify your code <br>
 8. Note that there are specific sequencing requirements for default and conditional Flows, and for Route-Rules. <br>
@@ -169,10 +169,10 @@ A typical development session might use commands in this sequence:
    http://apigee.com/docs/api-services/content/best-practices-api-proxy-design-and-development) <br>
 
 9. Re-zip the modifications <br>
-   zip -r myApi apiproxy <br>
+    > zip -r myApi apiproxy <br>
 
 11. Import (upload) the new revisions: <br>
-   ImportApi myApi
+    > ImportApi myApi
 
 12. Please use a json file to enter data for createAppfromfile and createDeveloperfromfile. The arg is the name of the json file. 
 

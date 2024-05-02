@@ -1,3 +1,9 @@
-.D[ST]*
-.vi*
+**/.D[ST]*
+**/.vi*
+**/*.code-workspace
 
+.DS_Store
+zip/
+*.old
+*.bak
+*.orig

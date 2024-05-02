@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# getCache
+# getCache 
 #
-# retrieves the specified cache
+# retrieves the configuration of a cache for an environment
 #
 # usage:
-#   getCache environment cache_name
+#   getCache cache_name
 
 #set -e
 
@@ -13,15 +13,12 @@ USAGE="cache_name"
 TOOLSDIR="${APITOOLS_HOME}"
 . "$TOOLSDIR/lib/functions"
 parseCommandline "$@"
-checkArgs 2
+checkArgs 1
 
-cache_name="${ARGS[0]}"
+CACHE="${ARGS[0]}"
 
-#URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/caches/$(uri_escape "$cache_name")/entries"
-#URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/caches/$(uri_escape "$cache_name")/entries"
-#URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/caches/$(uri_escape "$cache_name")"
-URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/caches/$(uri_escape "$cache_name")"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/caches/${CACHE}"
 
 http_get $URL
 
-echo $RESPONSE
+echo "$RESPONSE"

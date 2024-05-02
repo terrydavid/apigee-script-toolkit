@@ -58,7 +58,7 @@ getvhosts () {
 #	(we only create as needed the directory. Its name will create KVM at upload time)
 #
 #				TODO: 	Fix Config KVMs!!!
-getkvms() {
+putkvms() {
 	DIR=$1
 	kvmDIR="$DIR/kvms"
 	[[ ! -d ${kvmDIR} ]] && mkdir ${kvmDIR}
@@ -83,6 +83,7 @@ getkvms() {
 }
 
 putsharedflows() {
+	# set -x 
 	DIR=$1
 	shDIR="$DIR/../shFlows"
 	[[ ! -d ${shDIR} ]] && exit 1 "No SharedFlows found"
@@ -94,7 +95,7 @@ putsharedflows() {
 			# sed -a -e 's/^.*Bundle>sf_/sf_/g' -e 's/<.*$/ /g' | sort -u > ${SFOUTFILE}
 
 	SFLIST=`cat $SFOUTFILE`
-	# SFLIST='sf_ptt-verifyToken sf_gcp-srvcAuth'
+	SFLIST='sf-auth-external-v1_32'
 	debug "SFLIST=$SFLIST"
 
 	for sf in $SFLIST ; do
@@ -104,12 +105,13 @@ putsharedflows() {
 		rev="${sf#*_}"
 		b=$(echo ${sf} | cut -d'_' -f 1)
 		debug "b= ${b}; rev= ${rev}"
-		ZIP="${DIR}/${sf}/${b}-${rev}.zip"
+		ZIP="${shDIR}/${sf}/${b}-${rev}.zip"
 		debug "ZIP= ${ZIP}"
 
 		# importBundle ${ZIP}
 		importSHFlow ${b} ${ZIP}
 	done
+	set -
 }
 
 putapiproxies () {
@@ -118,7 +120,7 @@ putapiproxies () {
 
 	cd $DIR
 	ALIST=`ls .` # retrieves list of apis in this ENV
-	# ALIST="ptt-auth" # Unit test only
+	ALIST="v2-lite_8" # Unit test only
 	debug "ALIST=$ALIST"
 
 	for a in $ALIST ; do
@@ -165,17 +167,17 @@ if [[ ! -d ${APISDIR} ]] ; then
 fi
 
 
-# echo -en "\n\tPutting Proxies\n"
-# putapiproxies ${APISDIR}
+echo -en "\n\tPutting Proxies\n"
+putapiproxies ${APISDIR}
 
 echo -en "\n\tPutting SharedFlows\n"
-# # Scan for SharedFlows used by this proxy
 putsharedflows ${APISDIR}
 # # TODO? loop to check SFs for embedded SFs
+# # Scan for SharedFlows used by this proxy
 
 # # Scan for KVMs and download info
-# echo -en "\n\tGetting KVMS\n"
-# getkvms ${APISDIR}
+echo -en "\n\tGetting KVMS\n"
+putkvms ${APISDIR}
 
 # Scan for TargetServers & download
 # echo -en "\n\tPutting TargetServers\n"

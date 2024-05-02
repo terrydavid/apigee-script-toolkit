@@ -9,15 +9,11 @@
 
 #set -e
 
-USAGE="environment"
+USAGE="<none>"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
 checkArgs 1
-loadConfig "${ARGS[0]}"
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/keyvaluemaps"
 

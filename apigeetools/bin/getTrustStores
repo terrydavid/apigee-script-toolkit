@@ -11,15 +11,11 @@
 
 USAGE="environment"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
-loadConfig "${ARGS[0]}"
 
-URL="/o/${ORGANIZATION}/e/${ENVIRONMENT}/keystores"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/keystores"
 
-getApigee "HOST_ALIAS" "$URL"
+http_get "$URL"
 
 echo "$RESPONSE"
