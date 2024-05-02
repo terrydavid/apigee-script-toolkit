@@ -19,33 +19,29 @@ TOOLSDIR="${APITOOLS_HOME}"
 parseCommandline "$@"
 checkArgs 3
 
-KVMOUTFILE="KVMList.out"
-
 DIR="${ARGS[0]}"
 cd ${DIR}
 kvmDIR="$DIR/kvms"
+
 [[ ! -d ${kvmDIR} ]] && mkdir ${kvmDIR}
 
-# Scan for KVMs
-find "${DIR}" -name '*.xml' -exec grep mapIdentifier= '{}' ';' |
-		sed -a -e 's/^.*mapIdentifier=\"//g' -e 's/\".*$/ /g' | sort -u > $KVMOUTFILE
-
-KLIST=`cat $KVMOUTFILE | sort -u`
+KLIST=`getKVMs | sort -u`
 debug "KLIST= $KLIST"
 for k in $KLIST; do 
 
     echo "thisKVM: ${k}"
-    KVM="$(getKeyValueMap ${k})" 
+    KVM="$(getKVM ${k})" 
 
     KDIR="${kvmDIR}/${k}";
     [[ ! -d ${KDIR} ]] && mkdir "${KDIR}";
 
+    # TODO Nedd a more universal test for finding content
     CFG=""; [[ `echo "$k" | grep "PTT-"` ]] && CFG=true;
     [[ ${CFG} ]] && [[ -d ${KDIR} ]] && echo "$KVM" > $KDIR/$k.json;
 done
 cd -
 
-
-keyvaluemap_name="${ARGS[1]}"
-names[0]="keyvaluemap_name"
-debug "Status Code [$STATUS_CODE] response is: \n$RESPONSE"
+# Is any of this used??
+# keyvaluemap_name="${ARGS[1]}"
+# names[0]="keyvaluemap_name"
+# debug "Status Code [$STATUS_CODE] response is: \n$RESPONSE"

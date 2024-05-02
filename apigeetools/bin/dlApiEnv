@@ -56,17 +56,12 @@ getkvms() {
 	kvmDIR="$DIR/kvms"
 	[[ ! -d ${kvmDIR} ]] && mkdir ${kvmDIR}
 
-	# Scan for KVMs
-	# find "${DIR}" -name '*.xml' -exec grep mapIdentifier= '{}' ';' |
-	# 		sed -a -e 's/^.*mapIdentifier=\"//g' -e 's/\".*$/ /g' | sort -u > $KVMOUTFILE
-	# getKeyValueMaps | sort -u > $KVMOUTFILE
-
-	KLIST=`getKeyValueMaps | sort -u`
+	KLIST=`getKVMs | sort -u`
 	debug "KLIST= $KLIST"
 	for k in $KLIST; do 
 
 	    echo "thisKVM: ${k}"
-	    KVM="$(getKeyValueMap ${k})" 
+	    KVM="$(getKVM ${k})" 
 
 	    KDIR="${kvmDIR}/${k}";
 	    [[ ! -d ${KDIR} ]] && mkdir "${KDIR}";
@@ -170,13 +165,13 @@ echo -en "\n\n\t***** Downloading the ${ENV} environment to directory ${APISDIR}
 
 if [[ ! -d ${APISDIR} && ! -d ${APISDIR}/apis ]] ; then
 	echo -en '${APISDIR}= '${APISDIR}' is not found [404]'
-	exit
+	exit 1
 else
 	cd ${APISDIR}; cd ..
 	APISDIR=`pwd`
 	BZF="${APISDIR}/${ORG}-${ENV}.bkp.zip"
 	echo -en "Backing up: ${APISDIR}/* to ${BZF} \n\n"
-	zip -r ${APISDIR}/${ORG}-${ENV}.bkp.zip ${APISDIR}
+	zip -qr ${APISDIR}/${ORG}-${ENV}.bkp.zip ${APISDIR}
 	echo "done $?"
 	[[ $? != 0 ]] && exit
 	mv ${APISDIR}/${ORG}-${ENV}.bkp.zip ..
@@ -189,23 +184,23 @@ getapiproxies ${APISDIR}
 
 echo -en "\n\tGetting SharedFlows\n"
 # Scan for SharedFlows used by this proxy
-# getsharedflows ${APISDIR}
-# # TODO? loop to check SFs for embedded SFs
+getsharedflows ${APISDIR}
+# TODO? loop to check SFs for embedded SFs
 
-# # Scan for KVMs and download info
-# echo -en "\n\tGetting KVMS\n"
-# getkvms ${APISDIR}
+# Scan for KVMs and download info
+echo -en "\n\tGetting KVMS\n"
+getkvms ${APISDIR}
 
-# # Scan for TargetServers & download
-# echo -en "\n\tGetting TargetServers\n"
-# gettargets ${APISDIR}
+# Scan for TargetServers & download
+echo -en "\n\tGetting TargetServers\n"
+gettargets ${APISDIR}
 
-# # Scan for VirtualHosts & download
-# echo -en "\n\tGetting VirtualHosts\n"
-# getvhosts ${APISDIR}
+# Scan for VirtualHosts & download
+echo -en "\n\tGetting VirtualHosts\n"
+getvhosts ${APISDIR}
 
-# # Scan for 'caches' & download
-# # TODO
+# Scan for 'caches' & download
+# TODO
 
 echo -en "\n\n\t************ End of processing `basename $0` **********\n\n\n"
 

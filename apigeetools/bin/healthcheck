@@ -1,0 +1,122 @@
+#!/bin/bash
+
+# Default values
+DEFAULT_ORG="default_org"
+DEFAULT_ENV="default_env"
+DEFAULT_APIGEE_HOST="api-enterprise.apigee.com/v1"
+
+# Function to display usage
+usage() {
+    echo "Usage: $0 [-a <api_name>] [-e <env_name>] [-n] [-o <org_name>] [-p <password>] [-u <username>]"
+    echo "Options:"
+    echo "  -a <api_name>      API name"
+    echo "  -e <env_name>      Apigee environment name"
+    echo "  -n                 Include -n option in curl calls"
+    echo "  -o <org_name>      Apigee organization name"
+    echo "  -p <password>      Password (if -n option is not provided)"
+    echo "  -u <username>      Username (if -n option is not provided)"
+    exit 1
+}
+
+# Export variable if not already set
+export_variable() {
+    var_name=$1
+    var_value=$2
+    if [ -z "${!var_name}" ]; then
+        export "$var_name"="$var_value"
+    fi
+}
+
+# Parse command-line options
+while getopts ":a:e:no:pu:" opt; do
+    case ${opt} in
+        a )
+            API_NAME=$OPTARG
+            ;;
+        e )
+            ENV=$OPTARG
+            ;;
+        n )
+            INCLUDE_N_OPTION=true
+            ;;
+        o )
+            ORG=$OPTARG
+            ;;
+        p )
+            PASSWORD=$OPTARG
+            ;;
+        u )
+            USERNAME=$OPTARG
+            ;;
+        \? )
+            echo "Invalid option: $OPTARG" 1>&2
+            usage
+            ;;
+        : )
+            echo "Invalid option: $OPTARG requires an argument" 1>&2
+            usage
+            ;;
+    esac
+done
+shift $((OPTIND -1))
+
+# Read environment variables
+export_variable "ORG" "$ORG"
+export_variable "ENV" "$ENV"
+export_variable "API_NAME" "$API_NAME"
+export_variable "USER_NAME" "$DEVELOPER"
+
+# Check if -n option is provided
+if [[ "$*" == *"-n"* ]]; then
+    INCLUDE_N_OPTION=true
+fi
+
+# If -n option is provided, don't require the password
+if [ "$INCLUDE_N_OPTION" = true ]; then
+    PASSWORD=""
+fi
+
+# Check if all required options are provided
+missing_vars=0
+if [ -z "$API_NAME" ]; then
+    echo "API name is required"
+    missing_vars=$((missing_vars + 1))
+fi
+if [ "$INCLUDE_N_OPTION" = false ]; then
+    if [ -z "$USER_NAME" ]; then
+        echo "Developer username is required"
+        missing_vars=$((missing_vars + 1))
+    fi
+    if [ -z "$PASSWORD" ]; then
+        echo "Password is required"
+        missing_vars=$((missing_vars + 1))
+    fi
+fi
+
+if [ "$missing_vars" -gt 0 ]; then
+    usage
+fi
+
+# Set APIGEE_HOST
+if [ -z "$APIGEE_HOST" ]; then
+    APIGEE_HOST="$DEFAULT_APIGEE_HOST"
+fi
+
+# Prepare curl options
+curl_options=""
+if [ "$INCLUDE_N_OPTION" = true ]; then
+    curl_options="-n"
+fi
+
+# Authenticate and get access token
+# if [ "$INCLUDE_N_OPTION" = true ]; then
+#     ACCESS_TOKEN=$(curl $curl_options -s -X POST "${APIGEE_HOST}/organizations/${ORG}/environments/${ENV}/token" | jq -r '.access_token')
+# else
+#     ACCESS_TOKEN=$(curl $curl_options -s -X POST -u "${USER_NAME}:${PASSWORD}" "${APIGEE_HOST}/organizations/${ORG}/environments/${ENV}/token" | jq -r '.access_token')
+# fi
+
+# Get API health status
+# API_HEALTH=$(curl $curl_options -s -X GET "${APIGEE_HOST}/organizations/${ORG}/environments/${ENV}/apis/${API_NAME}/health" -H "Authorization: Bearer ${ACCESS_TOKEN}" | jq -r '.health')
+API_HEALTH=$(curl $curl_options -s -X GET "${APIGEE_HOST}/organizations/${ORG}/environments/${ENV}/apis/${API_NAME}/health" | jq -r '.health')
+
+echo "API Health Status for ${API_NAME}: ${API_HEALTH}"

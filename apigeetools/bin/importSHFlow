@@ -5,9 +5,9 @@
 # imports a sharedflow bundle
 #
 # usage:
-#   import api [zip_file]
-#       api the name of the api
-#       zip_file the name of the apiproxy zip file (default is ./apiproxy.zip)   
+#   import sharedflow zip_file revision
+#       sharedflow the name of the sharedflow
+#       zip_file the name of the sharedflow zip file (default is ./apiproxy.zip)   
 
 USAGE="shflow [zip_file] # 'import' a .zip file as the name 'shflow'"
 TOOLSDIR="${APITOOLS_HOME}"
@@ -22,7 +22,7 @@ if [[ ! -f "${SHFPROXYZIP}" ]] ; then
 	fail "${SHFPROXYZIP} File Not Found"
 fi
 
-URL="${MOST}/o/${ORGANIZATION}/apis?action=import&name=${SHFNAME}"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/sharedflows?action=import&name=${SHFNAME}"
 debug "importing SHF ${SHFNAME} via ${URL}"
 
 FRMT=json

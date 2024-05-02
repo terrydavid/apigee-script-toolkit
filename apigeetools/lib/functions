@@ -43,11 +43,11 @@ usage() {
 	2=default; 3=1+2; 4=3+functions; 5=delete 9=help" >&2
 	echo "    -e: set ENVIRONMENT" >&2
 	echo "    -h print this Help message" >&2
-	echo "    -j input/output data in Json format" >&2
+	echo "    -j input/output data in Json format (default)" >&2
 	echo "    -l execute a %true% deLete" >&2
 	echo "    -o: set ORGANIZATION" >&2
 	echo "    -v display Version information" >&2
-	echo "    -x input/output data in Xml format" >&2
+	echo "    -x input/output data in Xml format (future)" >&2
 }
 
 usefail() {
@@ -101,18 +101,18 @@ loadConfig() {
 
 checkArgs() {
 	[[ $DEBUG -eq 4 ]] && debug "[checkArgs]: ARGS= $ARGS"
-	# [[ "${ARGS[0]}_" == "_" ]] && usefail "Missing Argument(s)"
-	# [[ "$1_" == "_" ]] && usefail "Missing Argument(s)"
+	# This should identify a specific count of ARGS
 	loadConfig
 }
 
 debugOpts () {
 	case $DEBUG in 
-		0) echo -n "" > $HOME/.curlrc ; export DEBUG=0 ;;
-		1) echo -n "" > $HOME/.curlrc ; export DEBUG=1 ;;
-		2) echo "-v" > $HOME/.curlrc ; export DEBUG=2 ;;
-		3) echo -n "" > $HOME/.curlrc ; export DEBUG=3 ;;
-		4) echo -n "" > $HOME/.curlrc ; export DEBUG=4 ;;
+		# 0-4) ;;
+		0) export DEBUG=0 ;;
+		1) export DEBUG=1 ;;
+		2) export DEBUG=2 ;;
+		3) export DEBUG=3 ;;
+		4) export DEBUG=4 ;;
 		5) export DEBUG=5 ; echo "5 is special true DELETE code" ;;
 		7) echo "--trace" > $HOME/.curlrc ;;
 		8) echo "--trace-ascii -" > $HOME/.curlrc ;;
@@ -140,7 +140,7 @@ parseCommandline() {
 	while (( "$#" )); do
 		case "$1" in
 
-		-d[1-9]|--debug)
+		-d[0-9]|--debug)
 			
 			echo "" > $HOME/.curlrc
 			DEBUG=0
@@ -149,7 +149,6 @@ parseCommandline() {
 			[[ $DEBUG -eq 4 ]] && debug "\${1:2:3}=${1:2:3}"
 			if [[ ${1:2:3} = [0-9] ]]; then
 				FLAGARG=${1:2:3}
-				[[ $DEBUG -eq 4 ]] && debug "PCL[-d]: FLAGARG=${FLAGARG}"
 				NUMOPTS+=1
 				shift 				
 
@@ -163,15 +162,15 @@ parseCommandline() {
 				echo "Error: Argument for $1 is missing" >&2
 			fi
 
-			if [[ "$FLAGARG" ]]; then
-				export DEBUG=${FLAGARG}
-				[[ $DEBUG -eq 2 ]] && echo '-v' > $HOME/.curlrc
-			fi
+			[[ $DEBUG -eq 4 ]] && debug "PCL[-d[1]]: FLAGARG=${FLAGARG}; DEBUG=$DEBUG; .curlrc=`cat $HOME/.curlrc` "
+			[[ "$FLAGARG" != "" ]] && export DEBUG=${FLAGARG}
+			[[ "$DEBUG" -ge 3 ]] && echo '-v' > $HOME/.curlrc
+
+			debug "PCL[-d[2]]: FLAGARG=${FLAGARG}; DEBUG=$DEBUG; .curlrc=`cat $HOME/.curlrc` "
 
 			debugOpts
 
-			# [[ $DEBUG -ge 2 ]] && 
-			debug "PCL[-d]: FLAGARG=$FLAGARG "
+			[[ $DEBUG -ge 3 ]] && debug "PCL[-d[3]]: FLAGARG=$FLAGARG; DEBUG=$DEBUG; .curlrc=`cat $HOME/.curlrc` "
 			;;
 
 		-e) # set environment
@@ -203,6 +202,7 @@ parseCommandline() {
 			;;
 
 		-l) # set TRUE Delete
+			# export TRUEDEL=true
 			export DEBUG=5 # Special option for "True" delete
 			NUMOPTS+=1
 			shift
@@ -274,7 +274,7 @@ rest() {
 
 	if [ "$FRMT" != "xml" -a "$FRMT" != "json" ] ; then
 		FRMT=json
-		[[ $DEBUG -eq 4 ]] && debug "rest: No FRMT [$FRMT] - setting to 'json'"
+		[[ $DEBUG -ge 4 ]] && debug "rest: No FRMT [$FRMT] - setting to 'json'"
 	fi
 	
 	local ACCPT="application/$FRMT"
@@ -298,9 +298,11 @@ rest() {
 
 	[[ $DEBUG -eq 4 ]] && debug "rest[2] VERB=$VERB; URL=$URL; Headers: $HDRS ; curlOPTS: $curlOPTS ; ~/.curlrc = [`cat $HOME/.curlrc`]"
 
-	SHOWCURL="false"
-	[[ $DEBUG -ge 1 ]] && SHOWCURL=true
-	[[ $DEBUG -ge 4 ]] && debug "rest[4] SHOWCURL= $SHOWCURL ; DEBUG= $DEBUG"
+	SHOWCURL=false
+	[[ $DEBUG -eq 1 ]] && SHOWCURL=true
+	[[ $DEBUG -ge 3 ]] && SHOWCURL=true
+	# [[ $DEBUG -eq 2 ]] && SHOWCURL=false
+	[[ $DEBUG -ge 2 ]] && debug "rest[4] SHOWCURL= $SHOWCURL ; DEBUG= $DEBUG"
 
 	# MAKE THE CURL CALL!
 
@@ -310,7 +312,7 @@ rest() {
 	# .netrc version
 	local output=$(
 		set -
-		$SHOWCURL && set -x
+		[[ $SHOWCURL != false ]] && set -x
 		curl -nsS -X ${VERB} ${URL} -HAccept:${ACCPT} ${HDRS} -w "\n%{http_code}\n" ${curlOPTS}
 		set -
 	)
@@ -319,21 +321,19 @@ rest() {
 	echo "" >~/.curlrc
 
 	if [ "$output" != "" ] ; then
-		[[ $DEBUG -ge 4 ]] && debug "[rest]: Output= \n$output"
+		[[ $DEBUG -ge 2 ]] && debug "[rest]: Output= \n$output"
 
-		STATUS_CODE=`echo "$output" | tail -n 1`
+		export STATUS_CODE=`echo "$output" | tail -n 1`
 		rawRESPONSE=`echo "$output" | sed '$ d'`
 
 		case $STATUS_CODE in
 			"200"|"201")  # TODO: Need to do this as a "SUCCESS_CODES" list
 				if [ "$FRMT" = "json" ] && [ "$rawResponse" != "" ] ; then
-					RESPONSE=`echo "$rawRESPONSE" | "$TOOLSDIR/lib/jp.sh"`
-					[[ $DEBUG -ge 4 ]] && debug "rest: \n\tRESPONSE= \n$RESPONSE\n\t"
+					export RESPONSE=`echo "$rawRESPONSE" | "$TOOLSDIR/lib/jp.sh"`
 				else
-					RESPONSE=`echo "$rawRESPONSE"`
-					[[ $DEBUG -ge 4 ]] && debug "rest: \n\tRESPONSE= \n$RESPONSE\n\t"
+					export RESPONSE=`echo "$rawRESPONSE"`
 				fi
-				[[ $DEBUG -ge 4 ]] && debug "CURL call Succeeded: "
+				[[ $DEBUG -ge 4 ]] && debug "rest: \n\tRESPONSE= \n$RESPONSE\n\t STATUS_CODE=$STATUS_CODE"
 				;;
 
 			*) 	echo $output > ~/tmp/fail.out
@@ -343,11 +343,6 @@ rest() {
 	else
 		fail "CURL call failed: Output= {$output} N/A"
 	fi
-
-	[[ $DEBUG -ge 3 ]] && debug "rest: \n\tRawOutput= \n$output\n\t"
-
-	# echo "$STATUS_CODE"
-	# return "$STATUS_CODE"
 }
 
 http_get() {
@@ -360,6 +355,7 @@ http_post() {
 
 http_delete() {
 	VERB=GET
+	# [[ $TRUEDEL -eq true ]] && VERB=DELETE
 	[[ "$DEBUG" == "5" ]] && VERB=DELETE
 	[[ "$DEBUG" == "5" ]] && debug "http_delete: $VERB $1"
 	rest $VERB $@

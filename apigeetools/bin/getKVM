@@ -18,7 +18,7 @@
 
 #set -e
 
-USAGE="environment keyvaluemap_name"
+USAGE="keyvaluemap_name"
 TOOLSDIR="${APITOOLS_HOME}"
 . "${APITOOLS_HOME}/lib/functions"
 parseCommandline "$@"
@@ -37,7 +37,6 @@ URL="${APIGEE_HOST}/o/${ORGANIZATION}/environments/$ENVIRONMENT/keyvaluemaps/$ke
 http_get "$URL"
 
 debug "Status Code [$STATUS_CODE]"
-[[ $DEBUG -ge 3 ]] && debug "response is: \n$RESPONSE"
 
-echo $RESPONSE 
+echo $RESPONSE | jq .
 

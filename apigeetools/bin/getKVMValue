@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# getKVMValue
+# 	gets a KVM value for the keyname using a JSON parse phrase
+#
+#   Scoped to environment:
+#       ${APIGEE_HOST}/o/{org_name}/e/{env_name}/keyvaluemaps
+#
+
+#set -e
+
+USAGE="keyvaluemap_name key_value_to_retrieve"
+TOOLSDIR="${APITOOLS_HOME}"
+. "${APITOOLS_HOME}/lib/functions"
+parseCommandline "$@"
+checkArgs 3
+
+keyvaluemap_name="${ARGS[0]}"
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/keyvaluemaps/$keyvaluemap_name"
+# set -x 
+http_get "$URL" 
+
+debug "ARGS= | jq .${ARGS[1]}" 
+debug "STATUS_CODE [$STATUS_CODE] with RESPONSE is: "
+echo "$RESPONSE" | jq .${ARGS[1]}
+set -

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# getTargetServer
+# getTrustStore
 #
 # lists the virtual hosts defined for an environment
 #
@@ -9,17 +9,13 @@
 
 #set -e
 
-USAGE="environment"
+USAGE="truststore"
 TOOLSDIR="${APITOOLS_HOME}"
-
-. "$TOOLSDIR/config/global"
 . "$TOOLSDIR/lib/functions"
-
 parseCommandline "$@"
-loadConfig "${ARGS[0]}"
 
-URL="/o/${ORGANIZATION}/e/${ENVIRONMENT}/keystores"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/keystores/${ARGS[0]}"
 
-getApigee "HOST_ALIAS" "$URL"
+http_get "$URL"
 
 echo "$RESPONSE"
