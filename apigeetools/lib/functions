@@ -29,7 +29,7 @@ debug() {
 
 fail() {
 	local RETVAL=$2
-	if [ "$RETVAL" = "" ]; then
+	if [ "$RETVAL" == "" ]; then
 		RETVAL=1
 	fi
 	error "$1"
@@ -282,7 +282,7 @@ rest() {
 
 	[[ $DEBUG -ge 3 ]] && debug "rest[1] VERB=$VERB; URL=$URL; Headers: $HDRS ; curlOPTS: $curlOPTS ; ~/.curlrc = [`cat $HOME/.curlrc`]"
 
-	[[ $DEBUG -ge 6 ]] && set -x
+	[[ $DEBUG -ge 4 ]] && set -x
 
 	case $VERB in
 		"DELETE") ;;
@@ -321,28 +321,27 @@ rest() {
 	echo "" >~/.curlrc
 
 	if [ "$output" != "" ] ; then
-		[[ $DEBUG -ge 2 ]] && debug "[rest]: Output= \n$output"
+		[[ $DEBUG -ge 4 ]] && debug "[rest]: Output= \n$output"
 
 		export STATUS_CODE=`echo "$output" | tail -n 1`
 		rawRESPONSE=`echo "$output" | sed '$ d'`
 
-		case $STATUS_CODE in
-			"200"|"201")  # TODO: Need to do this as a "SUCCESS_CODES" list
-				if [ "$FRMT" = "json" ] && [ "$rawResponse" != "" ] ; then
-					export RESPONSE=`echo "$rawRESPONSE" | "$TOOLSDIR/lib/jp.sh"`
-				else
-					export RESPONSE=`echo "$rawRESPONSE"`
-				fi
-				[[ $DEBUG -ge 4 ]] && debug "rest: \n\tRESPONSE= \n$RESPONSE\n\t STATUS_CODE=$STATUS_CODE"
+		case ${STATUS_CODE} in
+			"200"|"201")  
+				# TODO: Need to do this as a "SUCCESS_CODES" list
+				export RESPONSE="${rawRESPONSE}"
 				;;
 
-			*) 	echo $output > ~/tmp/fail.out
-				fail "CURL call failed: STATUS_CODE= [$STATUS_CODE]"
+			*) 	export RESPONSE="${rawRESPONSE}"
+				# fail "CURL call failed: STATUS_CODE= [${STATUS_CODE}]" 1  
+				echo "CURL call failed: STATUS_CODE= [${STATUS_CODE}]"
 				;;
 		esac
 	else
-		fail "CURL call failed: Output= {$output} N/A"
+		# fail "CURL call failed: Output= ${output} N/A"
+		echo "CURL call failed: Output= ${output} N/A"
 	fi
+	[[ $DEBUG -ge 4 ]] && debug "rest: \nSTATUS_CODE=${STATUS_CODE} \n\tRESPONSE= \n${RESPONSE}\n"
 }
 
 http_get() {
@@ -350,7 +349,8 @@ http_get() {
 }
 
 http_post() {
-	return `rest POST $@`
+	# return `rest POST $@`
+	rest POST $@
 }
 
 http_delete() {

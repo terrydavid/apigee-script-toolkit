@@ -25,14 +25,12 @@ URL="${APIGEE_HOST}/o/${ORGANIZATION}/sharedflows/${SFNAME}/revisions/${REV}?for
 
 debug "Downloading SharedFlow ${APISDIR}/${SFName}-${REV}.zip via ${URL}"
 
-FRMT=json
-
 #HDRS="-H Content-Type:application/octet-stream"
 # No need for version # if using git
 if [ "$REV" != "" ] ; then
-	curlOPTS=" -o ${APISDIR}/shFlows/${SFNAME}-${REV}.zip "
+	curlOPTS=" -o ${APISDIR}/../shFlows/${SFNAME}-${REV}.zip "
 else
-	curlOPTS=" -o ${APISDIR}/shFlows/${SFNAME}.zip "
+	curlOPTS=" -o ${APISDIR}/../shFlows/${SFNAME}.zip "
 fi
 
 debug "curlOPTS= $curlOPTS"

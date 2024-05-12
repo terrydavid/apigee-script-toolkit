@@ -17,6 +17,8 @@ checkArgs 1
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/caches"
 
- http_get $URL
+http_get $URL
 
- echo "$RESPONSE"
+for a in $RESPONSE ; do printf "%b\n" $a | sed -e 's/[",\[]//g' -e 's/\]//g' ; done
+
+# echo "$RESPONSE"

@@ -44,7 +44,8 @@ ZIPQUIET=-v
 [ "_$DEBUG" == "_1" ] && ZIPQUIET=-v	
 
 debug "creating $ZIPFILE from $APIDIR"
-cd "$APIDIR" && zip $ZIPQUIET -r "$APINAME" apiproxy -x "*/.svn/*" "*~"
+cd "$APIDIR" 
+zip $ZIPQUIET -r "$APINAME" apiproxy -x "*/.svn/*" "*~"
 
 
 

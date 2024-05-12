@@ -1,0 +1,30 @@
+#!/bin/bash
+ 
+# deployLatestSF
+#
+# deploys the latest version of a Shared Flow to an environment
+#
+# usage:
+#   deployLatestSF sharedflow_name
+
+#set -e
+
+USAGE="sharedflow_name"
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/lib/functions"
+parseCommandline "$@"
+checkArgs 1 1
+
+SFNAME=${ARGS[0]}
+if [ "$SFNAME" == "" ]; then
+	usefail "no API name specified"
+fi
+
+deployed=`getSFRevisionDeployed ${OPTS[@]} "$SFNAME"`
+latest=`getSFRevisionLatest ${OPTS[@]} "$SFNAME"`
+
+if [ "$deployed" == "$latest" ]; then
+	echo "Revision $deployed of SF $SFNAME is already deployed to environment $ENVIRONMENT"
+else 
+	deploySF ${OPTS[@]} "$SFNAME" $deployed
+fi

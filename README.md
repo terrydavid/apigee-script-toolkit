@@ -17,7 +17,8 @@ Source of record for all code, configurations, management scripts, etc. are loca
 #
 # set -x
 
-[[ -f "${HOME}/apigee/README.md" ]] && export APITOOLS_HOME="${HOME}/apigee"
+# APITOOLS_HOME should point to the "apigeetools" subdirectory of the repo.
+[[ -f "${HOME}/apigee/../README.md" ]] && export APITOOLS_HOME="${HOME}/apigee"
 
 [[ "_$1" == "_" ]] && exit 1
 
