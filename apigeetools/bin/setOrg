@@ -25,7 +25,7 @@ newDev=$3
 if [ $newOrg ] ; then
 	export ORGANIZATION="$newOrg"
 else 
-	echo "newOrg newEnv newDev  - Did you 'source || . ' me?"
+	echo "$newOrg $newEnv $newDev  - Did you 'source || . ' me?"
 fi
 
 [ $newEnv ] && {

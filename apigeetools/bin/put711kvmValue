@@ -1,0 +1,34 @@
+#!/bin/bash
+
+USAGE="keyvaluemap_name kvm_key kvmkey_value"
+TOOLSDIR="${APITOOLS_HOME}"
+. "${APITOOLS_HOME}/lib/functions"
+parseCommandline "$@"
+
+# OLD was "ARGS[]" 
+MAPNAME="${PPRAMS[0]}"
+KVMKEY="${PPRAMS[1]}"
+KVMVAL="${PPRAMS[2]}"
+
+KEYVAL="{\"name\":\"$KVMKEY\",\"value\":\"$KVMVAL\"}"
+
+debug "[p7kV]: MAPNAME=$MAPNAME; KVMKEY=$KVMKEY; KVMVAL=$KVMVAL"
+
+# Have to POST if no value and PUT if exists. PUT needs ${KVMKEY} in URL
+# [[ $DEBUG -ge 1 ]] && 
+  set -x
+curl -w '\n[%{http_code}]\n' -L -X POST \
+   "${APIGEE_HOST}/organizations/${ORGANIZATION}/environments/${ENVIRONMENT}/keyvaluemaps/${MAPNAME}/entries" \
+  -H "Authorization: Bearer ${MyTOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "${KEYVAL}" # | tail -1
+
+if [[ $STATUS_CODE -ne 200 ]] ; then
+  curl -w '\n[%{http_code}]\n' -L -X PUT \
+    "${APIGEE_HOST}/organizations/${ORGANIZATION}/environments/${ENVIRONMENT}/keyvaluemaps/${MAPNAME}/entries/${KVMKEY}" \
+    -H "Content-Type:application/json" \
+    -H "Authorization: Bearer ${MyTOKEN}" \
+    -d "${KEYVAL}" # | tail -1
+fi
+set -
+debug "p7kV: SC= $STATUS_CODE"

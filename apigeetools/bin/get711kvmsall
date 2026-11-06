@@ -1,0 +1,46 @@
+#!/bin/bash
+
+#
+# 1. set711e (mod envs)
+# 2. get711KVMaps > .txt
+# 3. get711KVMNames > .keys
+# 4. get711KVMValue > .kvm
+#
+# getKVMValue
+# 	gets a KVM value for the keyname
+#
+#Scoped to environment:
+#  https://api.enterprise.apigee.com/o/{org_name}/environments/{env_name}/keyvaluemaps
+#
+
+#set -e
+
+USAGE="environment keyvaluemap_name"
+TOOLSDIR="${APITOOLS_HOME}"
+. "${APITOOLS_HOME}/lib/functions"
+parseCommandline "$@"
+checkArgs 1 1
+FRMT="json"
+
+ENVIRON=${ARGS[0]:-$ENVIRONMENT}
+debug "get711kvmsall $ENVIRON"
+
+get711KVMaps ${ENVIRON}
+
+for n in `cat ${ENVIRON}-711-map-names.txt` ; do
+    set -x
+    get711KVMNames -i ${ENVIRON} ${n}
+    set -
+done > ${n}-${ENVIRON}-711.keys
+cat ${n}-${ENVIRON}-711.keys
+
+for n in `cat ${ENVIRON}-711-map-names.txt` ; do
+    echo "KVMNAME= ${n}"
+    : > ${n}-${ENVIRON}-711.kvm
+    for k in `cat ${n}-${ENVIRON}-711.keys` ; do
+      val=`get711KVMValue -i ${ENVIRON} ${n} ${k}`
+      debug "get711KVMValue -i ${ENVIRON} ${n} ${k} ${val}"
+      echo "$k;$val" >> ${n}-${ENVIRON}-711.kvm # 2>/dev/null
+    done
+    cat ${n}-${ENVIRON}-711.kvm
+done 

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+curl -w '\n[%{http_code}]\n' -X POST https://apigee.googleapis.com/v1/organizations/pj-apigee-uat/environments/stage/keyvaluemaps/fp-im-speedway-migration-credentials/entries -H "Authorization: Bearer $MyTOKEN"  -H 'Content-Type: application/json' -d '{"name":"k2","value":"v3,v4"}
+
+[[ $? ]] && \
+curl -w '\n[%{http_code}]\n' -X PUT https://apigee.googleapis.com/v1/organizations/pj-apigee-uat/environments/stage/keyvaluemaps/fp-im-speedway-migration-credentials/entries/k2 -H "Authorization: Bearer $MyTOKEN"  -H 'Content-Type: application/json' -d '{"name":"k2","value":"v3,v4"}'
+
+#Output
+#{
+#  "name": "k2",
+#  "value": "v3,v4"
+#}
+# [200]
+
+

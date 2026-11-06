@@ -1,0 +1,62 @@
+#!/bin/bash
+
+#set +e
+# 1. set711e (mod envs)
+# 2. get711KVMaps > .txt
+# 3. get711KVMNames > .keys
+# 4. get711KVMValue > .kvm
+
+#set -x
+export APITOOLS_HOME="$APIGEE_HOME"
+
+USAGE="organization environment"
+TOOLSDIR="${APITOOLS_HOME}"
+. "${APITOOLS_HOME}/lib/functions"
+parseCommandline "$@"
+# checkArgs 2 2
+
+ORGAN="${ARGS[0]:-$ORGANIZATION}"
+ENVIRON="${ARGS[1]:-$ENVIRONMENT}"
+debug "ORGAN= $ORGAN; ENVIRON= $ENVIRON"
+
+export MyTOKEN=`get711token`
+debug "MyTOKEN= $MyTOKEN"
+
+[[ $ORGAN && $ENVIRON ]] && {
+
+    export APISDIR="$HOME/Projects/711/apis"
+
+    # 7ep. https://7-eleven-7ep-infra-saml.apigee.com/ws/proxy
+    [[ $ORGAN == 7ep ]] && {
+        export DEVELOPER="tdav3146@7-11.com"
+        export ORGANIZATION="7ep"
+        export ORG="7ep"
+        export HOST_ALIAS="api.enterprise"
+        export DOMAIN=".apigee.com"
+        export ENVIRONMENT=$ENVIRON
+        export ENV=$ENVIRON
+    }
+
+    # seveneleven. token: https://7-eleven-saml.apigee.com/ mgmtSrvr: https://api.enterprise.apigee.com; kvmex: https://api[-$ENVIRON].7-eleven.com
+    [[ $ORGAN == 711 ]] && {
+        export DEVELOPER="terry.david@7-11.com"
+        export ORGANIZATION="seveneleven"
+        export ORG="seveneleven"
+        export HOST_ALIAS="api.enterprise"
+        export DOMAIN=".apigee.com"
+        export ENVIRONMENT=$ENVIRON
+        export ENV=$ENVIRON
+    }
+
+    export SCHEME="https"
+    export PORT=""
+    export FRMT="json"
+
+    export APIGEE_HOST="${SCHEME}://${HOST_ALIAS}${DOMAIN}${PORT}/v1"
+    export MOST="$APIGEE_HOST"
+
+    listevars
+
+    echo "TODO: create a config file for each ApiG instance and 1 command to switch"
+}
+set -

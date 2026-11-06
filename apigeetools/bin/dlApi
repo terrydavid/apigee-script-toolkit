@@ -23,7 +23,7 @@ FNAME="${ARGS[2]}"
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis/${APINAME}/revisions/${REV}?format=bundle"
 
-debug "Downloading API ${APINAME}-${REV}.zip via ${URL}"
+debug "\nDownloading API ${APINAME}-${REV}.zip via ${URL}"
 
 FRMT=json
 
@@ -38,4 +38,4 @@ fi
 debug "curlOPTS= $curlOPTS"
 http_get "$URL"
 
-echo -e "\tDownloaded version $REV of API $APINAME to ${APISDIR}/${APINAME}-${REV}.zip"
+debug "\n\tDownloaded version $REV of API $APINAME to ${APISDIR}/${APINAME}-${REV}.zip"

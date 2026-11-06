@@ -24,29 +24,35 @@ TOOLSDIR="${APITOOLS_HOME}"
 parseCommandline "$@"
 checkArgs 2
 
-[[ $DEBUG -ge 3 ]] && set -x
+[[ $DEBUG -ge 4 ]] && set -x
 
 kvm_name="${ARGS[0]}"
 kvm_keys_file="${ARGS[1]}"
 
 FRMT="json"
 
-URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/keyvaluemaps"
+URL="${APIGEE_HOST}/organizations/${ORGANIZATION}/environments/${ENVIRONMENT}/keyvaluemaps"
 
-if [[ ! -f ${kvm_keys_file} ]] ; then 
-	kvm_keys_file="${kvm_name}.json"
-	echo -en "{ \"name\" : \"${kvm_name}\", \"entry\" : [ { \"name\" : \"${ARGS[0]}-APINAME\",  \"value\" : \"dummy1stEntry\" } ] }" > ${kvm_keys_file}
-fi
+# if [[ ! -f ${kvm_keys_file} ]] ; then 
+# 	# kvm_keys_file="${kvm_name}.json"
+# 	# echo -en "{ \"name\" : \"${kvm_name}\", \"entry\" : [ { \"name\" : \"${ARGS[0]}-APINAME\",  \"value\" : \"dummy1stEntry\" } ] }" > ${kvm_keys_file}
+# fi
 
-LEN=`cat ${kvm_keys_file} | wc -c`
-LEN=`echo "$LEN" | trims`
+curlOPTS="-d {\"name\":\"$kvm_name\",\"encrypted\":true}"
+debug "curlOPTS= $curlOPTS"
 
-#HDRS="-HContent-Type:application/json -HContent-Length:${LEN}"
-HDRS="-HContent-Length:${LEN}"
-curlOPTS="--data-binary @${kvm_keys_file}"
+# LEN=`echo $curlOPTS | wc -c`
+# LEN=`echo "$LEN" | trims`
+# LEN=`cat ${kvm_keys_file} | wc -c`
+# LEN=`echo "$LEN" | trims`
+# debug "LEN: $LEN"
+
+HDRS="-HContent-Type:application/json"
+# HDRS="$HDRS -HContent-Length:${LEN}"
+# curlOPTS="--data-binary @${kvm_keys_file}"
 
 #KFNAME=`cat ${kvm_keys_file}`
-#debug " checking kvm file ${kvm_keys_file}: $KFNAME"
+#debug "Checking kvm file ${kvm_keys_file}: $KFNAME"
 
 http_post "$URL"
 

@@ -9,7 +9,7 @@
 
 #set -e
 
-USAGE="environment keyvaluemap_name"
+USAGE="keyvaluemap_name"
 TOOLSDIR="${APITOOLS_HOME}"
 . "${APITOOLS_HOME}/lib/functions"
 parseCommandline "$@"

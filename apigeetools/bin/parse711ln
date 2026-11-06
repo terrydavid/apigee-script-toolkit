@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+USAGE="environment keyvaluemap_name"
+TOOLSDIR="${APITOOLS_HOME}"
+. "${APITOOLS_HOME}/lib/functions"
+parseCommandline "$@"
+checkArgs 2 2
+FRMT="json"
+
+collecting=false
+buffer=""
+current_key=""
+
+# helper: trim leading whitespace only
+ltrim() {
+  local s="$1"
+  echo "${s#"${s%%[![:space:]]*}"}"
+}
+
+while IFS= read -r line; do
+  if $collecting; then
+    trimmed_line="$(ltrim "$line")"
+    buffer+=$'\n'"$trimmed_line"
+
+    if [[ "$trimmed_line" == -----END* ]]; then
+      echo "{ \"name\" : \"$current_key\", \"value\" : \"$buffer\" }"
+      collecting=false
+      buffer=""
+      current_key=""
+    fi
+    continue
+  fi
+
+  # skip empty lines
+  [[ -z "${line//[[:space:]]/}" ]] && continue
+
+  # skip lines without ';'
+  [[ "$line" != *";"* ]] && continue
+
+  key="${line%%;*}"
+  value="${line#*;}"
+
+  # trim key
+  key="$(echo "$key" | xargs)"
+
+  # trim leading spaces from value
+  value="$(ltrim "$value")"
+
+  # BEGIN block detection (after trim)
+  if [[ "$value" == -----BEGIN* ]]; then
+    collecting=true
+    current_key="$key"
+    buffer="$value"
+    continue
+  fi
+
+  # single-line case
+  # echo "KEYVAL={ \"name\" : \"$key\", \"value\" : \"$value\" }"
+  echo "{ \"name\" : \"$key\", \"value\" : \"$value\" }"
+
+done

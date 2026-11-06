@@ -3,8 +3,8 @@
 :vm <C-A> <esc>^i
 :im <C-E> <esc>$a
 :vm <C-E> <esc>$a
-:im <C-D> <esc>lxi
-:vm <C-D> <esc>lxv
+:im <C-D> <esc>xi
+:vm <C-D> <esc>xv
 :im <C-K> <esc>Da
 :vm <C-K> <esc>Dv
 :im <C-U> <esc>Ui

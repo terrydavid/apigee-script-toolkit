@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# 1. set711e (mod envs)
+# 2. get711KVMaps > .txt
+# 3. get711KVMNames > .keys
+# 4. get711KVMValue > .kvm
+#
+# getKVMValue
+# 	gets a KVM value for the keyname
+#
+#Scoped to environment:
+#  https://api.enterprise.apigee.com/o/{org_name}/environments/{env_name}/keyvaluemaps
+#
+
+#set -e
+USAGE="environment keyvaluemap_name"
+TOOLSDIR="${APITOOLS_HOME}"
+. "${APITOOLS_HOME}/lib/functions"
+parseCommandline "$@"
+checkArgs 2 2
+FRMT="json"
+
+ENVIRON=${ARGS[0]:-$ENVIRONMENT}
+KVMN=${ARGS[1]}
+debug "get711KVMNames $ENVIRON $KVMN"
+
+: > $KVMN-$ENVIRON-711.keys
+
+[[ $DEBUG -eq 3 || $DEBUG -eq 1 ]] && set -x
+output=`curl -w '\n [%{http_code}]\n' -L -H "Authorization: Bearer $MyTOKEN" "$APIGEE_HOST/organizations/$ORGANIZATION/environments/$ENVIRON/keyvaluemaps/$KVMN" | awk '/name/{print $3}' | sed -e 's/[\"\,]//g' > $KVMN-$ENVIRON-711.keys`
+set -
+debug "$KVMN-$ENVIRON-711.keys: -n`cat $KVMN-$ENVIRON-711.keys`"
+tail -1 $KVMN-$ENVIRON-711.keys

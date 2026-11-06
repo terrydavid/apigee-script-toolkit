@@ -1,0 +1,46 @@
+#!/bin/bash
+ 
+# deploy
+#
+# deploys the specified version of an sharedflow to an environment 
+#
+# usage:
+#   deploy  sharedflow version
+#		sharedflow the name of the api to deploy
+# 		version the version to deploy (use "latest" to deploy the latest version)
+
+#set -e
+
+USAGE="api version"
+TOOLSDIR="${APITOOLS_HOME}"
+. "$TOOLSDIR/lib/functions"
+parseCommandline "$@"
+
+SHFNAME=${ARGS[0]}
+if [ "$SHFNAME" = "" ]; then
+	usefail "No Sharedflow name specified"
+fi
+
+REVISION=${ARGS[1]}
+if [ "$REVISION" = "latest" ]; then
+	REVISION=`getSFRevisionLatest ${OPTS[@]} "$SHFNAME"`
+	if [ "$REVISION" = "" ]; then
+		fail "No revisions of SHF $SHFNAME in environment $ENVIRONMENT"
+	fi
+fi
+if [ "$REVISION" = "" ]; then
+	usefail "No version specified"
+fi
+
+export BODY="override=true"
+export curlOPTS="-d ${BODY}"
+export HDRS="-HContent-Type:application/x-www-form-urlencoded -HContent-Length:${#BODY}"
+
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/sharedflows/${SHFNAME}/revisions/${REVISION}/deployments"
+
+echo "Deploying revision $REVISION of SHF $SHFNAME in environment $ENVIRONMENT"
+http_post "$URL"
+
+if [ "$STATUS_CODE" != "200" ]; then
+	fail "Failed with status $STATUS_CODE: $RESPONSE"
+fi

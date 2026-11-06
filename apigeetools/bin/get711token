@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# 1. set711e (mod envs)
+# 2. get711KVMaps > .txt
+# 3. get711KVMNames > .keys
+# 4. get711KVMValue > .kvm
+
+export MyTOKEN=
+
+# Log in to gcloud
+if [ ! $MyTOKEN ] ; then
+    set -x
+    # export MyTOKEN=`
+    curl -v --location 'https://7-eleven-7ep-infra-saml.login.apigee.com/oauth/token' --header 'Content-Type: application/x-www-form-urlencoded;charset=utf-8' --header 'Authorization: Basic ***REMOVED***' --data-urlencode 'grant_type=password' --data-urlencode 'username=7ep_migration_machine_user@7-11.com' --data-urlencode 'password=***REMOVED***$UJLR_V432urB3BXjOE$' --data-urlencode 'response-type=token' | jq '.access_token' | sed 's/\"//g'
+    set -
+fi
+
+exit 
+
+[[ "${ORG}" == "711" ]] && \
+    curl --location 'https://7-eleven-saml.login.apigee.com/oauth/token' \
+        --header 'Content-Type: application/x-www-form-urlencoded;charset=utf-8' \
+        --header 'Authorization: Basic ***REMOVED***' \
+        --data-urlencode 'grant_type=password' \
+        --data-urlencode 'username=711_mig_machine_user@7-11.com' \
+        --data-urlencode 'password=***REMOVED***$UJLR_V432urB3BXjOE$' \
+        --data-urlencode 'response-type=token'
+
+[[ "${ORG}" == "7ep" ]] && \
+    curl --location 'https://7-eleven-7ep-infra-saml.login.apigee.com/oauth/token' \
+        --header 'Content-Type: application/x-www-form-urlencoded;charset=utf-8' \
+        --header 'Authorization: Basic ***REMOVED***' \
+        --data-urlencode 'grant_type=password' \
+        --data-urlencode 'username=7ep_migration_machine_user@7-11.com' \
+        --data-urlencode 'password=***REMOVED***$UJLR_V432urB3BXjOE$' \
+        --data-urlencode 'response-type=token'
+
+ 

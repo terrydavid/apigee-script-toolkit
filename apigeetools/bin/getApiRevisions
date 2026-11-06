@@ -13,7 +13,7 @@ TOOLSDIR="${APITOOLS_HOME}"
 parseCommandline "$@"
 checkArgs 1
 
-[[ $DEBUG -ge 3 ]] && set -x
+[[ $DEBUG -ge 5 ]] && set -x
 
 APINAME=${ARGS[0]}
 
@@ -21,11 +21,8 @@ if [ "$APINAME" = "" ]; then
 	usefail "No API name specified"
 fi
 
-# force json for now
-FRMT=json
-
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/apis/${APINAME}/revisions"
-debug "retrieving API ${APINAME} versions from ${URL}"
+debug "Retrieving API ${APINAME} versions from ${URL}"
 
 http_get "$URL"
 
@@ -33,9 +30,10 @@ if [ "$STATUS_CODE" != "200" ]; then
 	fail "$(basename "$0") failed with status $STATUS_CODE: $RESPONSE"
 fi
 
-debug "RESPONSE= \n$RESPONSE"
+[[ $DEBUG -ge 5 ]] && debug "RESPONSE= \n$RESPONSE"
 
 JLIST=`echo "$RESPONSE" | sed -e 's/\"\,//g' -e 's/\]//g' -e 's/\[//g'`
-debug "JLIST: \n$JLIST"
+[[ $DEBUG -ge 3 ]] && debug "JLIST: \n$JLIST"
+
 for a in $JLIST ; do printf "%b\n" $a | sed 's/\"//g' ; done
 

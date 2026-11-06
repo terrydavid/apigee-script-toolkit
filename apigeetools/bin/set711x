@@ -1,0 +1,42 @@
+#!/bin/bash
+
+export MyTOKEN=
+
+# Log in to gcloud
+if [ ! $MyTOKEN ] ; then
+    gcloud auth login
+    export MyTOKEN="$(gcloud auth print-access-token)"
+fi
+
+set +e
+
+ENVIRON="${1:-'dev'}"
+
+export APITOOLS_HOME="$APIGEE_HOME"
+export APISDIR="$HOME/Projects/711/apis"
+export VIRT_HOST="https://apigeex-prod-7ep.7digi.net"
+
+# Endpoints for client access
+# apigeex-prod.7digi.net
+# apigeex-prod-7ep.7digi.net
+# 7ep-api.7-eleven.com
+# api.7-eleven.com
+# apis.7-eleven.com
+
+export DEVELOPER="tdav32146@7-11.com"
+export FRMT="json"
+
+export ORGANIZATION="pj-apigee-uat"
+[[ $ENVIRON -eq prod ]] && export ORGANIZATION="pj-apigee-prod"
+export ENVIRONMENT="${ENVIRON}"
+
+export SCHEME="https"
+export HOST_ALIAS="apigee"
+export DOMAIN=".googleapis.com"
+export PORT=""
+
+export APIGEE_HOST="${SCHEME}://${HOST_ALIAS}${DOMAIN}${PORT}/v1"
+
+listevars
+
+echo "TODO: create a config file for each ApiG instance and 1 command to switch"

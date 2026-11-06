@@ -14,42 +14,39 @@ TOOLSDIR="${APITOOLS_HOME}"
 parseCommandline "$@"
 checkArgs 2 4
 
+DBG=""
+DBG="-d3"
+
 OUTFILE="APIRevList.out"
-SFOUTFILE="SFRevList.out"
-KVMOUTFILE="KVMList.out"
 
 # addnl functions:
 puttargets () {
-	DIR=$1
-	[[ ! -d ${DIR}/targets ]] && echo "${DIR}/targets not found" && exit "-2";
+	DIR=$1/targets
+	[[ ! -d ${DIR} ]] && echo "${DIR} not found" && exit "-2";
 
-	# Scan for target serverss
-	TSLIST=`ls ./targets/`
-	echo "TSLIST= ${TSLIST}"
+	# TSLIST=`ls ${DIR}`
+	TSLIST="TS-AIRS-01.json"			# Single for debugging
+	debug "TSLIST= \n$TSLIST"
+
 	for ts in $TSLIST; do
-	    echo "thisTS: ./targets/${ts} "
-
-	    DEBUG=2; echo "-v" >~/.curlrc
-	    
-	    TSLIST=`crtgtsvr ./targets/${ts}`
-	    
-	    DEBUG=0; echo "" >~/.curlrc
-	    
-	    sleep 2  # Debug for TS timeouts
+	    echo -en "\nthisTS: ${ts} "
+		echo "CMD> crtgtsvr ${DBG} ${DIR}/${ts}"
+	    crtgtsvr ${DBG} ${DIR}/${ts}
 	done
 }
 
-getvhosts () {
-	DIR=$1
-	[[ ! -d ${DIR}/vhosts ]] && mkdir "${DIR}/vhosts";
+# Do we need this on the upload side?? 
+# getvhosts () {
+# 	DIR=$1
+# 	[[ ! -d ${DIR}/vhosts ]] && mkdir "${DIR}/vhosts";
 
-	# get the list of virtual hosts
-	VHLIST=`getVirtualHosts`
-	for vh in $VHLIST; do
-	    echo "thisVH: ${vh}"
-	    VHOST=`getVirtualHost ${vh} | sed -e 's/[",\[]//g' -e 's/\]//g' > ${DIR}/vhosts/${vh}.json`
-	done
-}
+# 	# get the list of virtual hosts
+# 	VHLIST=`getVirtualHosts`
+# 	for vh in $VHLIST; do
+# 	    echo "thisVH: ${vh}"
+# 	    VHOST=`getVirtualHost ${vh} | sed -e 's/[",\[]//g' -e 's/\]//g' > ${DIR}/vhosts/${vh}.json`
+# 	done
+# }
 
 # KVMs come in 2 flavors; 
 #	configuration that is for the specific environment but does not change during 
@@ -90,13 +87,12 @@ putsharedflows() {
 
 	# Scan for SharedFlows used by this proxy
 	cd ${shDIR}
-	ls  > $SFOUTFILE
 	# find "${DIR}/apis" -name "*.xml" -exec grep 'Bundle>sf_' {} \; | 
 			# sed -a -e 's/^.*Bundle>sf_/sf_/g' -e 's/<.*$/ /g' | sort -u > ${SFOUTFILE}
 
-	SFLIST=`cat $SFOUTFILE`
-	SFLIST='sf-auth-external-v1_32'
-	debug "SFLIST=$SFLIST"
+	SFLIST=`ls`
+	SFLIST='sf-auth-external-v1_40'
+	debug "SFLIST= \n$SFLIST"
 
 	for sf in $SFLIST ; do
 		echo -n "thisSF: ${sf} " # for each SF, upload the zip file 
@@ -120,8 +116,8 @@ putapiproxies () {
 
 	cd $DIR
 	ALIST=`ls .` # retrieves list of apis in this ENV
-	ALIST="v2-lite_8" # Unit test only
-	debug "ALIST=$ALIST"
+	ALIST="v2-lite_11" # Unit test only
+	debug "ALIST= \n$ALIST"
 
 	for a in $ALIST ; do
 		# debug 
@@ -140,49 +136,41 @@ putapiproxies () {
 	cd -
 }
 
-# MAIN starts here; ENV is controlled by .apigee file
-# MAIN starts here; ENV is controlled by .apigee file
-# MAIN starts here; ENV is controlled by .apigee file
-# MAIN starts here; ENV is controlled by .apigee file
+# MAIN starts here
+# MAIN starts here
+# MAIN starts here
 
 [[ $DEBUG -ge 3 ]] && set -x
 OPWD=`pwd`
 
-echo -en "\n\n\t***** Uploading the directory ${OPWD} to environment ${ORG}:${ENV} *****\n\n\n"
+echo -en "\n ** Uploading the directory ${OPWD} to environment ${ORG}:${ENV} **\n\n"
 
 if [[ ! -d ${APISDIR} ]] ; then
 	echo -en "APISDIR= ${APISDIR} is not found [404]"
 	exit
-# else
-# 	cd ${APISDIR}; cd ..
-# 	APISDIR=`pwd`
-# 	BZF="${APISDIR}/${ORG}-${ENV}.bkp.zip"
-# 	echo -en "Backing up: ${APISDIR}/* to ${BZF} \n\n"
-# 	# [TODO] Add a date-time string to filename
-# 	zip -r ${APISDIR}/${ORG}-${ENV}.bkp.zip ${APISDIR}
-# 	echo "done $?"
-# 	[[ $? != 0 ]] && exit
-# 	mv ${APISDIR}/${ORG}-${ENV}.bkp.zip ..
-# 	rm -fr *
+else
+	cd ${APISDIR}; cd ..
+	ENVDIR=`pwd`
 fi
 
 
-echo -en "\n\tPutting Proxies\n"
-putapiproxies ${APISDIR}
+# Upload TargetServer configs
+echo -en "\n\tPutting TargetServers\n"
+puttargets ${ENVDIR}
+# puttargets .
 
+# Upload KVMs and data
+# echo -en "\n\tPutting KVMS\n"
+# putkvms ${APISDIR}
+
+# Upload shared flows
 echo -en "\n\tPutting SharedFlows\n"
 putsharedflows ${APISDIR}
-# # TODO? loop to check SFs for embedded SFs
-# # Scan for SharedFlows used by this proxy
+# TODO? loop to check SFs for embedded SFs
 
-# # Scan for KVMs and download info
-echo -en "\n\tGetting KVMS\n"
-putkvms ${APISDIR}
-
-# Scan for TargetServers & download
-# echo -en "\n\tPutting TargetServers\n"
-# puttargets ${APISDIR}
-# puttargets .
+# Upload proxies
+echo -en "\n\tPutting Proxies\n"
+putapiproxies ${APISDIR}
 
 # # Scan for VirtualHosts & download
 # echo -en "\n\tGetting VirtualHosts\n"

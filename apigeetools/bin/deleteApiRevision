@@ -1,17 +1,16 @@
 #!/bin/bash
 
 #
-# deleteApi
-# deletes an API
+# deleteAPIRevision
+# deletes an API revision
 #
-# "https://api.enterprise.apigee.com/organizations/<org>/apis/<api>/revisions/<revisions_number>/deployments?action=undeploy&env=<env>&force=true"
 #
 # usage:
-#   deleteApi host_alias api
+#   deleteApiRevision api_name revision
 
 #set -e
 
-USAGE="api_name revision#"
+USAGE="api_name revision"
 TOOLSDIR="${APITOOLS_HOME}"
 . "$TOOLSDIR/lib/functions"
 parseCommandline "$@"
@@ -30,4 +29,4 @@ debug "Deleting ${URL}"
 
 http_delete "$URL"
 
-echo -e "Delete Code = $DEBUG; Status Code = $STATUS_CODE"
+echo "Status Code = $STATUS_CODE"

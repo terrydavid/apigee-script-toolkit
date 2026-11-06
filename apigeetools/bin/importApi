@@ -12,7 +12,7 @@
 
 #set -e
 
-USAGE="api zip_file [revision]# 'import' a .zip file as the name 'api'"
+USAGE="api zip_file [revision]"  # 'import' a .zip file as the name 'api'"
 TOOLSDIR="${APITOOLS_HOME}"
 . "$TOOLSDIR/lib/functions"
 parseCommandline "$@"
@@ -33,8 +33,6 @@ else
 fi
 debug "importing API ${APINAME} via ${URL}"
 
-FRMT=json
-
 #HDRS="-HContent-Type:application/octet-stream"
 #curlOPTS="--data-binary \'@${APIPROXYZIP}\'"
 HDRS="-HContent-Type:multipart/form-data"
@@ -42,13 +40,10 @@ curlOPTS="-F file=@${APIPROXYZIP}"
 
 http_post "$URL"
 
-JSON_OUTPUT=`echo "$RESPONSE" | "$TOOLSDIR/lib/jp.sh" -b`
-debug "JSON_OUTPUT=$JSON_OUTPUT"
-
-API_REVISION=`echo "$JSON_OUTPUT" | awk '/\[\"revision\"\,?([0-9])*/ {print $2}' | sed 's/\"//g'`
+# JSON_OUTPUT=`echo "$RESPONSE" | "$TOOLSDIR/lib/jp.sh" -b`
+debug "RESPONSE= $RESPONSE"
 debug "APIPROXYREV = $APIPROXYREV"
-
-API_NAME=`echo "$JSON_OUTPUT" | awk '/\[\"name\"\,?([0-9])*/ {print $2}' | sed 's/\"//g'`
+# API_NAME=`echo "$JSON_OUTPUT" | awk '/\[\"name\"\,?([0-9])*/ {print $2}' | sed 's/\"//g'`
 debug "APINAME = $APINAME"
 
-echo "imported version $APIPROXYREV of API $APINAME"
+echo "imported revision `getApiRevisionLatest $APINAME` of API $APINAME"

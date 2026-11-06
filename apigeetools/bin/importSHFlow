@@ -23,9 +23,7 @@ if [[ ! -f "${SHFPROXYZIP}" ]] ; then
 fi
 
 URL="${APIGEE_HOST}/o/${ORGANIZATION}/sharedflows?action=import&name=${SHFNAME}"
-debug "importing SHF ${SHFNAME} via ${URL}"
-
-FRMT=json
+debug "In `pwd` and importing SHF ${SHFNAME} via ${URL}"
 
 #HDRS="-HContent-Type:application/octet-stream"
 #curlOPTS="--data-binary \'@${SHFPROXYZIP}\'"

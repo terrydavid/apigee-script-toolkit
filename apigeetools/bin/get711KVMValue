@@ -1,0 +1,43 @@
+#!/bin/bash
+#
+# 1. set711e (mod envs)
+# 2. get711KVMaps > .txt
+# 3. get711KVMNames > .keys
+# 4. get711KVMValue > .kvm
+#
+# getKVMValue
+# 	gets a KVM value for the keyname
+#
+#Scoped to environment:
+#  https://api.enterprise.apigee.com/o/{org_name}/environments/{env_name}/keyvaluemaps
+#
+
+#set -e
+
+USAGE="environment keyvaluemap_name keyvaluemap_key"
+TOOLSDIR="${APITOOLS_HOME}"
+. "${APITOOLS_HOME}/lib/functions"
+parseCommandline "$@"
+FRMT="${FRMT}:-json"
+
+ENVIRON="-${ARGS[0]}"
+# [[ "$ENVIRON" == "-prod" ]] && ENVIRON=''
+KVMNAME="${ARGS[1]}"
+KVMKEY="${ARGS[2]}"
+
+# export VIRT_HOST="https://apigeex-prod-7ep.7digi.net"
+
+debug "get711KVMValue $ENVIRON $KVMNAME $KVMKEY"
+
+# [[ $ORG == 7ep ]] && export VIRT_HOST="https://7ep$ENVIRON-api.7-eleven.com"
+[[ $ORG == 7ep ]] && export VIRT_HOST="https://7ep$ENVIRON.apigee.net"
+[[ $ORG == seveneleven ]] && export VIRT_HOST="https://api$ENVIRON.7-eleven.com"
+
+debug "VIRT_HOST= $VIRT_HOST"
+
+[[ $DEBUG -ge 2 ]] && set -x
+curl -L -H "Authorization: Bearer $MyTOKEN" "${VIRT_HOST}/v1/kvmex?mapname=$KVMNAME&key=$KVMKEY" | trims
+set -
+
+#http_get "$URL"
+#echo -e "Status Code [$STATUS_CODE] response is: \n$RESPONSE"

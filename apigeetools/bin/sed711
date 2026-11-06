@@ -1,0 +1,3 @@
+#!/bin/bash
+
+sed -e 's/","token_type":[a-zA-Z0-9\"\,\:\.\}\-\_]*//g' -e 's/{"access_token":"//' -e 's/","expires_in":.*//'

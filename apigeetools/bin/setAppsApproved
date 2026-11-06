@@ -1,0 +1,204 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+#
+# setAppsApproved
+#
+# usage:
+#   setAppsApproved environment [dev_id (email)]
+
+# USAGE=" # output is simple list"
+# TOOLSDIR="${APITOOLS_HOME}"
+# . "$TOOLSDIR/lib/functions"
+#parseCommandline "$@"
+#checkArgs 1 2
+
+[[ $DEBUG -ge 2 ]] && `echo "Step 0";` 
+#set -x;
+
+########################################
+# Defaults from environment
+########################################
+
+APIGEE_HOST="${APIGEE_HOST:-https://apigee.googleapis.com/v1}"
+CONCURRENCY="${CONCURRENCY:-10}"
+LOG_FILE="${LOG_FILE:-approval_failures.log}"
+ORGANIZATION="${ORGANIZATION:-}"
+TOKEN="${TOKEN:-$(gcloud auth print-access-token)}"
+
+########################################
+# Usage
+########################################
+
+usage() {
+cat <<EOF
+Usage: $(basename "$0") [options]
+
+Options (alphabetical):
+  -c NUM     Concurrency level (default: 10)
+  -h         Show help
+  -l FILE    Failure log file
+  -o ORG     Apigee organization
+  -t TOKEN   OAuth token
+  -u HOST    Apigee API host
+
+Environment defaults:
+  APIGEE_HOST
+  CONCURRENCY
+  LOG_FILE
+  ORGANIZATION
+  TOKEN
+
+EOF
+  listevars
+  exit 1
+}
+
+########################################
+# Logging
+########################################
+
+: > "$LOG_FILE"
+
+log_failure() {
+  echo "$1" >> "$LOG_FILE"
+}
+
+########################################
+# Curl wrappers with retry
+########################################
+
+curl_get() {
+  curl -sS --retry 3 --retry-delay 2 \
+    -H "Authorization: Bearer $TOKEN" \
+    "$1"
+}
+
+curl_post() {
+  curl -sS -X POST --retry 3 --retry-delay 2 \
+    -H "Authorization: Bearer $TOKEN" \
+    "$1"
+}
+
+########################################
+# Approve apps for a developer
+########################################
+
+process_developer() {
+
+  developer="$1"
+  echo -en "\n\nDeveloper= $developer  \n"
+  # [[ $developer != "*@*.*" ]] && echo "Bad Dev= $developer" 
+
+  apps=`curl_get "$APIGEE_HOST/organizations/$ORGANIZATION/developers/$developer/apps" | jq '.app[].appId'`
+  # | sed 's/\"//g')
+  echo "$apps"
+
+  [[ -z "$apps" ]] && exit 0
+  for app in $apps; do
+    echo "Approving: $developer -> $app"; echo 
+
+    output=`curl_post "$APIGEE_HOST/organizations/$ORGANIZATION/developers/$developer/apps/$app?action=approve"`   # >/dev/null
+
+    set -x
+    if [ ! "$?" ]
+    then
+      output=`echo $output | trimhtml`
+      log_failure "$developer, $app \n\t $output"
+    fi
+    set -
+
+  done
+}
+
+########################################
+########################################
+#       BEGIN MAIN    
+########################################
+########################################
+
+
+export -f process_developer
+export -f curl_get
+export -f curl_post
+export -f log_failure
+
+export APIGEE_HOST
+export ORGANIZATION
+export TOKEN
+export LOG_FILE
+
+[[ $DEBUG -ge 2 ]] && echo "Step 10"
+
+########################################
+# Option parsing - alphabetical
+########################################
+
+while getopts ":c:hl:o:t:u:" opt; do
+  case "${opt}" in
+    c) CONCURRENCY="$OPTARG" ;;
+    h) usage ;;
+    l) LOG_FILE="$OPTARG" ;;
+    o) ORGANIZATION="$OPTARG" ;;
+    t) TOKEN="$OPTARG" ;;
+    u) APIGEE_HOST="$OPTARG" ;;
+    \?) echo "Invalid option: -$OPTARG" >&2; usage ;;
+  esac
+done
+
+########################################
+# Validation
+########################################
+
+if [[ -z "$ORGANIZATION" ]]; then
+  echo "ERROR: ORGANIZATION not set"
+  exit 1
+fi
+
+if [[ -z "$TOKEN" ]]; then
+  echo "ERROR: TOKEN not set"
+  exit 1
+fi
+
+command -v jq >/dev/null || { echo "jq required"; exit 1; }
+command -v curl >/dev/null || { echo "curl required"; exit 1; }
+
+########################################
+# Fetch developers
+########################################
+
+echo "Fetching developers..."
+
+developers=`curl_get "$APIGEE_HOST/organizations/$ORGANIZATION/developers" \
+    | jq '.developer[].email'`
+
+echo "$developers"
+count=$(echo "$developers" | wc -l | tr -d ' ')
+echo "Found $count developers"
+
+########################################
+# Parallel processing
+########################################
+
+#echo "$developers" | xargs -n1 -P "$CONCURRENCY" -I{} bash -c 'process_developer "$@"' _ {}
+
+########################################
+# Serial processing
+########################################
+
+for d in `echo "$developers"` ; do
+  process_developer "$@" # _ {}
+done 
+
+echo "Processing complete."
+
+if [[ -s "$LOG_FILE" ]]; then
+  echo "Failures logged in: $LOG_FILE"
+else
+  rm -f "$LOG_FILE"
+fi
+
+set -
+
+[[ $DEBUG -ge 2 ]] && echo "Step 20"

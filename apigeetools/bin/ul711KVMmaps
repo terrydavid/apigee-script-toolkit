@@ -1,0 +1,65 @@
+#!/bin/bash
+#
+# getKVMValue
+# 	gets a KVM value for the keyname
+#
+#Scoped to environment:
+#  https://api.enterprise.apigee.com/o/{org_name}/environments/{env_name}/keyvaluemaps
+#
+
+#set -e
+
+USAGE="environment keyvaluemap_name"
+TOOLSDIR="${APITOOLS_HOME}"
+. "${APITOOLS_HOME}/lib/functions"
+parseCommandline "$@"
+checkArgs 2 2
+FRMT="json"
+
+KVMOUTFILE="./delete.me"
+ENVIRONMENT=ENV=${ARGS[0]}
+KVMN=${ARGS[1]}
+
+putkvms() {
+	apisDIR=$1
+	kvmDIR="$apisDIR/kvms"
+	[[ ! -d ${kvmDIR} ]] && error "${kvmDIR}"
+
+	# Scan for KVMs
+	find "${apisDIR}" -name '*.json' -exec grep mapIdentifier= '{}' ';' |
+			sed -a -e 's/^.*mapIdentifier=\"//g' -e 's/\".*$/ /g' | sort -u > $KVMOUTFILE
+	
+    if [ -s "$KVMOUTFILE" ] ; then
+		KLIST=`cat $KVMOUTFILE | sort -u`
+		debug "KLIST= $KLIST"
+	else 
+		error "KVMOUTFILE= $KVMOUTFILE"
+	fi
+
+	for k in $KLIST; do 
+
+	    echo "thisKVM: ${k}"
+	    KVM="$(getKeyValueMap ${k})" 
+
+	    KDIR="${kvmDIR}/${k}";
+	    [[ ! -d ${KDIR} ]] && error "${KDIR}" ;
+
+	    CFG=""; [[ `echo "$k" | grep "PTT-"` ]] && CFG=true;
+	    [[ ${CFG} ]] && [[ -d ${KDIR} ]] && echo "$KVM" > $KDIR/$k.json;
+	done
+}
+
+putkvms $HOME/Projects/7eleven
+
+# for k in `cat $KVMN-$ENVIRON-711.keys` ; do
+#     v=`get711KVMValue $KVMN ${k}`
+#     echo "$k;$v"
+# done > $KVMN-$ENVIRON-711.kvm 2>/dev/null
+
+# for n in `cat kvmap.names` ; do
+#     for k in `cat ${n}-stage-711-names.txt`; do 
+#         v=`get711KVMValue $KVMN ${k}`
+#         echo "$k;$v"
+#     done > $KVMN-stage-711.kvm 2>/dev/null
+# done
+

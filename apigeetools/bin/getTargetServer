@@ -20,12 +20,12 @@ debug "OPTs[@]=${OPTS[@]}; ARGS[@]=${ARGS[@]}; ARGS[0]=${ARGS[0]}"
 TS_NAME="${ARGS[0]}"
 debug "VH_NAME=${TS_NAME}; ARGS=${ARGS}; \$\@=$@"
 
-URL="${MOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers/${TS_NAME}"
+URL="${APIGEE_HOST}/o/${ORGANIZATION}/e/${ENVIRONMENT}/targetservers/${TS_NAME}"
 
 debug "URL= $URL"
 http_get "$URL"
 
-echo "RESPONSE= $RESPONSE"
-echo "STATUS_CODE= ${STATUS_CODE}"
+echo "$RESPONSE"
+# echo "STATUS_CODE= ${STATUS_CODE}"
 
 # for a in $RESPONSE ; do printf "%b\n" $a | sed -e 's/[",\[]//g' -e 's/\]//g' ; done

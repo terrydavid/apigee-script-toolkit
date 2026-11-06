@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+#!/bin/bash
+#
+# 1. set711e (mod envs)
+# 2. get711KVMaps > .txt
+# 3. get711KVMNames > .keys
+# 4. get711KVMValue > .kvm
+#
+# getKVMValue
+# 	gets a KVM value for the keyname
+#
+#Scoped to environment:
+#  https://api.enterprise.apigee.com/o/{org_name}/environments/{env_name}/keyvaluemaps
+#
+
+#set -e
+
+USAGE="environment keyvaluemap_name"
+TOOLSDIR="${APITOOLS_HOME}"
+. "${APITOOLS_HOME}/lib/functions"
+parseCommandline "$@"
+checkArgs 2 2
+FRMT="json"
+
+ENVIRON=${ARGS[0]}
+KVMNAME=${ARGS[1]}
+# KVMKEY=${ARGS[2]}
+BUFFER=''
+COLLECTING=false
+current_key=""
+
+[[ $DEBUG -ge 1 ]] & echo "in put711KVMValues [1]; KVMNAME= $KVMNAME"
+
+ltrim() {
+    local s="$1"
+    echo "${s#"${s%%[![:space:]]*}"}"
+}
+
+parse711Ln () {
+    line=$1
+
+    # helper: trim leading whitespace only
+    if $COLLECTING; then
+        debug "p7L[44]: Collecting..."
+
+        trimmed_line="$(ltrim "$line")"
+        BUFFER+=$'\n'"$trimmed_line"
+
+        if [[ "$trimmed_line" == -----END* ]]; then
+            debug "p7L[44]: End Collecting."
+            # echo "{ \"name\" : \"$current_key\", \"value\" : \"$BUFFER\" }"
+            echo "$current_key\", \"value\" : \"$BUFFER\" }"
+            COLLECTING=false
+            BUFFER=""
+            current_key=""
+        fi
+        continue
+    fi
+
+    # skip empty lines
+    [[ -z "${line//[[:space:]]/}" ]] && continue
+
+    # skip lines without ';'    # [tmd] Do Not for now
+    # [[ "$line" != *";"* ]] && continue
+
+    key="${line%%;*}"
+    value="${line#*;}"
+
+    # trim key
+    key="$(echo "$key" | xargs)"
+
+    # trim leading spaces from value
+    value="$(ltrim "$value")"
+
+    # # BEGIN block detection (after trim)
+    # if [[ "$value" == -----BEGIN* ]]; then
+    #     COLLECTING=true
+    #     current_key="$key"
+    #     BUFFER="$value"
+    #     continue
+    # fi
+
+    # single-line case
+    # echo "KEYVAL={ \"name\" : \"$key\", \"value\" : \"$value\" }"
+    # echo "{ \"name\" : \"$key\", \"value\" : \"$value\" }"
+    # echo "$key;$value"
+}
+
+putMapVals () {
+    local mn=$1
+
+    [[ $DEBUG -ge 1 ]] && echo -en "\n\npMV[88]: ${ENVIRON} KVM= ${mn} \nkvmfile ${mn}-${ENVIRON}-711.kvm has `cat ${mn}-${ENVIRON}-711.kvm | wc -w` words\n\n"
+
+    # set -x
+    extant=`curl -w '\n[%{http_code}]\n' -L "-HAuthorization: Bearer $MyTOKEN" "$APIGEE_HOST/organizations/$ORGANIZATION/environments/${ENVIRON}/keyvaluemaps/${mn}" 2>/dev/null | tail -1; set -`
+    debug "pMV[90] extant= $extant"
+    if [ "_${extant}" != "_[200]" ] ; then
+        echo "KVM ${mn} failed in $ORGANIZATION:$ENVIRON Extant= $extant; so Create Map"
+        createKeyValueMap -i ${mn}
+    fi
+
+    KVM=`cat ${mn}-${ENVIRON}-711.kvm`
+    debug "pMV[99]: KVM= $KVM"
+
+    for pair in "${KVM[@]}"; do
+        # Split pair by ';'
+        IFS=';' read -r k v <<< "$pair"
+
+        # BEGIN block detection (after trim)
+        if [[ "$v" == -----BEGIN* ]]; then
+            COLLECTING=true
+            current_key="$k"
+            BUFFER="$v"
+            continue
+        else
+            if [ "$COLLECTING" == "true" ]; then
+                # helper: trim leading whitespace only
+
+                debug "p7L[44]: Collecting..."
+
+                trimmed_value="$(ltrim "$v")"
+                BUFFER+=$'\n'"$trimmed_value"
+
+                if [[ "$trimmed_value" == -----END* ]]; then
+                    debug "p7L[44]: End Collecting."
+                    # echo "{ \"name\" : \"$current_key\", \"value\" : \"$BUFFER\" }"
+                    echo "$current_key\", \"value\" : \"$BUFFER\" }"
+                    COLLECTING=false
+                    BUFFER=""
+                    current_key=""
+                fi
+                continue
+            fi
+        fi
+
+        #         # skip empty lines
+        #         [[ -z "${line//[[:space:]]/}" ]] && continue
+
+        #         # skip lines without ';'    # [tmd] Do Not for now
+        #         # [[ "$line" != *";"* ]] && continue
+
+        #         key="${line%%;*}"
+        #         value="${line#*;}"
+
+        #         # trim key
+        #         key="$(echo "$key" | xargs)"
+
+        #         # trim leading spaces from value
+        #         value="$(ltrim "$value")"
+
+        #         continue
+        #     fi
+        # fi
+
+        debug "pMV[103]: KVP= ${pair}; put711KVMValue ${mn} ${k} ${v}"
+        # set -x
+        [[ $v ]] && put711KVMValue ${mn} ${k} ${v}
+        debug "pMV: rtn= $?; KVP=${pair}; k=$k; v=$v"
+        set -
+    done
+}
+
+[[ $DEBUG -ge 1 ]] & echo "in put711KVMValues [2]"
+
+# set -x
+if [[ $KVMNAME ]] ; then
+    [[ $DEBUG -ge 1 ]] && echo "in put711KVMValues [3] KVMNAME= $KVMNAME"
+    debug "putMapVals $KVMNAME"
+    putMapVals "$KVMNAME"
+    [[ $DEBUG -ge 1 ]] && echo "in put711KVMValues [5]"
+
+else
+    [[ $DEBUG -ge 1 ]] && echo "in put711KVMValues [4]"
+    for mn in `cat ${ENVIRON}-711-map-names.txt`; do
+        debug "putMapVals KVMNAME= $mn"
+        putMapVals "$mn"
+    done
+fi
+set -
