@@ -1,0 +1,8 @@
+{
+  "name": "apigee-toolkit-tools",
+  "private": true,
+  "description": "Optional Node.js helpers for apigee-toolkit",
+  "dependencies": {
+    "node-jose": "^2.2.0"
+  }
+}

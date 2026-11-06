@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Fake macOS `security` for the tests. Entries live in $FAKE_KEYCHAIN_FILE as
+# "service account secret" lines.
+[[ "${1:-}" == find-generic-password ]] || exit 1
+shift
+service="" account=""
+while (($#)); do
+  case "$1" in
+    -s) service="$2"; shift 2 ;;
+    -a) account="$2"; shift 2 ;;
+    -w) shift ;;
+    *) shift ;;
+  esac
+done
+while read -r s a secret; do
+  if [[ "$s" == "$service" && "$a" == "$account" ]]; then
+    printf '%s\n' "$secret"
+    exit 0
+  fi
+done <"${FAKE_KEYCHAIN_FILE:-/dev/null}"
+exit 44

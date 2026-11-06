@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+#
+# Fake curl used by the tests (put tests/fakebin first on PATH).
+# Records every request in $FAKE_CURL_LOG and answers from $FAKE_CURL_ROUTES:
+#   METHOD URL_REGEX HTTP_CODE RESPONSE_FILE      (first match wins)
+# Unmatched requests get HTTP 200 with body {}.
+
+log="${FAKE_CURL_LOG:?FAKE_CURL_LOG not set}"
+routes="${FAKE_CURL_ROUTES:-/dev/null}"
+method=GET out="" wfmt="" url="" data="" have_data=0 form=""
+cfgs=()
+headers=()
+argv="$*"
+
+while (($#)); do
+  case "$1" in
+    --version) printf 'curl 8.0.0 (fake)\n'; exit 0 ;;
+    -sS | -s | -S | --fail | --fail-with-body | -L) shift ;;
+    -X) method="$2"; shift 2 ;;
+    -o) out="$2"; shift 2 ;;
+    -w) wfmt="$2"; shift 2 ;;
+    --config | -K) cfgs+=("$2"); shift 2 ;;
+    -H) headers+=("$2"); shift 2 ;;
+    --data-binary | --data | -d) data="$2"; have_data=1; shift 2 ;;
+    -F) form="$2"; shift 2 ;;
+    http://* | https://*) url="$1"; shift ;;
+    *) printf 'fake curl: unsupported argument %s\n' "$1" >&2; exit 2 ;;
+  esac
+done
+
+{
+  printf '=== %s %s\n' "$method" "$url"
+  printf 'argv: %s\n' "$argv"
+  for h in ${headers[@]+"${headers[@]}"}; do printf 'header: %s\n' "$h"; done
+  for c in ${cfgs[@]+"${cfgs[@]}"}; do
+    while IFS= read -r line; do printf 'config: %s\n' "$line"; done <"$c"
+  done
+  if ((have_data)); then
+    if [[ "$data" == @* ]]; then
+      printf 'body: %s\n' "$(cat "${data#@}")"
+    else
+      printf 'body: %s\n' "$data"
+    fi
+  fi
+  [[ -n "$form" ]] && printf 'form: %s\n' "$form"
+} >>"$log"
+
+code=200
+resp=""
+while read -r r_method r_re r_code r_file; do
+  [[ -z "$r_method" ]] && continue
+  if [[ "$r_method" == "$method" || "$r_method" == "*" ]] && printf '%s' "$url" | grep -E -- "$r_re" >/dev/null; then
+    code="$r_code"
+    resp="$r_file"
+    break
+  fi
+done <"$routes"
+
+if [[ -n "$resp" ]]; then
+  if [[ -n "$out" ]]; then cat "$resp" >"$out"; else cat "$resp"; fi
+else
+  if [[ -n "$out" ]]; then printf '{}' >"$out"; else printf '{}'; fi
+fi
+if [[ -n "$wfmt" ]]; then
+  printf '%s' "${wfmt//%\{http_code\}/$code}"
+fi
+if ((code >= 400)); then
+  exit 22
+fi
+exit 0

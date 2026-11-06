@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+#
+# Load an apigee-toolkit profile into the current shell:
+#
+#   source bin/apigee-env <profile>      # exports the profile's settings
+#   source bin/apigee-env --unset        # forget them again
+#
+# Works when sourced from bash or zsh. Profiles are NAME.env files in
+# ~/.config/apigee-toolkit/profiles/ or config/profiles/. They replace the
+# old setenv.sh / setorg scripts.
+
+if [[ -n "${ZSH_VERSION:-}" ]]; then
+  # zsh-only expansion; eval keeps bash from parsing it.
+  eval '__apigee_env_src="${(%):-%x}"'
+  if [[ "${ZSH_EVAL_CONTEXT:-}" != *:file* ]]; then
+    printf 'apigee-env: this file must be sourced: source %s <profile>\n' "$__apigee_env_src" >&2
+    exit 1
+  fi
+else
+  __apigee_env_src="${BASH_SOURCE[0]}"
+  if [[ "$__apigee_env_src" == "$0" ]]; then
+    printf 'apigee-env: this file must be sourced: source %s <profile>\n' "$0" >&2
+    exit 1
+  fi
+fi
+
+__apigee_env_main() {
+  local home
+  home="$(cd "$(dirname "$__apigee_env_src")/.." && pwd)"
+  if [[ "${1:-}" == --unset ]]; then
+    local var
+    # shellcheck disable=SC2043
+    for var in APIGEE_PROFILE APIGEE_PLATFORM APIGEE_ORG APIGEE_ENV APIGEE_X_API_URL \
+      APIGEE_EDGE_MGMT_URL APIGEE_EDGE_AUTH APIGEE_EDGE_USER APIGEE_EDGE_TOKEN_URL \
+      APIGEE_EDGE_KEYCHAIN_SERVICE APIGEE_EDGE_SSO_KEYCHAIN_SERVICE APIGEE_KVM_READER_URL \
+      APIGEE_KVM_READER_AUTH APIGEE_JSON_ENGINE APIGEE_NO_TOKEN_CACHE; do
+      unset "$var"
+    done
+    return 0
+  fi
+  [[ -n "${1:-}" ]] || {
+    printf 'usage: source bin/apigee-env <profile> | --unset\n' >&2
+    return 1
+  }
+  local file=""
+  local dir
+  for dir in "${APIGEE_CONFIG_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/apigee-toolkit}/profiles" "$home/config/profiles"; do
+    if [[ -f "$dir/$1.env" ]]; then
+      file="$dir/$1.env"
+      break
+    fi
+  done
+  [[ -n "$file" ]] || {
+    printf 'apigee-env: profile %s not found\n' "$1" >&2
+    return 1
+  }
+  set -a
+  # shellcheck disable=SC1090
+  . "$file"
+  set +a
+  export APIGEE_PROFILE="$1"
+  case ":$PATH:" in
+    *":$home/bin:"*) ;;
+    *) export PATH="$home/bin:$PATH" ;;
+  esac
+  printf 'apigee-env: loaded profile %s (platform=%s org=%s env=%s)\n' \
+    "$1" "${APIGEE_PLATFORM:-?}" "${APIGEE_ORG:-?}" "${APIGEE_ENV:-?}" >&2
+}
+
+__apigee_env_main "$@"

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Fake gcloud for the tests.
+case "$*" in
+  "auth print-access-token"*)
+    printf 'gcloud auth print-access-token account=%s\n' "${CLOUDSDK_CORE_ACCOUNT:-}" >>"${FAKE_CURL_LOG:-/dev/null}"
+    printf '%s\n' "${FAKE_GCLOUD_TOKEN:-fake-x-token}"
+    ;;
+  "config get-value account") printf 'tester@example.com\n' ;;
+  "apigee --help") exit 0 ;;
+  *) exit 1 ;;
+esac

@@ -1,0 +1,190 @@
+#!/usr/bin/env bash
+#
+# apigee — one CLI for Apigee X/hybrid and Apigee Edge management.
+#
+#   apigee [global options] <resource> <verb> [options]
+#
+set -euo pipefail
+
+APIGEE_TOOLKIT_VERSION="1.0.0"
+
+apigee_resolve_home() {
+  local src="${BASH_SOURCE[0]}" dir
+  while [[ -L "$src" ]]; do
+    dir="$(cd -P "$(dirname "$src")" && pwd)"
+    src="$(readlink "$src")"
+    [[ "$src" == /* ]] || src="$dir/$src"
+  done
+  cd -P "$(dirname "$src")/.." && pwd
+}
+
+APIGEE_TOOLKIT_HOME="$(apigee_resolve_home)"
+export APIGEE_TOOLKIT_HOME
+
+# shellcheck source=../lib/platform.sh
+. "$APIGEE_TOOLKIT_HOME/lib/platform.sh"
+# shellcheck source=../lib/json.sh
+. "$APIGEE_TOOLKIT_HOME/lib/json.sh"
+
+apigee_usage() {
+  cat <<EOF
+Usage: apigee [global options] <resource> <verb> [options]
+
+Resources and verbs:
+  proxy          list revisions latest deployed download import deploy undeploy
+                 delete-revision clean-revisions compare
+  sharedflow     (same verbs as proxy)
+  kvm            list get create delete put export import
+  target-server  list get create update delete
+  keystore       list get
+  truststore     list get
+  app            list get approve revoke
+  developer      list get
+  product        list get
+  cache          list clear                      (Edge only)
+  env            list get health export
+  virtualhost    list get                        (Edge only)
+  envgroup       list get                        (X/hybrid only)
+  user           list                            (Edge only)
+  org            get
+  token          print an access token
+  profile        list use show current clear
+  doctor         verify configuration and authentication
+
+Global options (accepted anywhere on the command line):
+  --platform x|hybrid|edge   Override APIGEE_PLATFORM
+  --org ORG                  Override APIGEE_ORG
+  --env ENV                  Override APIGEE_ENV
+  --profile NAME             Load config/profiles/NAME.env (overrides the environment)
+  -n, --dry-run              Print mutating requests instead of sending them
+  -y, --yes                  Do not ask for confirmation on mutating verbs
+  --debug                    Log each request (never credentials) to stderr
+  --json-engine jq|python    Force the JSON engine
+  -h, --help                 Help (also: apigee <resource> --help, apigee <resource> <verb> --help)
+  --version                  Print the toolkit version
+
+Configuration: config/apigee.env.example, profiles in config/profiles/.
+EOF
+}
+
+apigee_canonical_resource() {
+  case "$1" in
+    proxy | proxies | api | apis) printf 'proxy\n' ;;
+    sharedflow | sharedflows | sf) printf 'sharedflow\n' ;;
+    kvm | kvms | keyvaluemap) printf 'kvm\n' ;;
+    target-server | target-servers | targetserver | ts) printf 'targetserver\n' ;;
+    keystore | keystores) printf 'keystore\n' ;;
+    truststore | truststores) printf 'truststore\n' ;;
+    app | apps) printf 'app\n' ;;
+    developer | developers | dev) printf 'developer\n' ;;
+    product | products | apiproduct) printf 'product\n' ;;
+    cache | caches) printf 'cache\n' ;;
+    env | envs | environment | environments) printf 'env\n' ;;
+    virtualhost | virtualhosts | vhost) printf 'virtualhost\n' ;;
+    envgroup | envgroups) printf 'envgroup\n' ;;
+    user | users) printf 'user\n' ;;
+    org | organization) printf 'org\n' ;;
+    token) printf 'token\n' ;;
+    profile | profiles) printf 'profile\n' ;;
+    doctor) printf 'doctor\n' ;;
+    *) return 1 ;;
+  esac
+}
+
+apigee_resource_module() {
+  case "$1" in
+    proxy | sharedflow) printf 'bundle.sh\n' ;;
+    kvm) printf 'kvm.sh\n' ;;
+    targetserver) printf 'targetserver.sh\n' ;;
+    keystore | truststore) printf 'keystore.sh\n' ;;
+    app | developer | product) printf 'apps.sh\n' ;;
+    org | env | cache | virtualhost | envgroup | user) printf 'env.sh\n' ;;
+    token | profile) printf 'session.sh\n' ;;
+  esac
+}
+
+apigee_load_modules() {
+  local m
+  for m in bundle.sh kvm.sh targetserver.sh keystore.sh apps.sh env.sh session.sh; do
+    # shellcheck disable=SC1090
+    . "$APIGEE_TOOLKIT_HOME/libexec/$m"
+  done
+}
+
+main() {
+  local profile="" cli_org="" cli_env="" cli_platform="" rest=()
+  while (($#)); do
+    case "$1" in
+      --org) cli_org="${2:?--org needs a value}"; shift 2 ;;
+      --org=*) cli_org="${1#--org=}"; shift ;;
+      --env) cli_env="${2:?--env needs a value}"; shift 2 ;;
+      --env=*) cli_env="${1#--env=}"; shift ;;
+      --platform) cli_platform="${2:?--platform needs a value}"; shift 2 ;;
+      --platform=*) cli_platform="${1#--platform=}"; shift ;;
+      --profile) profile="${2:?--profile needs a value}"; shift 2 ;;
+      --profile=*) profile="${1#--profile=}"; shift ;;
+      -n | --dry-run) APIGEE_DRY_RUN=1; shift ;;
+      -y | --yes) APIGEE_YES=1; shift ;;
+      --debug) APIGEE_DEBUG=1; shift ;;
+      --json-engine) APIGEE_JSON_ENGINE="${2:?--json-engine needs a value}"; shift 2 ;;
+      --version) printf 'apigee toolkit %s\n' "$APIGEE_TOOLKIT_VERSION"; return 0 ;;
+      --) rest+=("$@"); break ;;
+      *) rest+=("$1"); shift ;;
+    esac
+  done
+  set -- ${rest[@]+"${rest[@]}"}
+
+  if (($# == 0)) || [[ "$1" == -h || "$1" == --help || "$1" == help ]]; then
+    apigee_usage
+    return 0
+  fi
+
+  local resource
+  resource="$(apigee_canonical_resource "$1")" || {
+    apigee_usage >&2
+    apigee_die "unknown resource '$1'"
+  }
+  shift
+
+  if [[ "$resource" == doctor ]]; then
+    exec "$APIGEE_TOOLKIT_HOME/setup/doctor.sh" \
+      ${profile:+--profile "$profile"} ${cli_platform:+--platform "$cli_platform"} \
+      ${cli_org:+--org "$cli_org"} ${cli_env:+--env "$cli_env"} "$@"
+  fi
+
+  apigee_load_modules
+  local verb="${1:-}" a
+  if [[ -z "$verb" || "$verb" == -h || "$verb" == --help || "$verb" == help ]]; then
+    if [[ "$resource" == token && -z "$verb" ]]; then
+      :
+    else
+      "${resource}_help"
+      return 0
+    fi
+  fi
+  for a in "$@"; do
+    if [[ "$a" == -h || "$a" == --help ]]; then
+      if [[ "$resource" == token ]]; then "${resource}_help"; else "${resource}_help" "$verb"; fi
+      return 0
+    fi
+  done
+  if [[ "$resource" != token && "$resource" != profile ]]; then
+    "${resource}_verbs" | grep -x -- "$verb" >/dev/null ||
+      apigee_die "unknown $resource verb '$verb' (see 'apigee $resource --help')"
+  fi
+
+  exec 3>&1
+  apigee_init_tmpdir
+  if [[ "$resource" == profile ]]; then
+    profile_main "$@"
+    return
+  fi
+  apigee_load_config "$profile"
+  if [[ -n "$cli_platform" ]]; then APIGEE_PLATFORM="$cli_platform"; fi
+  if [[ -n "$cli_org" ]]; then APIGEE_ORG="$cli_org"; fi
+  if [[ -n "$cli_env" ]]; then APIGEE_ENV="$cli_env"; fi
+  apigee_platform_init
+  "${resource}_main" "$@"
+}
+
+main "$@"

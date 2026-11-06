@@ -1,1 +1,0 @@
-BEGIN { RS = "[\n\r]+" } ; /revision.*,0,.*name/ {print $2}

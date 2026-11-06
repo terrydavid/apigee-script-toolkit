@@ -1,182 +1,257 @@
-## General Instructions for setting up "Apigee Tools Kit"
+# apigee-toolkit
 
-Source of record for all code, configurations, management scripts, etc. are located in a git repository at
+A small, dependency-light shell CLI for day-to-day Apigee administration that
+works the same way against **Apigee X / hybrid** and **Apigee Edge**.
 
-    https://github.com/terrydavid/apigee-script-tools.git
+It replaces a large collection of one-script-per-call legacy tools with a
+single `apigee` dispatcher, shared auth and request handling, profiles, and
+an offline test suite. See [docs/INVENTORY.md](docs/INVENTORY.md) for how every
+legacy script maps to a command here (or why it was dropped).
 
-### Setup your environment variables
-    Use the following code to create and make runable to set up environments:
-```
-#!/bin/bash
-#
-#   This shell script handles verifying project directories are setup correctly for operation of 
-#       the Apigee Management APIs
-#
-#   The lines below referencing the environment variable "ENVARS" will source a second script that 
-#       handle the setup of the environment variables for the Apigee Organization & Environment
-#
-# set -x
+Prefer `gcloud apigee` when it already does the job; this toolkit focuses on
+what gcloud does not cover (shared flows, KVMs, target servers, keystores,
+revision clean-up, bundle diffing, environment export, Edge-only resources).
 
-# APITOOLS_HOME should point to the "apigeetools" subdirectory of the repo.
-[[ -f "${HOME}/apigee/../README.md" ]] && export APITOOLS_HOME="${HOME}/apigee"
+## Quick start
 
-[[ "_$1" == "_" ]] && exit 1
+```bash
+setup/install.sh --check          # what is missing? (read-only)
+setup/install.sh                  # install missing tools with Homebrew (asks first)
 
-export ENVARS=$1
+cp config/profiles/example-x.env config/profiles/my-x.env   # edit org/env
+bin/apigee profile use my-x
+setup/doctor.sh                   # tools, config, auth and a read-only org GET
 
-# Source the bash environment variables for Apigee (See example below)
-source ${ENVARS}
-
-export TOOLSDIR="${APITOOLS_HOME}"
-export APISDIR="${HOME}/Projects/${APRJCT}/${ORGANIZATION}/${ENVIRONMENT}/apis"
-
-if [[ ! -d $APISDIR ]] ; then
-    if [[ ! -d ${HOME}/Projects/${APRJCT}/${ORGANIZATION}/${ENVIRONMENT} ]] ; then
-        if [[ ! -d ${HOME}/Projects/${APRJCT}/${ORGANIZATION} ]] ; then
-            mkdir ${HOME}/Projects/${APRJCT}/${ORGANIZATION}
-        fi
-        mkdir ${HOME}/Projects/${APRJCT}/${ORGANIZATION}/${ENVIRONMENT}
-    fi
-    mkdir ${APISDIR}
-fi
-
-set -
-export DEBUG=0
-chmod 600 $HOME/.curlrc
-echo -n "" >$HOME/.curlrc
-export FRMT="json"
-
-# Set the Management Host (IMPORTANT: This determines "which" management server is accessed) <br>
-export APIGEE_HOST="${SCHEME}://${HOST_ALIAS}${DOMAIN}${PORT}/v1"
-
-export ORG=${ORGANIZATION}
-export ENV=${ENVIRONMENT}
-export PATH="${PATH}:${APITOOLS_HOME}/bin"
-export CDPATH="${CDPATH}:${APISDIR}"
-export MOST="${APIGEE_HOST}"
-
-# A fair number of my aliases need to be set to use bash env vars we just set up.
-#   You can skip this step if not needed
-source $HOME/.aliases
-
-echo -en "\nAPISDIR = ${APISDIR}\n"
-cd ${APISDIR}
-
-set -
-
+bin/apigee proxy list
+bin/apigee proxy deployed my-proxy --all-envs
 ```
 
-Example child script for Apigee Variables:
-```
-#!/bin/bash
+Put `bin/` on your `PATH`, or `source bin/apigee-env my-x` (bash or zsh),
+which exports the profile into the current shell and adds `bin/` to `PATH`.
 
-if [ ${APITOOLS_HOME} ] ; then
+Requirements: bash 3.2+ (the macOS default works), curl, and either `jq` or
+`python3` for JSON. Apigee X / hybrid also needs the Google Cloud SDK
+(`gcloud`). `unzip`/`zip` and `diff` are used by bundle commands.
 
-	export APRJCT="rso"
-	export ORGANIZATION="lite"
-	export ENVIRONMENT="sandbox"
-	export DEVELOPER="terry.david@540.co"
-	export SCHEME="https"
-	export HOST_ALIAS="mgmt-api.sandbox"
-	#export HOST_ALIAS="${ORGANIZATION}-${ENVIRONMENT}"; export PORT=":8080"
-	export DOMAIN=".lite-portal.com"
-	export PORT=""
+## Usage
 
-else
-	echo "NO APITOOLS_HOME Directory: [${APITOOLS_HOME}]"
-	exit 1
-fi
+```text
+apigee [global options] <resource> <verb> [options]
+apigee --help | apigee <resource> --help | apigee <resource> <verb> --help
 ```
 
-Note: These tools use .netrc file for credentials
+| Resource | Verbs | Platforms |
+|----------|-------|-----------|
+| `proxy` | list revisions latest deployed download import deploy undeploy delete-revision clean-revisions compare | both |
+| `sharedflow` | same as `proxy` | both |
+| `kvm` | list get create delete put export import (`--scope env\|org\|proxy:NAME`) | both |
+| `target-server` | list get create update delete | both |
+| `keystore`, `truststore` | list get | both |
+| `app` | list get approve revoke (`approve --all-pending`) | both |
+| `developer`, `product` | list get | both |
+| `env` | list get health export | both |
+| `org` | get | both |
+| `cache` | list clear | Edge only |
+| `virtualhost` | list get | Edge only |
+| `user` | list | Edge only |
+| `envgroup` | list get (with attachments) | X / hybrid only |
+| `token` | print an access token (`--header` for an `Authorization:` line) | both |
+| `profile` | list use show current clear | n/a |
+| `doctor` | runs `setup/doctor.sh` | both |
 
-By default, all commands issued with -h will get the Usage and Switches, e.g.:
-```shell
-> getTargetServers -h
-usage: getTargetServers [-cd:hjlvx] [Args]
+Global options can appear anywhere on the command line:
 
-    -d[0-9] set Debug output 0=off; 2='curl'; 9=help
-    -h print this Help message
-    -j input/output data in Json format (default)
-    -l execute a %true% deLete
-    -v display Version information
-    -x input/output data in Xml format (future)
+| Option | Meaning |
+|--------|---------|
+| `--platform x\|hybrid\|edge` | Override `APIGEE_PLATFORM` |
+| `--org ORG`, `--env ENV` | Override `APIGEE_ORG` / `APIGEE_ENV` |
+| `--profile NAME` | Load a profile for this command only |
+| `-n`, `--dry-run` | Run read requests, print every mutating request instead of sending it |
+| `-y`, `--yes` | Skip confirmation prompts on mutating verbs |
+| `--debug` | Log requests to stderr (credentials are never logged) |
+| `--json-engine jq\|python` | Force the JSON engine (default: jq, else python3) |
+
+Mutating verbs ask for confirmation on a terminal. In scripts (no TTY) they
+refuse to run unless `--yes` (or `--dry-run`) is given.
+
+A command that has no equivalent on the selected platform fails with a clear
+`not supported on Apigee X/hybrid` (or `Apigee Edge`) message instead of
+sending a request.
+
+### Examples
+
+```bash
+# Revisions
+apigee proxy latest orders
+apigee proxy download orders --deployed -o orders.zip
+apigee proxy import orders ./orders/apiproxy --validate
+apigee proxy deploy orders --latest --yes
+apigee proxy delete-revision orders 3-7          # skips deployed revisions
+apigee proxy clean-revisions --all --keep 5 --dry-run
+apigee proxy compare orders 12 14                # diff two revisions
+apigee proxy compare orders 14 --dir ./orders    # revision vs. a local checkout
+
+# KVMs
+apigee kvm list --scope org
+apigee kvm get settings timeout
+apigee kvm put settings tls-cert --value-file cert.pem
+printf %s "$VALUE" | apigee kvm put settings api-key --value-stdin
+apigee kvm export --out kvm-export               # every env-scoped map
+apigee kvm import kvm-export --env prod --yes
+
+# Environments
+apigee env health
+apigee env export ./snapshot-test                # target servers, KVMs, vhosts (Edge), deployed bundles
+
+# Apps
+apigee app approve --all-pending --dry-run     # only status "pending"; revoked apps are skipped and listed
 ```
 
-Example command usage:
+Options of a verb may be given before or after its positional arguments
+(`apigee proxy deployed --all-envs orders` works like
+`apigee proxy deployed orders --all-envs`).
 
-```shell
-> gettargetservers
+## Configuration
 
-TS-IMDS-01
-TS-AIRS-01
-TS-MANAGEMENT-API-01
-TS-MARS-01
-TS-KEYCLOAK-01
-TS-FADS-01
+Settings are plain `KEY=value` files; see
+[config/apigee.env.example](config/apigee.env.example) for every variable.
+
+Precedence (lowest to highest):
+
+1. `config/apigee.env` in the repo (git-ignored)
+2. `~/.config/apigee-toolkit/apigee.env`
+3. the current profile (`apigee profile use NAME` or `APIGEE_PROFILE`) — only fills variables that are not already set
+4. variables already in the environment
+5. `--profile NAME` on the command line
+6. `--org`, `--env`, `--platform` flags
+
+Profiles live in `config/profiles/NAME.env` (git-ignored except the
+`example-*` files) or `~/.config/apigee-toolkit/profiles/NAME.env`.
+
+```bash
+apigee profile list
+apigee profile use my-edge        # remembered in ~/.config/apigee-toolkit/current-profile
+apigee profile show               # prints settings; secret-looking values show as <redacted>
+apigee profile clear
+source bin/apigee-env my-edge     # bash or zsh; `source bin/apigee-env --unset` to undo
 ```
 
-Then drill down farther with the next command:
-```shell
-> gettargetserver TS-AIRS-01
-RESPONSE= {
-  "host" : "<yourAPIHost>.<yourDomain>.com",
-  "isEnabled" : true,
-  "name" : "TS-SOMETHINGHERE-01",
-  "port" : 443,
-  "sSLInfo" : {
-    "ciphers" : [ ],
-    "clientAuthEnabled" : "false",
-    "enabled" : "true",
-    "ignoreValidationErrors" : false,
-    "protocols" : [ ]
-  }
-}
-STATUS_CODE= 200
+`apigee profile show` redacts the value of every variable whose name contains
+`SECRET`, `PASSWORD`, `PASSCODE`, `TOKEN`, `CLIENT`, `MFA` or `KEY` (any case),
+for example `APIGEE_EDGE_SSO_CLIENT` and `APIGEE_EDGE_MFA_CODE`. This also
+hides harmless settings such as `APIGEE_EDGE_TOKEN_URL`.
 
+Key variables: `APIGEE_PLATFORM` (`x`, `hybrid`, `edge`), `APIGEE_ORG`,
+`APIGEE_ENV`, `APIGEE_X_API_URL`, `APIGEE_EDGE_MGMT_URL`, `APIGEE_EDGE_AUTH`,
+`APIGEE_EDGE_USER`, `APIGEE_EDGE_TOKEN_URL`, `APIGEE_KVM_READER_URL`.
+
+## Authentication
+
+Credentials are never accepted as command-line arguments, never echoed, and
+never placed in curl's argv: they are written to a private (mode 0600) curl
+config file in a per-command temporary directory that is removed on exit.
+
+**Apigee X / hybrid** uses `gcloud auth print-access-token` (set
+`CLOUDSDK_CORE_ACCOUNT` to pin an account). Run `gcloud auth login` first.
+
+**Apigee Edge** supports three modes (`APIGEE_EDGE_AUTH`):
+
+| Mode | How |
+|------|-----|
+| `oauth` (default) | Password grant against the Edge OAuth endpoint; the token is cached in `~/.cache/apigee-toolkit` (mode 0600) until it expires. SSO orgs set `APIGEE_EDGE_TOKEN_URL` to their zone and provide `APIGEE_EDGE_PASSCODE`. |
+| `basic` | HTTP basic auth with `APIGEE_EDGE_USER` and the password. |
+| `token` | Use a pre-fetched bearer token from `APIGEE_TOKEN`. |
+
+Secrets are read from the environment of the current shell, or from the macOS
+Keychain:
+
+```bash
+security add-generic-password -U -s apigee-toolkit-edge -a "$APIGEE_EDGE_USER" -w
+# OAuth client credentials ("client_id:client_secret") for the Edge token endpoint
+security add-generic-password -U -s apigee-toolkit-edge-sso-client -a client -w
 ```
 
-Some useful commands - 
+Environment alternatives: `APIGEE_EDGE_PASSWORD`, `APIGEE_EDGE_SSO_CLIENT`,
+`APIGEE_EDGE_MFA_CODE`, `APIGEE_EDGE_PASSCODE`, `APIGEE_TOKEN`.
 
-<table>
-<tr><th>deploy*</th> <th>Deploy an API Proxy to a specific version</th></tr>
-<tr><th>deployLatest*</th>  <th>Deploy the Latest (Newest) Version to an environment </th></tr>
-<tr><th>dlAllApis*</th>  <th>Download All the deployed API proxies </th></tr>
-<tr><th>getTargetServer*</th>  <th>Get Target Server Config </th></tr>
-<tr><th>createTargetServer*</th>  <th>Set a Target Server Config </th></tr>
-<tr><th>getVirtualHost*</th>  <th>Get Virtual Host Configs </th></tr>
-<tr><th>importAll*</th>  <th>Import All APIs from a repository into a management server </th></tr>
-<tr><th>importApi*</th>  <th>Import a single API </th></tr>
-<tr><th>importDeploy*</th>  <th>Import and then Deploy an API Bundle </th></tr>
-<tr><th>listApiVersions*</th>  <th>Show Latest and Deployed versions of APIs </th></tr>
-<tr><th>undeploy*</th>  <th>Undeploy a Version of an API </th></tr>
-</table>
+`apigee token` prints the current access token, so ad-hoc calls stay possible:
 
+```bash
+curl -sS -H "$(apigee token --header)" "https://apigee.googleapis.com/v1/organizations/my-org/environments"
+```
 
-A typical development session might use commands in this sequence:
+## KVM export formats
 
-1. Use a SCM system to store tested and verified revisions <br>
-2. Extract the latest known good version from your SCM as your starting point (or verify current working version) <br>
+`apigee kvm export` writes one file per map.
 
-3. Download a version of the API <br>
-    > dlApi myApi myApiRev <br>
+* `--format json` (default): `{"name": "...", "encrypted": true|false, "entries": [{"name": "...", "value": "..."}]}`
+* `--format lines`: the legacy `key;value` format, one entry per line. A value
+  that starts with `-----BEGIN` continues until the matching `-----END` line,
+  so PEM blocks round-trip. CRLF line endings are accepted on import.
 
-5. Explode the zip file <br>
-    > unzip myApi.zip -d myApi <br>
+Apigee Edge does not return values of **encrypted** maps. To export them,
+deploy a small reader proxy that answers `GET <url>?mapname=MAP&key=KEY` with
+the raw value and set `APIGEE_KVM_READER_URL` (or `--reader-url`). Keep such
+a proxy locked down; it exposes secrets by design.
 
-7. Use your editing tools (e.g., Sublime, Eclipse, etc.) to modify your code <br>
-8. Note that there are specific sequencing requirements for default and conditional Flows, and for Route-Rules. <br>
-   (See Developer Best Practices on the APIGEE doc site:   <br>
-   http://apigee.com/docs/api-services/content/best-practices-api-proxy-design-and-development) <br>
+On import, existing entries are updated (X uses `PUT .../entries/KEY`, Edge
+uses `POST .../entries/KEY`), missing maps are created unless `--no-create`.
 
-9. Re-zip the modifications <br>
-    > zip -r myApi apiproxy <br>
+`apigee kvm import` refuses to write anything if any value in any of the given
+files consists only of asterisks (`*****` is how Edge masks encrypted values),
+so a masked export cannot overwrite real secrets. It lists the affected files
+and keys. Pass `--allow-masked` to import such values anyway.
 
-11. Import (upload) the new revisions: <br>
-    > ImportApi myApi
+`apigee kvm get MAP KEY` prints the value byte-for-byte, including trailing
+newlines (PEM files keep their final newline); `--reader-url` values are
+preserved the same way in `get` and `export`.
 
-12. Please use a json file to enter data for createAppfromfile and createDeveloperfromfile. The arg is the name of the json file. 
+## Platform differences
 
-Send thoughts, comments, bugs, etc., to tdavid99@gmail.com
+| Feature | X / hybrid | Edge |
+|---------|------------|------|
+| Base URL | `https://apigee.googleapis.com/v1` | `https://api.enterprise.apigee.com/v1` |
+| Auth | gcloud token | OAuth password grant, basic, or token |
+| KVM entries | paginated `entries` API; values always readable | values of encrypted maps hidden |
+| `kvm create --no-encrypt` | not supported (always encrypted) | supported |
+| `proxy deploy --service-account` | supported | not supported |
+| Caches, virtual hosts, users | not supported | supported |
+| Environment groups | supported | not supported |
 
-Cheers!
+## Tools
+
+* `tools/cvtPEM2JWK.js` — convert a PEM public key into a JWK (with thumbprint)
+  for JWT/JWKS configuration. `cd tools && npm install`, then
+  `node cvtPEM2JWK.js key.pem`.
+* `setup/install.sh --optional` also offers `apigeelint` (bundle linter) and
+  explains how to install `apigeecli` for operations outside this toolkit
+  (app/credential provisioning, analytics, whole-proxy delete).
+
+## Testing
+
+```bash
+tests/run.sh
+```
+
+The suite is plain bash. A fake `curl` on `PATH` records every request (method,
+URL, headers, curl config, body) and serves canned responses, with fake
+`gcloud` and `security` (Keychain) commands, so no network or real org is
+needed. Every test runs once with jq and once with the python3 JSON engine.
+Tests cover both platforms: URL building, auth (including that secrets never
+reach argv), dry-run and confirmation safety, KVM export/import round trips,
+and bundle revision handling.
+
+Linting: `shellcheck bin/* lib/*.sh libexec/*.sh setup/*.sh tests/*.sh tests/fakebin/*`.
+
+## Migrating from the legacy scripts
+
+* Session scripts that exported org/host variables become profiles.
+* `getXxx`/`listXxx` scripts become `apigee <resource> list|get`.
+* Bulk KVM scripts become `apigee kvm export|import`; the legacy `key;value`
+  files are still readable with `--format lines`.
+* Revision clean-up scripts become `apigee proxy|sharedflow delete-revision`
+  and `clean-revisions`, which never delete deployed revisions.
+* Product writes are left to `gcloud apigee products`.
+
+The full mapping, including dropped scripts and reasons, is in
+[docs/INVENTORY.md](docs/INVENTORY.md).
