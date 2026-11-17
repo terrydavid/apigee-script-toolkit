@@ -26,7 +26,7 @@ test_x_export_json_follows_pages() {
   assert_eq "encrypted" "true" "$(jq -r .encrypted "$doc")"
   assert_eq "entry count" "3" "$(jq '.entries | length' "$doc")"
   assert_eq "pem preserved" "$PEM" "$(jq -r '.entries[] | select(.name == "cert") | .value' "$doc")"
-  assert_eq "file mode" "600" "$(stat -f '%Lp' "$doc" 2>/dev/null || stat -c '%a' "$doc")"
+  assert_eq "file mode" "600" "$(stat -c '%a' "$doc" 2>/dev/null || stat -f '%Lp' "$doc")"
 }
 
 test_edge_export_reads_map_and_flags_masked_values() {
