@@ -68,8 +68,14 @@ def deployments(api, org, env, shared):
 
 
 def state_of(api, org, env, kind, name, rev):
+    """Return (state, reason) for one deployment; reason comes from Apigee's own error text."""
     data = api.get(f"/v1/organizations/{org}/environments/{env}/{kind}/{name}/revisions/{rev}/deployments")
-    return data.get("state") or "UNKNOWN"
+    reasons = [e.get("message", "") for e in data.get("errors", []) if e.get("message")]
+    for pod in data.get("pods", []):
+        msg = pod.get("statusMessage") or ""
+        if msg and pod.get("podStatus") not in (None, "", "RUNNING", "ready"):
+            reasons.append(msg)
+    return data.get("state") or "UNKNOWN", " | ".join(dict.fromkeys(reasons))[:300]
 
 
 def names(api, path, key):
@@ -82,7 +88,7 @@ def names(api, path, key):
 def entry_count(api, org, env, kvm):
     n, token = 0, None
     while True:
-        params = {"pageSize": "1000"}
+        params = {"pageSize": "100"}
         if token:
             params["pageToken"] = token
         d = api.get(f"/v1/organizations/{org}/environments/{env}/keyvaluemaps/{urllib.parse.quote(kvm, safe='')}/entries", **params)
@@ -121,14 +127,22 @@ def main():
             report("different revision", False, ", ".join(f"{n} ({a.src} {s[n].get('revision')}, {a.dst} {d[n].get('revision')})" for n in wrong))
         sa_diff = sorted(n for n in s if n in d and s[n].get("serviceAccount") != d[n].get("serviceAccount"))
         if sa_diff:
-            report("different service account", False, ", ".join(sa_diff))
+            report("different service account", False, ", ".join(sa_diff[:8]) + (f", ... and {len(sa_diff) - 8} more" if len(sa_diff) > 8 else ""))
         if not a.no_state:
             bad = []
             for n in sorted(d):
-                st = state_of(api, a.org, a.dst, kind, n, d[n].get("revision"))
+                st, why = state_of(api, a.org, a.dst, kind, n, d[n].get("revision"))
                 if st != "READY":
-                    bad.append(f"{n} rev {d[n].get('revision')} is {st}")
-            report(f"every {a.dst} deployment is READY", not bad, "; ".join(bad))
+                    bad.append((n, d[n].get("revision"), st, why))
+            shown = "; ".join(f"{n} rev {r} is {st}" for n, r, st, _ in bad[:8])
+            if len(bad) > 8:
+                shown += f"; ... and {len(bad) - 8} more"
+            report(f"every {a.dst} deployment is READY", not bad, f"{len(bad)} of {len(d)} not READY: {shown}" if bad else "")
+            reasons = {}
+            for _, _, _, why in bad:
+                reasons[why or "(no reason given)"] = reasons.get(why or "(no reason given)", 0) + 1
+            for why, count in sorted(reasons.items(), key=lambda kv: -kv[1])[:5]:
+                print(f"          reason x{count}: {why}")
         extra = sorted(set(d) - set(s))
         if extra:
             print(f"  note  only in {a.dst} (not an error): {', '.join(extra)}")
