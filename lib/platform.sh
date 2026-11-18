@@ -21,7 +21,7 @@ APIGEE_CONFIG_VARS="APIGEE_PLATFORM APIGEE_ORG APIGEE_ENV APIGEE_X_API_URL
 APIGEE_EDGE_MGMT_URL APIGEE_EDGE_AUTH APIGEE_EDGE_USER APIGEE_EDGE_TOKEN_URL
 APIGEE_EDGE_KEYCHAIN_SERVICE APIGEE_EDGE_SSO_KEYCHAIN_SERVICE
 APIGEE_KVM_READER_URL APIGEE_KVM_READER_AUTH APIGEE_JSON_ENGINE
-APIGEE_NO_TOKEN_CACHE CLOUDSDK_CORE_ACCOUNT APIGEE_SKIP_IDENTITY_CHECK"
+APIGEE_NO_TOKEN_CACHE CLOUDSDK_CORE_ACCOUNT CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT APIGEE_SKIP_IDENTITY_CHECK"
 
 apigee_die() {
   printf 'apigee: error: %s\n' "$*" >&2
@@ -390,8 +390,12 @@ apigee_edge_oauth_token() {
 # which shows up as baffling 403s). Fails open: a lookup error never blocks a run.
 # Skip with APIGEE_SKIP_IDENTITY_CHECK=1.
 apigee_check_token_identity() {
-  local tok="$1" want="${CLOUDSDK_CORE_ACCOUNT:-}" form got
+  local tok="$1" want="${CLOUDSDK_CORE_ACCOUNT:-}" form got imp
   [[ -n "$want" && "${APIGEE_SKIP_IDENTITY_CHECK:-0}" != 1 ]] || return 0
+  # With service-account impersonation the token belongs to the service account.
+  imp="${CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT:-}"
+  [[ -n "$imp" ]] || imp="$(gcloud config get-value auth/impersonate_service_account 2>/dev/null || true)"
+  [[ -z "$imp" ]] || want="$imp"
   form="$(apigee_mktemp tokeninfo)"
   (umask 077 && printf 'access_token=%s' "$tok" >"$form")
   got="$(apigee_request POST https://oauth2.googleapis.com/tokeninfo --no-auth \
@@ -400,9 +404,14 @@ apigee_check_token_identity() {
   rm -f "$form"
   [[ -n "$got" ]] || return 0
   if [[ "$got" != "$want" ]]; then
+    if [[ -n "$imp" ]]; then
+      apigee_die "gcloud gave a token for '$got', but the impersonated service account is '$want'.
+Check the setting: gcloud config get-value auth/impersonate_service_account
+(set APIGEE_SKIP_IDENTITY_CHECK=1 to skip this check)"
+    fi
     apigee_die "gcloud gave a token for '$got', but CLOUDSDK_CORE_ACCOUNT is '$want'.
-Clear gcloud's token cache (rm ~/.config/gcloud/access_tokens.db) and log in again:
-  gcloud auth login $want --force
+Reset the login with setup/gcloud-login.sh $want, or clear the cache and log in again:
+  rm ~/.config/gcloud/access_tokens.db; gcloud auth login $want --force
 (set APIGEE_SKIP_IDENTITY_CHECK=1 to skip this check)"
   fi
 }

@@ -301,6 +301,10 @@ env_import() {
   fi
   [[ -n "$plan" ]] || apigee_die "nothing to import in $dir (expected targetservers/, kvms/, developers/, products/, apps/, proxies/, sharedflows/)"
   printf 'Importing from %s:\n%s' "$dir" "$plan" >&2
+  # Authenticate once, up front, in this shell. A bad token or the wrong
+  # gcloud identity then stops the whole import with a single message instead
+  # of failing (and repeating the error) on every call below.
+  apigee_token >/dev/null
   apigee_confirm "Import the items listed above into org '$(apigee_org)', environment '$(apigee_env)' (deploy=$deploy, overwrite=$overwrite)."
 
   # One confirmation covers every step below.

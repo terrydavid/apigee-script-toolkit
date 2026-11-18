@@ -9,6 +9,7 @@ case "$*" in
     printf 'gcloud auth print-access-token account=%s\n' "${CLOUDSDK_CORE_ACCOUNT:-}" >>"${FAKE_CURL_LOG:-/dev/null}"
     printf '%s\n' "${FAKE_GCLOUD_TOKEN:-fake-x-token}"
     ;;
+  "config get-value auth/impersonate_service_account") printf '%s\n' "${FAKE_GCLOUD_IMPERSONATE:-}" ;;
   "config get-value account") printf 'tester@example.com\n' ;;
   "apigee --help") exit 0 ;;
   "apigee "*" list "*)

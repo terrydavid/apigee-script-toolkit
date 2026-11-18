@@ -164,7 +164,7 @@ test_import_requires_confirmation() {
   make_export "$APP_JSON"
   run "$APIGEE" product import "$T/in"
   assert_status "no tty, no --yes" 1
-  assert_eq "nothing sent" "" "$(posts)"
+  assert_eq "nothing sent to Apigee" "" "$(posts | grep -v tokeninfo)"
 }
 
 test_import_with_no_files_fails() {
@@ -273,7 +273,7 @@ test_env_import_needs_confirmation_and_dir() {
   make_export "$APP_JSON"
   run "$APIGEE" env import "$T/in"
   assert_status "no yes" 1
-  assert_eq "nothing sent" "" "$(posts)"
+  assert_eq "nothing sent to Apigee" "" "$(posts | grep -v tokeninfo)"
   run "$APIGEE" --yes env import
   assert_contains "missing dir" "$ERR" "missing DIR"
   mkdir -p "$T/none"
@@ -334,6 +334,18 @@ test_env_import_dry_run_counts_bundles_as_would_import() {
   assert_status "dry run succeeds" 0
   assert_contains "bundle counted" "$ERR" "bundles: 1 created, 0 updated, 0 already existed (skipped), 0 failed"
   assert_not_contains "no failure message" "$ERR" "import of proxy p1"
+}
+
+test_env_import_stops_once_on_wrong_gcloud_identity() {
+  use_x
+  make_export "$APP_JSON"
+  export CLOUDSDK_CORE_ACCOUNT=me@example.com
+  route POST 'oauth2.googleapis.com/tokeninfo$' 200 '{"email":"someone.else@gmail.com"}'
+  run "$APIGEE" --yes env import "$T/in"
+  assert_status "aborted" 1
+  assert_eq "mismatch reported exactly once" "1" "$(printf '%s\n' "$ERR" | grep -c "gcloud gave a token for")"
+  assert_eq "nothing sent to Apigee" "" "$(posts | grep -v tokeninfo)"
+  assert_not_contains "no per-step noise" "$ERR" "step failed; continuing"
 }
 
 run_tests

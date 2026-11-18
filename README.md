@@ -154,6 +154,26 @@ config file in a per-command temporary directory that is removed on exit.
 **Apigee X / hybrid** uses `gcloud auth print-access-token` (set
 `CLOUDSDK_CORE_ACCOUNT` to pin an account). Run `gcloud auth login` first.
 
+When `CLOUDSDK_CORE_ACCOUNT` is set, the toolkit checks (via Google's tokeninfo
+endpoint) that the token really belongs to that account, or to the impersonated
+service account if one is configured, and stops before any Apigee call if not.
+`env import` does this once, up front. Skip with `APIGEE_SKIP_IDENTITY_CHECK=1`.
+
+*Wrong account or repeated 403s.* gcloud can hold a credential saved under one
+account name that actually belongs to another (usually from a browser login with
+several Google accounts signed in). `setup/gcloud-login.sh [ACCOUNT]` revokes
+that credential, clears the token cache, prints the login URL (open it in a
+private window and sign in as ACCOUNT only), then checks that the tokens are
+ACCOUNT's. `setup/gcloud-login.sh --check` runs the checks alone.
+
+*No hourly re-login.* `setup/gcloud-impersonate.sh --project PROJECT --user ACCOUNT`
+creates a service account (`apigee-toolkit`), grants it `roles/apigee.admin`
+(`--read-only` for `roles/apigee.readOnlyAdmin`), lets you create tokens for it
+(Token Creator on that service account only) and sets
+`auth/impersonate_service_account` in the active gcloud configuration. gcloud then
+mints a fresh token for the service account on every call. Use `-n` to preview,
+`--no-config` to leave gcloud's configuration alone, `--undo` to stop impersonating.
+
 **Apigee Edge** supports three modes (`APIGEE_EDGE_AUTH`):
 
 | Mode | How |

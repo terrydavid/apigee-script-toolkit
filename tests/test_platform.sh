@@ -278,4 +278,35 @@ test_identity_check_still_runs_in_dry_run() {
   assert_contains "mismatch" "$ERR" "token for 'someone.else@gmail.com'"
 }
 
+test_identity_check_expects_the_impersonated_service_account() {
+  use_x
+  export CLOUDSDK_CORE_ACCOUNT=me@example.com
+  export FAKE_GCLOUD_IMPERSONATE=sa@proj.iam.gserviceaccount.com
+  route GET '/organizations/org1$' 200 '{"name":"org1"}'
+  route POST 'oauth2.googleapis.com/tokeninfo$' 200 '{"email":"sa@proj.iam.gserviceaccount.com"}'
+  run "$APIGEE" org get
+  assert_status "service account token accepted" 0
+}
+
+test_identity_check_refuses_a_user_token_while_impersonating() {
+  use_x
+  export CLOUDSDK_CORE_ACCOUNT=me@example.com
+  export FAKE_GCLOUD_IMPERSONATE=sa@proj.iam.gserviceaccount.com
+  route GET '/organizations/org1$' 200 '{"name":"org1"}'
+  route POST 'oauth2.googleapis.com/tokeninfo$' 200 '{"email":"me@example.com"}'
+  run "$APIGEE" org get
+  assert_status "user token refused while impersonating" 1
+  assert_contains "names the service account" "$ERR" "impersonated service account is 'sa@proj.iam.gserviceaccount.com'"
+}
+
+test_identity_check_reads_impersonation_from_the_environment() {
+  use_x
+  export CLOUDSDK_CORE_ACCOUNT=me@example.com
+  export CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT=sa2@proj.iam.gserviceaccount.com
+  route GET '/organizations/org1$' 200 '{"name":"org1"}'
+  route POST 'oauth2.googleapis.com/tokeninfo$' 200 '{"email":"sa2@proj.iam.gserviceaccount.com"}'
+  run "$APIGEE" org get
+  assert_status "accepted" 0
+}
+
 run_tests
