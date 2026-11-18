@@ -348,4 +348,58 @@ test_env_import_stops_once_on_wrong_gcloud_identity() {
   assert_not_contains "no per-step noise" "$ERR" "step failed; continuing"
 }
 
+test_env_import_failed_deploy_does_not_stop_the_rest() {
+  use_x
+  make_export "$APP_JSON"
+  mkdir -p "$T/in/proxies" "$T/in/sharedflows"
+  printf 'zipdata' >"$T/in/proxies/p1-rev3.zip"
+  printf 'zipdata' >"$T/in/sharedflows/s1-rev1.zip"
+  printf 'zipdata' >"$T/in/sharedflows/s2-rev1.zip"
+  route POST "$ORGP/environments/test/sharedflows/s1/revisions/2/deployments" 400 '{"error":{"code":400,"message":"MISSING_SERVICE_ACCOUNT"}}'
+  route POST "$ORGP/apis\?action=import" 200 '{"revision":"4"}'
+  route POST "$ORGP/sharedflows\?action=import" 200 '{"revision":"2"}'
+  run "$APIGEE" --yes env import "$T/in" --deploy --no-targetservers --no-kvms --no-developers --no-products --no-apps
+  assert_status "reports the failure" 1
+  assert_contains "failed deploy named" "$ERR" "deploy of sharedflow s1 revision 2 failed"
+  assert_contains "next shared flow still deployed" "$(posts)" "sharedflows/s2/revisions/2/deployments"
+  assert_contains "proxy still imported" "$(posts)" "apis?action=import&name=p1"
+  assert_contains "proxy still deployed" "$(posts)" "apis/p1/revisions/4/deployments"
+  assert_contains "summary" "$ERR" "bundles: 2 created, 0 updated, 0 already existed (skipped), 1 failed"
+}
+
+test_env_import_service_account_is_sent_with_deployments() {
+  use_x
+  make_export "$APP_JSON"
+  mkdir -p "$T/in/proxies"
+  printf 'zipdata' >"$T/in/proxies/p1-rev3.zip"
+  route POST "$ORGP/apis\?action=import" 200 '{"revision":"4"}'
+  run "$APIGEE" --yes env import "$T/in" --deploy --service-account sa@proj.iam.gserviceaccount.com --no-targetservers --no-kvms --no-developers --no-products --no-apps
+  assert_status "ok" 0
+  assert_contains "service account on the deployment" "$(posts)" "apis/p1/revisions/4/deployments?override=true&serviceAccount=sa%40proj.iam.gserviceaccount.com"
+}
+
+test_env_import_existing_revisions_deploys_without_uploading() {
+  use_x
+  make_export "$APP_JSON"
+  mkdir -p "$T/in/proxies" "$T/in/sharedflows"
+  printf 'zipdata' >"$T/in/proxies/p1-rev3.zip"
+  printf 'zipdata' >"$T/in/sharedflows/s1-rev7.zip"
+  run "$APIGEE" --yes env import "$T/in" --deploy --existing-revisions --service-account sa@proj.iam.gserviceaccount.com --no-targetservers --no-kvms --no-developers --no-products --no-apps
+  assert_status "ok" 0
+  local p; p="$(posts)"
+  assert_contains "shared flow revision from the file name" "$p" "sharedflows/s1/revisions/7/deployments"
+  assert_contains "proxy revision from the file name" "$p" "apis/p1/revisions/3/deployments"
+  assert_contains "service account" "$p" "serviceAccount=sa%40proj.iam.gserviceaccount.com"
+  assert_not_contains "nothing uploaded" "$p" "action=import"
+  assert_contains "summary" "$ERR" "bundles: 2 created"
+}
+
+test_env_import_existing_revisions_needs_deploy() {
+  use_x
+  make_export "$APP_JSON"
+  run "$APIGEE" --yes env import "$T/in" --existing-revisions
+  assert_status "refused" 1
+  assert_contains "reason" "$ERR" "--existing-revisions needs --deploy"
+}
+
 run_tests

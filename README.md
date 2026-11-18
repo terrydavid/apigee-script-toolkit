@@ -416,8 +416,19 @@ apigee env import ./snap --env test --deploy  # recreate it somewhere else
   (import: `--no-targetservers --no-kvms --no-developers --no-products --no-apps --no-bundles`).
 - Import creates what is missing and skips what exists; `--overwrite` updates instead.
   `--deploy` deploys each imported bundle (shared flows first). It asks for one confirmation
-  (`--yes` to skip, `-n` to preview). Keystore contents, env groups, virtual hosts and caches
+  (`--yes` to skip, `-n` to preview). A bundle whose deployment fails is reported and the
+  import carries on with the rest. Keystore contents, env groups, virtual hosts and caches
   are exported for reference but not imported (Apigee does not export private keys).
+- **Importing into the same org** (for example dev to another environment of the same org):
+  org-level items (developers, products, apps) already exist and are skipped, and uploading
+  a bundle would only add a duplicate revision of a proxy that is already there. Use
+  `--existing-revisions --deploy` to skip the upload and deploy the revision named in each
+  file (`NAME-revN.zip`) to the target environment instead. This also avoids the "belongs
+  to space" 403, which blocks uploads, not deployments.
+- **Deployment service account (Apigee X):** bundles that need a service account (error
+  `MISSING_SERVICE_ACCOUNT`) are deployed with `--service-account EMAIL` on `env import`,
+  as with `proxy deploy`. The export does not record which service account each
+  deployment used.
 - **App credentials:** consumer keys and secrets are shown as `"<redacted>"` by `app get`,
   `app export` and `env export`. Add `--show-credentials` to include them. Exports made that
   way are restored on import (the key Apigee generates is removed); redacted ones are not,

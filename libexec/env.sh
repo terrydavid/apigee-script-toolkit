@@ -80,6 +80,15 @@ and are not imported.
 Options:
   --no-targetservers --no-kvms --no-developers --no-products --no-apps --no-bundles
   --deploy        deploy each imported bundle revision to --env (shared flows first)
+  --existing-revisions
+                  do not upload the bundles: deploy the revision number in each file
+                  name (NAME-revN.zip) as it already exists in the org. Use this when
+                  importing into the SAME org the export came from (for example dev to
+                  another environment): uploading would only create duplicate revisions.
+                  Needs --deploy.
+  --service-account EMAIL
+                  service account for the deployments (Apigee X; bundles that use
+                  Google authentication or similar require one)
   --overwrite     update things that already exist (default: skip them)
   --allow-masked  import KVM values that are all asterisks (see 'apigee kvm import --help')
 
@@ -227,12 +236,30 @@ env_export() {
 }
 
 env_import_bundles() {
-  local label="$1" sub="$2" dir="$3" deploy="$4" results="$5" zip base name rev
+  local label="$1" sub="$2" dir="$3" deploy="$4" results="$5" sa="${6:-}" existing="${7:-false}" zip base name rev
   [[ -d "$dir/$sub" ]] || return 0
+  local sa_args=()
+  [[ -n "$sa" ]] && sa_args=(--service-account "$sa")
   for zip in "$dir/$sub"/*.zip; do
     [[ -f "$zip" ]] || continue
     base="$(basename "$zip" .zip)"
     name="${base%-rev*}"
+    if [[ "$existing" == true ]]; then
+      rev="${base##*-rev}"
+      if [[ ! "$rev" =~ ^[0-9]+$ ]]; then
+        apigee_warn "cannot tell the revision of $zip (expected NAME-revN.zip)"
+        echo failed >>"$results"
+        continue
+      fi
+      if (bundle_deploy "$label" "$name" "$rev" ${sa_args[@]+"${sa_args[@]}"} >/dev/null); then
+        apigee_info "deployed existing $label $name revision $rev to $(apigee_env)"
+        echo created >>"$results"
+      else
+        apigee_warn "deploy of $label $name revision $rev failed"
+        echo failed >>"$results"
+      fi
+      continue
+    fi
     if [[ "$APIGEE_DRY_RUN" == 1 ]]; then
       bundle_import "$label" "$name" "$zip" >/dev/null || true
       if [[ "$deploy" == true ]]; then apigee_info "dry run: would deploy $label $name to $(apigee_env)"; fi
@@ -242,7 +269,7 @@ env_import_bundles() {
     if rev="$(bundle_import "$label" "$name" "$zip")" && [[ -n "$rev" ]]; then
       apigee_info "imported $label $name as revision $rev"
       if [[ "$deploy" == true ]]; then
-        if bundle_deploy "$label" "$name" "$rev" >/dev/null; then
+        if (bundle_deploy "$label" "$name" "$rev" ${sa_args[@]+"${sa_args[@]}"} >/dev/null); then
           echo created >>"$results"
         else
           apigee_warn "deploy of $label $name revision $rev failed"
@@ -259,7 +286,7 @@ env_import_bundles() {
 }
 
 env_import() {
-  local dir="" ts=true kvms=true developers=true products=true apps=true bundles=true deploy=false overwrite=false masked="" res
+  local dir="" ts=true kvms=true developers=true products=true apps=true bundles=true deploy=false overwrite=false masked="" res sa="" existing=false
   bundles=true
   while (($#)); do
     case "$1" in
@@ -270,6 +297,8 @@ env_import() {
       --no-apps) apps=false; shift ;;
       --no-bundles) bundles=false; shift ;;
       --deploy) deploy=true; shift ;;
+      --existing-revisions) existing=true; shift ;;
+      --service-account) [[ $# -ge 2 ]] || apigee_die "--service-account needs an EMAIL"; sa="$2"; shift 2 ;;
       --overwrite) overwrite=true; shift ;;
       --allow-masked) masked=--allow-masked; shift ;;
       -*) apigee_die "unknown option $1" ;;
@@ -278,6 +307,7 @@ env_import() {
   done
   [[ -n "$dir" ]] || apigee_die "missing DIR"
   [[ -d "$dir" ]] || apigee_die "no such directory: $dir"
+  [[ "$existing" != true || "$deploy" == true ]] || apigee_die "--existing-revisions needs --deploy (it only deploys)"
   local ow=""
   [[ "$overwrite" == true ]] && ow=--overwrite
 
@@ -338,8 +368,8 @@ env_import() {
   fi
   if [[ "$bundles" == true ]]; then
     : >"$results"
-    env_import_bundles sharedflow sharedflows "$dir" "$deploy" "$results"
-    env_import_bundles proxy proxies "$dir" "$deploy" "$results"
+    env_import_bundles sharedflow sharedflows "$dir" "$deploy" "$results" "$sa" "$existing"
+    env_import_bundles proxy proxies "$dir" "$deploy" "$results" "$sa" "$existing"
     if [[ -s "$results" ]]; then import_report "bundles" "$results" || failed=1; fi
   fi
   return "$failed"
