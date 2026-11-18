@@ -11,5 +11,9 @@ case "$*" in
     ;;
   "config get-value account") printf 'tester@example.com\n' ;;
   "apigee --help") exit 0 ;;
+  "apigee "*" list "*)
+    printf '%s' "${FAKE_GCLOUD_LIST-p1
+p2
+}" ;;
   *) exit 1 ;;
 esac

@@ -20,3 +20,4 @@ __pycache__/
 
 # Live check output
 tests/live_check_*.log
+tests/live_all/

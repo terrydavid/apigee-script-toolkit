@@ -283,3 +283,19 @@ Troubleshooting a failing live check:
 
 The full mapping, including dropped scripts and reasons, is in
 [docs/INVENTORY.md](docs/INVENTORY.md).
+
+### Live sweep of every read command (manual, read-only)
+
+```bash
+python3 tests/live_readonly.py run --org ORG --env ENV --platform x --gcloud
+```
+
+Runs every GET-style command (list/get/revisions/latest/deployed/health...) against
+real names it discovers (`--sample N`, default 2), optionally cross-checks counts with
+`gcloud apigee ... list`, and writes `tests/live_all/report.md` and `results.json`
+(git-ignored). Each row shows the legacy toolkit script it replaces (from
+`docs/INVENTORY.md`). The report groups failures by cause (auth, permission, 404, 5xx,
+timeout), flags slow and empty results, and lists gcloud count mismatches.
+Command output is never saved, developer emails and app ids are masked
+(`--no-redact` to show them), and file-writing commands are skipped.
+`python3 tests/live_readonly.py report` re-renders the report from the last run.
