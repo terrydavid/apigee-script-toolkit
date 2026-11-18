@@ -299,3 +299,31 @@ timeout), flags slow and empty results, and lists gcloud count mismatches.
 Command output is never saved, developer emails and app ids are masked
 (`--no-redact` to show them), and file-writing commands are skipped.
 `python3 tests/live_readonly.py report` re-renders the report from the last run.
+
+### Export and import a whole environment
+
+```bash
+apigee env export ./snap --env dev            # target servers, KVMs, keystore metadata,
+                                              # deployed proxies/shared flows, env groups (X)
+                                              # or caches/virtual hosts (Edge), plus the org's
+                                              # developers, API products and apps
+apigee env import ./snap --env test --deploy  # recreate it somewhere else
+```
+
+- Org-level data can also be moved on its own: `apigee developer|product|app export [DIR]`
+  and `apigee developer|product|app import DIR`.
+- Opt out of parts with `--no-bundles --no-kvms --no-keystores --no-developers --no-products --no-apps`
+  (import: `--no-targetservers --no-kvms --no-developers --no-products --no-apps --no-bundles`).
+- Import creates what is missing and skips what exists; `--overwrite` updates instead.
+  `--deploy` deploys each imported bundle (shared flows first). It asks for one confirmation
+  (`--yes` to skip, `-n` to preview). Keystore contents, env groups, virtual hosts and caches
+  are exported for reference but not imported (Apigee does not export private keys).
+- **App credentials:** consumer keys and secrets are shown as `"<redacted>"` by `app get`,
+  `app export` and `env export`. Add `--show-credentials` to include them. Exports made that
+  way are restored on import (the key Apigee generates is removed); redacted ones are not,
+  so the imported app gets a new key.
+- Export files are created private (mode 600, directories 700). KVM values and exported
+  credentials are secrets: keep the export out of version control.
+- `tests/live_readonly.py run --write-files DIR [--show-credentials]` also runs the
+  file-writing commands during the live sweep and reports what was written (never contents).
+

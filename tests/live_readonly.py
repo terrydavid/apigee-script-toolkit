@@ -19,7 +19,10 @@ Safety:
   * command output is NOT saved (it can contain secrets: KVM values, app keys);
     only exit code, timing, size, line count and the first error line are kept;
   * developer emails and app ids are masked unless --no-redact is given.
-Commands that write files (kvm export, proxy download, env export) are skipped.
+Commands that write files (kvm export, proxy/sharedflow download, env export) are
+skipped unless --write-files DIR is given; they then write under DIR (mode 700, files
+600) and the report lists what was written, never its contents. Exports of KVMs and
+(with --show-credentials) app keys and secrets are secrets: keep DIR private.
 """
 import argparse
 import json
@@ -254,15 +257,64 @@ def sweep(args):
 
     for res, verb in (("kvm", "export"), ("proxy", "download"), ("sharedflow", "download"),
                       ("env", "export")):
-        r.skip(res, verb, [], "writes files (may contain secrets); not run by this sweep")
+        if not args.write_files:
+            r.skip(res, verb, [], "writes files (may contain secrets); pass --write-files DIR to run")
+
+    written = write_files(args, r) if args.write_files else None
 
     xchecks = gcloud_crosscheck(args, r) if (args.gcloud and not edge) else []
     result = {
         "org": args.org, "env": args.env, "platform": args.platform, "sample": n,
         "started": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-        "rows": r.rows, "crosschecks": xchecks,
+        "rows": r.rows, "crosschecks": xchecks, "written": written,
+        "show_credentials": bool(args.show_credentials),
     }
     return result
+
+
+# --------------------------------------------------------------------------
+# --write-files: the commands that write to disk
+# --------------------------------------------------------------------------
+def write_files(args, r):
+    base = os.path.abspath(args.write_files)
+    os.makedirs(base, mode=0o700, exist_ok=True)
+    os.chmod(base, 0o700)
+    long = args.timeout * 10
+
+    def run(res, verb, argv, timeout=None):
+        rc, out, err, ms, to = r.exec([res, verb] + argv, timeout=timeout or long)
+        r.record(res, verb, argv, argv, rc, out, err, ms, to, note="writes files")
+        return out
+
+    run("kvm", "export", ["--scope", "env", "--out", os.path.join(base, "kvms-env")])
+    run("kvm", "export", ["--scope", "org", "--out", os.path.join(base, "kvms-org")])
+    for res in ("proxy", "sharedflow"):
+        _rc, listing, _e, _ms, _to = r.exec([res, "list"])
+        for name in r.names(listing):
+            sub = "proxies" if res == "proxy" else "sharedflows"
+            os.makedirs(os.path.join(base, sub), mode=0o700, exist_ok=True)
+            run(res, "download", [name, "--latest", "-o", os.path.join(base, sub, name + ".zip")])
+    extra = ["--show-credentials"] if args.show_credentials else []
+    run("env", "export", [os.path.join(base, "env-export")] + extra)
+    return summarize_dir(base)
+
+
+def summarize_dir(base):
+    files, total, loose = 0, 0, []
+    for root, _dirs, names in os.walk(base):
+        for n in names:
+            path = os.path.join(root, n)
+            st = os.stat(path)
+            files += 1
+            total += st.st_size
+            if st.st_mode & 0o077:
+                loose.append(os.path.relpath(path, base))
+    top = {}
+    for entry in sorted(os.listdir(base)):
+        path = os.path.join(base, entry)
+        count = sum(len(f) for _r, _d, f in os.walk(path)) if os.path.isdir(path) else 1
+        top[entry] = count
+    return {"dir": base, "files": files, "bytes": total, "by_folder": top, "loose_permissions": loose}
 
 
 # --------------------------------------------------------------------------
@@ -392,6 +444,21 @@ def render(result):
                  "%d cross-check(s) disagree or errored: investigate paging, filters or permissions." % len(bad))
         L.append("")
 
+    w = result.get("written")
+    if w:
+        L.append("### Files written (--write-files)\n")
+        L.append("Directory `%s`: %d files, %d bytes. Contents are not shown here." % (w["dir"], w["files"], w["bytes"]))
+        for folder, count in w["by_folder"].items():
+            L.append("- `%s`: %d file(s)" % (folder, count))
+        if w["loose_permissions"]:
+            L.append("- WARNING: %d file(s) readable by group/others, e.g. `%s`" % (
+                len(w["loose_permissions"]), w["loose_permissions"][0]))
+        else:
+            L.append("- all files are private to your user (no group/other access)")
+        L.append("- these files may hold secrets (KVM values%s): do not commit or share them" % (
+            ", app keys and secrets" if result.get("show_credentials") else ""))
+        L.append("")
+
     new_cmds = sorted({x["command"] for x in ran if not x["legacy"]})
     if new_cmds:
         L.append("### Commands with no legacy equivalent in INVENTORY.md\n")
@@ -415,6 +482,8 @@ def main():
             p.add_argument("--sample", type=int, default=2, help="names to query per resource (default 2)")
             p.add_argument("--timeout", type=int, default=60)
             p.add_argument("--gcloud", action="store_true", help="cross-check counts with gcloud apigee ... list (X only)")
+            p.add_argument("--write-files", metavar="DIR", help="also run the commands that write files (kvm export, proxy/sharedflow download, env export) into DIR")
+            p.add_argument("--show-credentials", action="store_true", help="with --write-files: include app consumer keys and secrets in the env export")
             p.add_argument("--no-redact", action="store_true", help="show developer emails and app ids")
     args = ap.parse_args()
     os.makedirs(args.out, mode=0o700, exist_ok=True)

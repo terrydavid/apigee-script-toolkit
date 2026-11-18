@@ -18,6 +18,11 @@
 #   apigee_json entries-to-lines       entries JSON lines -> "name;value"
 #   apigee_json masked-keys            names of entries whose value is all asterisks
 #   apigee_json app-statuses           "status name" per app (status lowercased, "-" if unset)
+#   apigee_json items [FIELD]          each element of a list response as compact JSON
+#   apigee_json omit KEY...            delete top-level keys (compact output)
+#   apigee_json redact-credentials     replace consumerKey/consumerSecret of an app with "<redacted>"
+#   apigee_json app-create-body        app -> {name, attributes?, callbackUrl?, apiProducts:[...]}
+#   apigee_json app-credentials        one {consumerKey,consumerSecret,apiProducts} line per real credential
 
 apigee_json_engine() {
   case "${APIGEE_JSON_ENGINE:-auto}" in
@@ -77,6 +82,23 @@ apigee_json() {
     app-statuses)
       jq -r '(if type == "array" then . else (.app // []) end)[] | select(type == "object")
              | "\(if (.status | type) == "string" and .status != "" then (.status | ascii_downcase) else "-" end) \(.name)"'
+      ;;
+    items)
+      jq -c --arg f "${1:-}" 'if $f != "" then (.[$f] // []) elif type == "array" then . elif type == "object" then ([.[] | select(type == "array")] | first // []) else [] end | .[]'
+      ;;
+    omit) jq -c 'del(.[$ARGS.positional[]])' --args "$@" ;;
+    redact-credentials)
+      jq 'if type == "object" and (.credentials | type) == "array"
+          then .credentials |= map(if type == "object" then (if has("consumerKey") then .consumerKey = "<redacted>" else . end | if has("consumerSecret") then .consumerSecret = "<redacted>" else . end) else . end)
+          else . end'
+      ;;
+    app-create-body)
+      jq -c '{name} + (if .attributes != null then {attributes} else {} end) + (if .callbackUrl != null then {callbackUrl} else {} end)
+             + {apiProducts: ([(.credentials // [])[] | (.apiProducts // [])[] | .apiproduct // empty] | unique)}'
+      ;;
+    app-credentials)
+      jq -c '(.credentials // [])[] | select(.consumerKey != null and .consumerSecret != null and .consumerSecret != "<redacted>")
+             | {consumerKey, consumerSecret, apiProducts: [(.apiProducts // [])[] | .apiproduct // empty]}'
       ;;
     *) apigee_die "apigee_json: unknown op '$op'" ;;
   esac

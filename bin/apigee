@@ -38,11 +38,11 @@ Resources and verbs:
   target-server  list get create update delete
   keystore       list get
   truststore     list get
-  app            list get approve revoke
-  developer      list get
-  product        list get
+  app            list get approve revoke export import
+  developer      list get export import
+  product        list get export import
   cache          list clear                      (Edge only)
-  env            list get health export
+  env            list get health export import
   virtualhost    list get                        (Edge only)
   envgroup       list get                        (X/hybrid only)
   user           list                            (Edge only)

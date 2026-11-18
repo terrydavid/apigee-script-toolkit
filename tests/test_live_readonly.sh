@@ -122,4 +122,36 @@ test_report_subcommand_rerenders() {
   assert_contains "rerendered" "$OUT" "# Live read-only sweep: org1 / test (x)"
 }
 
+test_write_files_switch_runs_the_writing_commands() {
+  use_x
+  sweep_routes
+  route GET '/keyvaluemaps/m1/entries$' 200 '{"keyValueEntries":[{"name":"k","value":"topsecret"}]}'
+  sweep --write-files "$T/dump"
+  assert_status "sweep" 0
+  assert_not_contains "no longer skipped" "$OUT" "pass --write-files DIR to run"
+  assert_contains "reported" "$OUT" "Files written"
+  assert_contains "private" "$OUT" "all files are private"
+  assert_contains "env export legacy" "$OUT" '`apigee env export'
+  assert_eq "kvm file written" "m1.json" "$(ls "$T/dump/kvms-env")"
+  assert_eq "bundle written" "p1.zip" "$(ls "$T/dump/proxies")"
+  assert_eq "dump dir mode" "700" "$(stat -c '%a' "$T/dump" 2>/dev/null || stat -f '%Lp' "$T/dump")"
+  assert_not_contains "contents not in report" "$OUT" "topsecret"
+  assert_not_contains "contents not in results" "$(cat "$T/live/results.json")" "topsecret"
+}
+
+test_write_files_show_credentials_reaches_env_export() {
+  use_x
+  sweep_routes
+  sweep --write-files "$T/dump" --show-credentials
+  assert_contains "flag passed" "$(jq -r '.rows[].command' "$T/live/results.json")" "env export $T/dump/env-export --show-credentials"
+  assert_contains "secrets warning" "$OUT" "app keys and secrets"
+}
+
+test_default_sweep_writes_no_files() {
+  use_x
+  sweep_routes
+  sweep
+  assert_eq "no dump" "no" "$([[ -e $T/dump ]] && echo yes || echo no)"
+}
+
 run_tests

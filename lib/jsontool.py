@@ -187,6 +187,68 @@ def op_app_statuses(_args):
         print("%s %s" % (status, "null" if name is None else text(name)))
 
 
+def op_items(args):
+    doc = load_stdin()
+    field = args[0] if args else ""
+    if field:
+        items = doc.get(field) if isinstance(doc, dict) else None
+        items = items or []
+    elif isinstance(doc, list):
+        items = doc
+    elif isinstance(doc, dict):
+        items = next((v for v in doc.values() if isinstance(v, list)), [])
+    else:
+        items = []
+    for item in items:
+        print(dump(item))
+
+
+def op_omit(args):
+    doc = load_stdin()
+    if isinstance(doc, dict):
+        for key in args:
+            doc.pop(key, None)
+    print(dump(doc))
+
+
+def op_redact_credentials(_args):
+    doc = load_stdin()
+    if isinstance(doc, dict) and isinstance(doc.get("credentials"), list):
+        for cred in doc["credentials"]:
+            if isinstance(cred, dict):
+                for key in ("consumerKey", "consumerSecret"):
+                    if key in cred:
+                        cred[key] = "<redacted>"
+    print(json.dumps(doc, indent=2, ensure_ascii=False))
+
+
+def product_names(cred):
+    return [p["apiproduct"] for p in (cred.get("apiProducts") or [])
+            if isinstance(p, dict) and p.get("apiproduct") is not None]
+
+
+def op_app_create_body(_args):
+    app = load_stdin()
+    body = {"name": app.get("name")}
+    for key in ("attributes", "callbackUrl"):
+        if app.get(key) is not None:
+            body[key] = app[key]
+    names = set()
+    for cred in app.get("credentials") or []:
+        names.update(product_names(cred))
+    body["apiProducts"] = sorted(names)
+    print(dump(body))
+
+
+def op_app_credentials(_args):
+    app = load_stdin()
+    for cred in app.get("credentials") or []:
+        if (cred.get("consumerKey") is not None and cred.get("consumerSecret") is not None
+                and cred["consumerSecret"] != "<redacted>"):
+            print(dump({"consumerKey": cred["consumerKey"], "consumerSecret": cred["consumerSecret"],
+                        "apiProducts": product_names(cred)}))
+
+
 def op_pretty(_args):
     print(json.dumps(load_stdin(), indent=2, ensure_ascii=False))
 
@@ -207,6 +269,11 @@ OPS = {
     "entries-to-lines": op_entries_to_lines,
     "masked-keys": op_masked_keys,
     "app-statuses": op_app_statuses,
+    "items": op_items,
+    "omit": op_omit,
+    "redact-credentials": op_redact_credentials,
+    "app-create-body": op_app_create_body,
+    "app-credentials": op_app_credentials,
 }
 
 

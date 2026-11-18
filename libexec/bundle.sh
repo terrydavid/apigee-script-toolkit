@@ -220,8 +220,9 @@ bundle_expand_revs() {
 
 bundle_download_to() {
   local label="$1" name="$2" rev="$3" out="$4"
-  apigee_request GET "$(bundle_path "$label" "$name")/revisions/$rev?format=bundle" \
-    --accept '*/*' --output "$out" || apigee_die "download of $label $name revision $rev failed"
+  # bundles can hold credentials in policies; keep the file private
+  (umask 077 && apigee_request GET "$(bundle_path "$label" "$name")/revisions/$rev?format=bundle" \
+    --accept '*/*' --output "$out") || apigee_die "download of $label $name revision $rev failed"
 }
 
 bundle_download() {

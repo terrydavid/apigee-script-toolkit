@@ -303,3 +303,10 @@ organizations list; products create/delete/describe/list/update.
 | `data/*` (43 files) | TGAO | Sample request/response payloads and LDAP/SOAP fixtures from past engagements | — | — | n/a | dropped (client data; some files contained credentials) |
 | `config/environments/*.d/*` (24 files) | A | Per-org environment config files for past engagements | — | — | n/a | dropped (client org/host names); replaced by profiles |
 | `bin/tmp/*` (24 files) | TA | Scratch copies (*.tmp) of scripts and awk files | — | — | n/a | dropped (artifacts) |
+
+## Update: environment import and org-level export
+
+`apigee env export DIR` now also writes keystore metadata, env groups (X) or caches (Edge) and
+the org's developers, API products and apps; `apigee env import DIR` is the upload half
+(replaces the manual upload composition noted for `dlApiEnv` / `mvApiEnv` / `ulApiEnv`).
+App consumer keys and secrets are redacted unless `--show-credentials` is given.

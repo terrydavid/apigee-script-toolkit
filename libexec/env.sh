@@ -9,7 +9,7 @@
 #   apigee user list                   (Edge only)
 
 org_verbs() { printf '%s\n' get; }
-env_verbs() { printf '%s\n' list get health export; }
+env_verbs() { printf '%s\n' list get health export import; }
 cache_verbs() { printf '%s\n' list clear; }
 virtualhost_verbs() { printf '%s\n' list get; }
 envgroup_verbs() { printf '%s\n' list get; }
@@ -32,7 +32,9 @@ Verbs:
   list               List environments
   get [ENV]          Show an environment (default --env)
   health [ENV]       Report deployments and their state; exit 1 if any failed
-  export DIR         Snapshot target servers, KVMs and deployed bundles of --env
+  export DIR         Snapshot --env: target servers, KVMs, keystores, deployed bundles,
+                     plus the org's developers, API products and apps
+  import DIR         Recreate a snapshot in --env (and the org-level data)
 EOF
       ;;
     list) printf 'Usage: apigee env list\n\nList environment names.\n' ;;
@@ -47,12 +49,41 @@ EOF
       ;;
     export)
       cat <<'EOF'
-Usage: apigee env export DIR [--no-bundles] [--no-kvms] [--kvm-format json|lines]
+Usage: apigee env export DIR [options]
 
 Write a snapshot of --env into DIR:
-  DIR/targetservers/NAME.json   DIR/kvms/MAP.json   DIR/virtualhosts/NAME.json (Edge)
+  DIR/targetservers/NAME.json   DIR/kvms/MAP.json   DIR/keystores/NAME.json (metadata only)
+  DIR/virtualhosts/NAME.json (Edge)   DIR/caches/NAME.json (Edge)
+  DIR/envgroups/NAME.json (X/hybrid)
   DIR/proxies/NAME-revN.zip     DIR/sharedflows/NAME-revN.zip (deployed revisions)
-KVM files may contain secrets; keep DIR out of version control.
+Org-level data (not specific to --env):
+  DIR/developers/EMAIL.json  DIR/products/NAME.json  DIR/apps/EMAIL/NAME.json
+
+Options:
+  --no-bundles --no-kvms --no-keystores --no-developers --no-products --no-apps
+  --kvm-format json|lines
+  --show-credentials   write app consumer keys and secrets (default: "<redacted>")
+
+KVM files and exported credentials are secrets; keep DIR out of version control.
+Private keys and certificates are not exported by Apigee.
+EOF
+      ;;
+    import)
+      cat <<'EOF'
+Usage: apigee env import DIR [options]
+
+Recreate an 'apigee env export' snapshot in --env (and the org): target servers,
+KVMs, developers, API products, apps, then proxy and shared flow bundles.
+Keystores, env groups, virtual hosts and caches are exported for reference only
+and are not imported.
+
+Options:
+  --no-targetservers --no-kvms --no-developers --no-products --no-apps --no-bundles
+  --deploy        deploy each imported bundle revision to --env (shared flows first)
+  --overwrite     update things that already exist (default: skip them)
+  --allow-masked  import KVM values that are all asterisks (see 'apigee kvm import --help')
+
+Asks for confirmation once. Use -n/--dry-run to see the requests without sending them.
 EOF
       ;;
     *) apigee_die "unknown env verb '$1' (see 'apigee env --help')" ;;
@@ -119,11 +150,16 @@ env_health() {
 }
 
 env_export() {
-  local dir="" bundles=true kvms=true kvm_format=json
+  local dir="" bundles=true kvms=true kvm_format=json keystores=true developers=true products=true apps=true creds=""
   while (($#)); do
     case "$1" in
       --no-bundles) bundles=false; shift ;;
       --no-kvms) kvms=false; shift ;;
+      --no-keystores) keystores=false; shift ;;
+      --no-developers) developers=false; shift ;;
+      --no-products) products=false; shift ;;
+      --no-apps) apps=false; shift ;;
+      --show-credentials) creds=--show-credentials; shift ;;
       --kvm-format) kvm_format="$2"; shift 2 ;;
       -*) apigee_die "unknown option $1" ;;
       *) dir="$1"; shift ;;
@@ -133,25 +169,53 @@ env_export() {
   (umask 077 && mkdir -p "$dir/targetservers")
   local ts
   for ts in $(targetserver_main list); do
-    apigee_get "$(targetserver_path "$ts")" | apigee_json pretty >"$dir/targetservers/$ts.json"
+    apigee_get "$(targetserver_path "$ts")" | apigee_json pretty | export_write "$dir/targetservers/$ts.json"
   done
   apigee_info "exported target servers to $dir/targetservers"
   if [[ "$APIGEE_KIND" == edge ]]; then
-    mkdir -p "$dir/virtualhosts"
+    (umask 077 && mkdir -p "$dir/virtualhosts")
     local vh
     for vh in $(virtualhost_main list); do
-      apigee_get "$(apigee_env_path)/virtualhosts/$(apigee_urlencode "$vh")" | apigee_json pretty >"$dir/virtualhosts/$vh.json"
+      apigee_get "$(apigee_env_path)/virtualhosts/$(apigee_urlencode "$vh")" | apigee_json pretty | export_write "$dir/virtualhosts/$vh.json"
     done
     apigee_info "exported virtual hosts to $dir/virtualhosts"
   fi
   if [[ "$kvms" == true ]]; then
     kvm_main export --out "$dir/kvms" --format "$kvm_format"
   fi
+  if [[ "$keystores" == true ]]; then
+    local ks
+    (umask 077 && mkdir -p "$dir/keystores")
+    for ks in $(keystore_main list); do
+      keystore_main get "$ks" | export_write "$dir/keystores/$ks.json"
+    done
+    apigee_info "exported keystore metadata to $dir/keystores"
+  fi
+  if [[ "$APIGEE_KIND" == edge ]]; then
+    local c
+    (umask 077 && mkdir -p "$dir/caches")
+    for c in $(cache_main list); do
+      apigee_get "$(apigee_env_path)/caches/$(apigee_urlencode "$c")" | apigee_json pretty | export_write "$dir/caches/$c.json"
+    done
+    apigee_info "exported caches to $dir/caches"
+  else
+    local g
+    (umask 077 && mkdir -p "$dir/envgroups")
+    for g in $(envgroup_main list); do
+      apigee_get "$(apigee_org_path)/envgroups/$(apigee_urlencode "$g")" | apigee_json pretty | export_write "$dir/envgroups/$g.json"
+    done
+    apigee_info "exported env groups to $dir/envgroups"
+  fi
+  [[ "$developers" == true ]] && developer_export "$dir"
+  [[ "$products" == true ]] && product_export "$dir"
+  if [[ "$apps" == true ]]; then
+    app_export "$dir" $creds
+  fi
   if [[ "$bundles" == true ]]; then
     local label sub name rev
     for label in proxy sharedflow; do
       if [[ "$label" == proxy ]]; then sub=proxies; else sub=sharedflows; fi
-      mkdir -p "$dir/$sub"
+      (umask 077 && mkdir -p "$dir/$sub")
       for name in $(bundle_list "$label"); do
         rev="$(bundle_deployed_env "$label" "$name" | tail -n 1)"
         [[ -n "$rev" ]] || continue
@@ -160,6 +224,115 @@ env_export() {
       apigee_info "exported deployed ${sub} to $dir/$sub"
     done
   fi
+}
+
+env_import_bundles() {
+  local label="$1" sub="$2" dir="$3" deploy="$4" results="$5" zip base name rev
+  [[ -d "$dir/$sub" ]] || return 0
+  for zip in "$dir/$sub"/*.zip; do
+    [[ -f "$zip" ]] || continue
+    base="$(basename "$zip" .zip)"
+    name="${base%-rev*}"
+    if rev="$(bundle_import "$label" "$name" "$zip")" && [[ -n "$rev" ]]; then
+      apigee_info "imported $label $name as revision $rev"
+      if [[ "$deploy" == true ]]; then
+        if bundle_deploy "$label" "$name" "$rev" >/dev/null; then
+          echo created >>"$results"
+        else
+          apigee_warn "deploy of $label $name revision $rev failed"
+          echo failed >>"$results"
+        fi
+      else
+        echo created >>"$results"
+      fi
+    else
+      apigee_warn "import of $label $name from $zip failed"
+      echo failed >>"$results"
+    fi
+  done
+}
+
+env_import() {
+  local dir="" ts=true kvms=true developers=true products=true apps=true bundles=true deploy=false overwrite=false masked="" res
+  bundles=true
+  while (($#)); do
+    case "$1" in
+      --no-targetservers) ts=false; shift ;;
+      --no-kvms) kvms=false; shift ;;
+      --no-developers) developers=false; shift ;;
+      --no-products) products=false; shift ;;
+      --no-apps) apps=false; shift ;;
+      --no-bundles) bundles=false; shift ;;
+      --deploy) deploy=true; shift ;;
+      --overwrite) overwrite=true; shift ;;
+      --allow-masked) masked=--allow-masked; shift ;;
+      -*) apigee_die "unknown option $1" ;;
+      *) dir="$1"; shift ;;
+    esac
+  done
+  [[ -n "$dir" ]] || apigee_die "missing DIR"
+  [[ -d "$dir" ]] || apigee_die "no such directory: $dir"
+  local ow=""
+  [[ "$overwrite" == true ]] && ow=--overwrite
+
+  local plan=""
+  count_of() { find "$dir/$1" -mindepth 1 -maxdepth "${3:-1}" -type f -name "$2" 2>/dev/null | wc -l | tr -d ' '; }
+  [[ "$ts" == true && -d "$dir/targetservers" ]] && plan="$plan  $(count_of targetservers '*.json') target server(s)
+"
+  [[ "$kvms" == true && -d "$dir/kvms" ]] && plan="$plan  $(count_of kvms '*.json') key value map(s) (.json)
+"
+  [[ "$developers" == true && -d "$dir/developers" ]] && plan="$plan  $(count_of developers '*.json') developer(s)
+"
+  [[ "$products" == true && -d "$dir/products" ]] && plan="$plan  $(count_of products '*.json') API product(s)
+"
+  [[ "$apps" == true && -d "$dir/apps" ]] && plan="$plan  $(count_of apps '*.json' 2) app(s)
+"
+  if [[ "$bundles" == true ]]; then
+    [[ -d "$dir/sharedflows" ]] && plan="$plan  $(count_of sharedflows '*.zip') shared flow bundle(s)
+"
+    [[ -d "$dir/proxies" ]] && plan="$plan  $(count_of proxies '*.zip') proxy bundle(s)
+"
+  fi
+  [[ -n "$plan" ]] || apigee_die "nothing to import in $dir (expected targetservers/, kvms/, developers/, products/, apps/, proxies/, sharedflows/)"
+  printf 'Importing from %s:\n%s' "$dir" "$plan" >&2
+  apigee_confirm "Import the items listed above into org '$(apigee_org)', environment '$(apigee_env)' (deploy=$deploy, overwrite=$overwrite)."
+
+  # One confirmation covers every step below.
+  local APIGEE_YES=1 failed=0 results f name
+  results="$(apigee_mktemp results)"
+
+  if [[ "$ts" == true && -d "$dir/targetservers" ]]; then
+    : >"$results"
+    for f in "$dir"/targetservers/*.json; do
+      [[ -f "$f" ]] || continue
+      name="$(apigee_json get name <"$f")"
+      if res="$(import_one "$(targetserver_path)" "$(targetserver_path "$name")" "$(apigee_json omit <"$f")" "$overwrite")"; then
+        echo "$res" >>"$results"
+      else
+        echo failed >>"$results"
+      fi
+    done
+    import_report "target servers" "$results" || failed=1
+  fi
+  if [[ "$kvms" == true && -d "$dir/kvms" ]]; then
+    kvm_main import "$dir/kvms" $masked || failed=1
+  fi
+  if [[ "$developers" == true && -d "$dir/developers" ]]; then
+    developer_import "$dir" $ow || failed=1
+  fi
+  if [[ "$products" == true && -d "$dir/products" ]]; then
+    product_import "$dir" $ow || failed=1
+  fi
+  if [[ "$apps" == true && -d "$dir/apps" ]]; then
+    app_import "$dir" $ow || failed=1
+  fi
+  if [[ "$bundles" == true ]]; then
+    : >"$results"
+    env_import_bundles sharedflow sharedflows "$dir" "$deploy" "$results"
+    env_import_bundles proxy proxies "$dir" "$deploy" "$results"
+    if [[ -s "$results" ]]; then import_report "bundles" "$results" || failed=1; fi
+  fi
+  return "$failed"
 }
 
 env_main() {
@@ -178,6 +351,7 @@ env_main() {
       ;;
     health) env_health "$@" ;;
     export) env_export "$@" ;;
+    import) env_import "$@" ;;
     *) apigee_die "unknown env verb '$verb' (see 'apigee env --help')" ;;
   esac
 }
