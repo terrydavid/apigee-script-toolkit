@@ -398,8 +398,13 @@ apigee_token() {
       return 0
     fi
     apigee_have gcloud || apigee_die "gcloud not found; install the Google Cloud SDK (setup/install.sh) or set APIGEE_TOKEN"
-    tok="$(gcloud auth print-access-token 2>/dev/null)" ||
-      apigee_die "gcloud auth print-access-token failed; run 'gcloud auth login'${CLOUDSDK_CORE_ACCOUNT:+ for $CLOUDSDK_CORE_ACCOUNT}"
+    local gerr
+    gerr="$(apigee_tmpdir)/gcloud-err"
+    tok="$(gcloud auth print-access-token 2>"$gerr")" || {
+      # gcloud's own message (e.g. "Reauthentication required") says why; show it.
+      apigee_die "gcloud auth print-access-token failed; run 'gcloud auth login'${CLOUDSDK_CORE_ACCOUNT:+ for $CLOUDSDK_CORE_ACCOUNT}${gerr:+
+gcloud said: $(head -n 5 "$gerr" 2>/dev/null)}"
+    }
     [[ -n "$tok" ]] || apigee_die "gcloud returned an empty token"
     (umask 077 && printf '%s\n' "$tok" >"$memo")
     printf '%s\n' "$tok"

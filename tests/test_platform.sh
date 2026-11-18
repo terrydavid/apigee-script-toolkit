@@ -23,6 +23,16 @@ test_x_account_is_passed_to_gcloud() {
   assert_contains "gcloud account" "$(curl_log)" "gcloud auth print-access-token account=ops@example.com"
 }
 
+test_x_token_failure_shows_gcloud_message() {
+  use_x
+  export FAKE_GCLOUD_FAIL="Reauthentication failed. cannot prompt during non-interactive execution."
+  run "$APIGEE" token
+  assert_status "token fails" 1
+  assert_contains "hint" "$ERR" "run 'gcloud auth login'"
+  assert_contains "gcloud's own reason" "$ERR" "Reauthentication failed"
+  unset FAKE_GCLOUD_FAIL
+}
+
 test_x_token_fetched_once_per_invocation() {
   use_x
   route GET '/apis/p1/revisions$' 200 '["1","2"]'

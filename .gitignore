@@ -17,3 +17,6 @@ __pycache__/
 .DS_Store
 *.swp
 *~
+
+# Live check output
+tests/live_check_*.log
