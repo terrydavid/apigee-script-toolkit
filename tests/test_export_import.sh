@@ -314,4 +314,15 @@ test_product_export_handles_names_with_spaces() {
   assert_eq "spaced name" "Bank Account" "$(jq -r .name "$T/ex/products/Bank Account.json")"
 }
 
+test_env_import_continues_after_a_failing_step() {
+  use_x
+  make_export "$APP_JSON"
+  route GET "$ORGP/environments/test/keyvaluemaps\$" 403 '{"error":{"code":403}}'
+  run "$APIGEE" --yes env import "$T/in" --no-bundles
+  assert_status "reports failure" 1
+  assert_contains "kvm step failed" "$ERR" "key value map import step failed; continuing"
+  assert_contains "developers still imported" "$(posts)" "POST /organizations/org1/developers"
+  assert_contains "apps still imported" "$(posts)" "POST /organizations/org1/developers/d1%40example.com/apps"
+}
+
 run_tests

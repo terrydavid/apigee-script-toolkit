@@ -315,16 +315,16 @@ env_import() {
     import_report "target servers" "$results" || failed=1
   fi
   if [[ "$kvms" == true && -d "$dir/kvms" ]]; then
-    kvm_main import "$dir/kvms" $masked || failed=1
+    ( kvm_main import "$dir/kvms" $masked ) || { apigee_warn "key value map import step failed; continuing"; failed=1; }
   fi
   if [[ "$developers" == true && -d "$dir/developers" ]]; then
-    developer_import "$dir" $ow || failed=1
+    ( developer_import "$dir" $ow ) || { apigee_warn "developer import step failed; continuing"; failed=1; }
   fi
   if [[ "$products" == true && -d "$dir/products" ]]; then
-    product_import "$dir" $ow || failed=1
+    ( product_import "$dir" $ow ) || { apigee_warn "API product import step failed; continuing"; failed=1; }
   fi
   if [[ "$apps" == true && -d "$dir/apps" ]]; then
-    app_import "$dir" $ow || failed=1
+    ( app_import "$dir" $ow ) || { apigee_warn "app import step failed; continuing"; failed=1; }
   fi
   if [[ "$bundles" == true ]]; then
     : >"$results"
