@@ -26,7 +26,7 @@ for arg in "$@"; do
   esac
 done
 
-HOME_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+HOME_DIR="$(CDPATH= cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null && pwd)"
 missing_required=0
 
 have() { command -v "$1" >/dev/null 2>&1; }

@@ -243,6 +243,34 @@ and bundle revision handling.
 
 Linting: `shellcheck bin/* lib/*.sh libexec/*.sh setup/*.sh tests/*.sh tests/fakebin/*`.
 
+### Live check (manual, read-only)
+
+`tests/live_check.sh` smoke-tests one proxy against a real Apigee X org. It is
+not part of `tests/run.sh` because it needs network access and a gcloud login.
+It only issues GET requests.
+
+```bash
+bash tests/live_check.sh [PROXY] [ORG] [ENV]     # default: hello-apigee-api corp-apigee dev
+CLOUDSDK_CORE_ACCOUNT=you@example.com bash tests/live_check.sh   # pin the gcloud account
+```
+
+It prints PASS/FAIL per check and writes the full output to
+`tests/live_check_<env>.log` (git-ignored; it contains org details).
+
+Troubleshooting a failing live check:
+
+- **"Reauthentication failed"**: the stored gcloud login expired. Run
+  `gcloud auth login ACCOUNT --force`. Without `--force`, gcloud reuses the
+  stored credential and nothing changes.
+- **403 `PERMISSION_DENIED` ... "(or it may not exist)"**: that account cannot
+  see the project. Check with
+  `CLOUDSDK_CORE_ACCOUNT=ACCOUNT gcloud projects list --format="table(projectId,name)"`;
+  if the project is missing, refresh the login as above. The Apigee org name
+  is the project **ID**, which can differ from the project's display name.
+- gcloud's active account can differ from what you expect; pin it with
+  `CLOUDSDK_CORE_ACCOUNT` rather than relying on
+  `gcloud config set account`.
+
 ## Migrating from the legacy scripts
 
 * Session scripts that exported org/host variables become profiles.

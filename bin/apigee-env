@@ -26,7 +26,7 @@ fi
 
 __apigee_env_main() {
   local home
-  home="$(cd "$(dirname "$__apigee_env_src")/.." && pwd)"
+  home="$(CDPATH= cd "$(dirname "$__apigee_env_src")/.." >/dev/null && pwd)"
   if [[ "${1:-}" == --unset ]]; then
     local var
     # shellcheck disable=SC2043

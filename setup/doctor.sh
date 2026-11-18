@@ -8,7 +8,7 @@
 #
 set -uo pipefail
 
-APIGEE_TOOLKIT_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+APIGEE_TOOLKIT_HOME="$(CDPATH= cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null && pwd)"
 export APIGEE_TOOLKIT_HOME
 # shellcheck source=../lib/platform.sh
 . "$APIGEE_TOOLKIT_HOME/lib/platform.sh"

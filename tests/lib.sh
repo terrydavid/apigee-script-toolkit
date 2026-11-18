@@ -4,8 +4,8 @@
 # Minimal test helpers (no bats). Each tests/test_*.sh sources this file,
 # defines test_* functions and calls run_tests.
 
-TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$TESTS_DIR/.." && pwd)"
+TESTS_DIR="$(CDPATH= cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
+ROOT="$(CDPATH= cd "$TESTS_DIR/.." >/dev/null && pwd)"
 APIGEE="$ROOT/bin/apigee"
 ORIG_PATH="$PATH"
 ORIG_TMPDIR="${TMPDIR:-/tmp}"

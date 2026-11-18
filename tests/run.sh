@@ -3,7 +3,7 @@
 # Run every tests/test_*.sh with each available JSON engine (jq, python).
 #   tests/run.sh [test_file...]
 set -u
-cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1
+CDPATH= cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null || exit 1
 
 files=("$@")
 if ((${#files[@]} == 0)); then

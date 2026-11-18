@@ -13,7 +13,7 @@ unset CDPATH # a CDPATH makes `cd` print the directory and corrupts $(cd ... && 
 PROXY="${1:-hello-apigee-api}"
 ORG="${2:-corp-apigee}"
 ENVN="${3:-dev}"
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)"
+ROOT="$(CDPATH= cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd)"
 LOG="$ROOT/tests/live_check_${ENVN}.log"
 APIGEE="$ROOT/bin/apigee"
 export APIGEE_PLATFORM=x APIGEE_ORG="$ORG" APIGEE_ENV="$ENVN"
