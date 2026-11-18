@@ -239,12 +239,15 @@ What it changes, each step safe to repeat:
 3. Grants that service account its Apigee role on the project.
 4. Grants `--user` `roles/iam.serviceAccountTokenCreator` on that service
    account only (not project-wide).
-5. Sets `auth/impersonate_service_account` in the **active** gcloud
-   configuration, so every gcloud command in that configuration impersonates.
-   To limit it to one shell instead, use `--no-config` and
+5. Requests a token and confirms with tokeninfo that it belongs to the service
+   account. IAM changes can take a few minutes to apply, so it retries for up to
+   about three minutes. If this fails, gcloud is left unchanged (not switched to
+   impersonation) and everything created so far is kept; run the script again to
+   retry just the check.
+6. Only after that passes, sets `auth/impersonate_service_account` in the
+   **active** gcloud configuration, so every gcloud command in that configuration
+   impersonates. To limit it to one shell instead, use `--no-config` and
    `export CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT=SA_EMAIL`.
-6. Requests a token and confirms with tokeninfo that it belongs to the service
-   account. IAM changes can take a minute to apply, so it retries for up to a minute.
 
 You need permission to create service accounts and edit the project's IAM policy
 (for example Owner). Impersonation still needs a valid login for `--user`; if

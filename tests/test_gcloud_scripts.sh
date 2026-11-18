@@ -16,7 +16,9 @@ a="$*"
 printf '%s\n' "$a" >>"$GLOG"
 case "$a" in
   "auth login"*) echo "Go to the following link in your browser: https://accounts.google.com/o/oauth2/auth?x=1" ;;
-  "auth print-access-token --impersonate-service-account="*) echo "tok-${a##*=}" ;;
+  "auth print-access-token --impersonate-service-account="*)
+    if [[ -n "${FAKE_TOKEN_DENIED:-}" ]]; then echo "ERROR: PERMISSION_DENIED: getAccessToken" >&2; exit 1; fi
+    echo "tok-${a##*=}" ;;
   "auth print-access-token --account="*) echo "tok-${a##*=}" ;;
   "auth print-access-token") echo "tok-${CLOUDSDK_CORE_ACCOUNT:-nobody}" ;;
   "config get-value account") echo "me@example.com" ;;
@@ -117,6 +119,19 @@ test_impersonate_fails_when_token_is_not_the_service_account() {
   run "$IMPERSONATE" -y --project proj1 --user me@example.com
   assert_status "verify fails" 1
   assert_contains "reason" "$OUT" "expected apigee-toolkit@proj1.iam.gserviceaccount.com"
+  assert_eq "gcloud not switched to impersonation" "no" "$([[ -e $GIMP ]] && echo yes || echo no)"
+}
+
+test_impersonate_denied_token_leaves_gcloud_unchanged() {
+  use_script_gcloud
+  export FAKE_TOKEN_DENIED=1 GCLOUD_IMPERSONATE_WAIT=0
+  run "$IMPERSONATE" -y --project proj1 --user me@example.com
+  assert_status "denied" 1
+  assert_contains "says not switched" "$ERR" "gcloud was NOT switched to impersonation"
+  assert_contains "shows the error" "$ERR" "PERMISSION_DENIED"
+  assert_contains "retried" "$OUT" "try 12 of 12"
+  assert_eq "config unchanged" "no" "$([[ -e $GIMP ]] && echo yes || echo no)"
+  assert_contains "setup steps kept" "$(cat "$GLOG")" "add-iam-policy-binding apigee-toolkit"
 }
 
 test_impersonate_undo() {

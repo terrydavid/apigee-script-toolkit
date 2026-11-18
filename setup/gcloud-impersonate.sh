@@ -25,8 +25,10 @@
 #   2. creates the service account (if missing)
 #   3. grants the service account its Apigee role(s) on the project
 #   4. grants --user roles/iam.serviceAccountTokenCreator on that service account only
-#   5. sets auth/impersonate_service_account in the ACTIVE gcloud configuration
-#   6. verifies that a token really belongs to the service account
+#   5. verifies that a token really belongs to the service account (retries while
+#      IAM propagates, up to about 3 minutes)
+#   6. only then sets auth/impersonate_service_account in the ACTIVE gcloud
+#      configuration; if the check fails, gcloud is left unchanged
 #
 # You need permission to create service accounts and edit the project's IAM
 # policy (for example Owner, or Service Account Admin + Project IAM Admin).
@@ -118,25 +120,26 @@ echo "== 4/6 let $user create tokens for it"
 run gcloud iam service-accounts add-iam-policy-binding "$sa" \
   --project "$project" --member "user:$user" --role roles/iam.serviceAccountTokenCreator --quiet --format=none
 
-echo "== 5/6 gcloud configuration"
-if [[ $do_config -eq 1 ]]; then
-  run gcloud config set auth/impersonate_service_account "$sa"
-else
-  echo "  skipped. To switch on later:  gcloud config set auth/impersonate_service_account $sa"
-  echo "  or per shell:                 export CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT=$sa"
-fi
-
-echo "== 6/6 verify"
+echo "== 5/6 verify (gcloud is not switched to impersonation until this passes)"
 if [[ $dry -eq 1 ]]; then
-  echo "  (dry run: not verified)"; exit 0
+  echo "  (dry run: not verified)"
+  echo "== 6/6 gcloud configuration"
+  if [[ $do_config -eq 1 ]]; then
+    echo "+ gcloud config set auth/impersonate_service_account $sa"
+  else
+    echo "  skipped (--no-config)"
+  fi
+  exit 0
 fi
 if [[ $step_fail -ne 0 ]]; then
   echo "Some steps failed; fix the errors above and run again (the script is safe to repeat)." >&2
   exit 1
 fi
+errf="$(mktemp)"
 ok=0
-for i in 1 2 3 4 5 6; do
-  tok="$(gcloud auth print-access-token --impersonate-service-account="$sa" 2>/tmp/.gi-err.$$)"
+tries=12
+for ((i = 1; i <= tries; i++)); do
+  tok="$(gcloud auth print-access-token --impersonate-service-account="$sa" 2>"$errf")"
   if [[ -n "$tok" ]]; then
     got="$(curl -s "https://oauth2.googleapis.com/tokeninfo?access_token=$tok" \
       | python3 -c 'import sys,json
@@ -145,18 +148,36 @@ except Exception: print("")')"
     if [[ "$got" == "$sa" ]]; then ok=1; break; fi
     echo "  token is for '${got:-unknown}', expected $sa"; break
   fi
-  echo "  waiting for the IAM change to propagate (try $i of 6)..."
-  sleep 10
+  echo "  waiting for the IAM change to propagate (try $i of $tries)..."
+  sleep "${GCLOUD_IMPERSONATE_WAIT:-15}"
 done
-if [[ $ok -eq 1 ]]; then
-  rm -f /tmp/.gi-err.$$
-  echo "  ok    token belongs to $sa"
+if [[ $ok -ne 1 ]]; then
+  echo "  FAIL  could not get a token for $sa:" >&2
+  grep -v '^WARNING' "$errf" | head -8 | sed 's/^/        /' >&2
+  rm -f "$errf"
+  cat >&2 <<EOT
+
+gcloud was NOT switched to impersonation (your configuration is unchanged).
+Everything created above is kept; run this script again to retry only the check.
+If it keeps failing after a few minutes, look at the service account's policy:
+  gcloud iam service-accounts get-iam-policy $sa --project $project
+and at organization-level restrictions (deny policies, Principal Access
+Boundaries) on iam.serviceAccounts.getAccessToken.
+EOT
+  exit 1
+fi
+rm -f "$errf"
+echo "  ok    token belongs to $sa"
+
+echo "== 6/6 gcloud configuration"
+if [[ $do_config -eq 1 ]]; then
+  run gcloud config set auth/impersonate_service_account "$sa" || exit 1
   echo
   echo "Done. gcloud now uses $sa for every command in this configuration."
-  echo "Check:  bin/apigee --org $project --platform x org get"
-  echo "Undo:   $0 --undo"
-  exit 0
+else
+  echo "  skipped. To switch on later:  gcloud config set auth/impersonate_service_account $sa"
+  echo "  or per shell:                 export CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT=$sa"
 fi
-echo "  FAIL  could not get a token for $sa:" >&2
-sed 's/^/        /' /tmp/.gi-err.$$ >&2 2>/dev/null; rm -f /tmp/.gi-err.$$
-exit 1
+echo "Check:  bin/apigee --org $project --platform x org get"
+echo "Undo:   $0 --undo"
+exit 0
