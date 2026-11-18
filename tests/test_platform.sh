@@ -269,4 +269,13 @@ test_identity_check_fails_open_and_can_be_skipped() {
   assert_status "skipped" 0
 }
 
+test_identity_check_still_runs_in_dry_run() {
+  use_x
+  export CLOUDSDK_CORE_ACCOUNT=me@example.com
+  route POST 'oauth2.googleapis.com/tokeninfo$' 200 '{"email":"someone.else@gmail.com"}'
+  run "$APIGEE" -n org get
+  assert_status "refused even with -n" 1
+  assert_contains "mismatch" "$ERR" "token for 'someone.else@gmail.com'"
+}
+
 run_tests

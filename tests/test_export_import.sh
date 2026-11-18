@@ -325,4 +325,15 @@ test_env_import_continues_after_a_failing_step() {
   assert_contains "apps still imported" "$(posts)" "POST /organizations/org1/developers/d1%40example.com/apps"
 }
 
+test_env_import_dry_run_counts_bundles_as_would_import() {
+  use_x
+  make_export "$APP_JSON"
+  mkdir -p "$T/in/proxies"
+  printf 'zipdata' >"$T/in/proxies/p1-rev3.zip"
+  run "$APIGEE" -n env import "$T/in" --deploy
+  assert_status "dry run succeeds" 0
+  assert_contains "bundle counted" "$ERR" "bundles: 1 created, 0 updated, 0 already existed (skipped), 0 failed"
+  assert_not_contains "no failure message" "$ERR" "import of proxy p1"
+}
+
 run_tests

@@ -395,7 +395,7 @@ apigee_check_token_identity() {
   form="$(apigee_mktemp tokeninfo)"
   (umask 077 && printf 'access_token=%s' "$tok" >"$form")
   got="$(apigee_request POST https://oauth2.googleapis.com/tokeninfo --no-auth \
-    --content-type application/x-www-form-urlencoded --data-file "$form" --ok 400 2>/dev/null \
+    --content-type application/x-www-form-urlencoded --data-file "$form" --ok 400 --read-only 2>/dev/null \
     | apigee_json get email 2>/dev/null)" || got=""
   rm -f "$form"
   [[ -n "$got" ]] || return 0
@@ -503,7 +503,7 @@ apigee_curl_fail_flag() {
 apigee_request() {
   local method="$1" target="$2"
   shift 2
-  local body="" body_file="" form="" ctype="" accept="application/json" output="" ok="" auth=mgmt
+  local body="" body_file="" form="" ctype="" accept="application/json" output="" ok="" auth=mgmt readonly_post=""
   while (($#)); do
     case "$1" in
       --json) body="$2"; shift 2 ;;
@@ -514,6 +514,7 @@ apigee_request() {
       --output) output="$2"; shift 2 ;;
       --ok) ok="$2"; shift 2 ;;
       --no-auth) auth=none; shift ;;
+      --read-only) readonly_post=1; shift ;;   # a POST that changes nothing: sent even in --dry-run
       --reader-auth) auth=bearer; shift ;;
       *) apigee_die "apigee_request: unknown option $1" ;;
     esac
@@ -532,7 +533,7 @@ apigee_request() {
   tmp="$(apigee_tmpdir)"
   status_file="$tmp/status"
 
-  if [[ "$APIGEE_DRY_RUN" == 1 && "$method" != GET ]]; then
+  if [[ "$APIGEE_DRY_RUN" == 1 && "$method" != GET && -z "$readonly_post" ]]; then
     {
       printf 'DRY-RUN: %s %s\n' "$method" "$url"
       if [[ "$auth" == mgmt ]]; then

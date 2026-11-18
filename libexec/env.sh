@@ -233,6 +233,12 @@ env_import_bundles() {
     [[ -f "$zip" ]] || continue
     base="$(basename "$zip" .zip)"
     name="${base%-rev*}"
+    if [[ "$APIGEE_DRY_RUN" == 1 ]]; then
+      bundle_import "$label" "$name" "$zip" >/dev/null || true
+      if [[ "$deploy" == true ]]; then apigee_info "dry run: would deploy $label $name to $(apigee_env)"; fi
+      echo created >>"$results"
+      continue
+    fi
     if rev="$(bundle_import "$label" "$name" "$zip")" && [[ -n "$rev" ]]; then
       apigee_info "imported $label $name as revision $rev"
       if [[ "$deploy" == true ]]; then
