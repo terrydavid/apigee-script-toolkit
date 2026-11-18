@@ -304,4 +304,14 @@ test_export_then_import_round_trip() {
   assert_contains "secret restored" "$(sed -n '/^body: /,$p' "$FAKE_CURL_LOG" | tr -d ' \n')" "SECRET456"
 }
 
+test_product_export_handles_names_with_spaces() {
+  use_x
+  route GET "$ORGP/apiproducts\$" 200 '["Bank Account","prod1"]'
+  route GET "$ORGP/apiproducts/Bank%20Account\$" 200 '{"name":"Bank Account"}'
+  route GET "$ORGP/apiproducts/prod1\$" 200 '{"name":"prod1"}'
+  run "$APIGEE" product export "$T/ex"
+  assert_status "export" 0
+  assert_eq "spaced name" "Bank Account" "$(jq -r .name "$T/ex/products/Bank Account.json")"
+}
+
 run_tests

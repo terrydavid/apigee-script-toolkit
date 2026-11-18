@@ -191,11 +191,17 @@ product_export() {
   dir="${dir:-$(export_default_dir)}"
   out="$dir/products"
   (umask 077 && mkdir -p "$out")
-  for p in $(product_main list); do
+  # product names may contain spaces: read line by line
+  local list
+  list="$(product_main list)" || exit 1
+  while IFS= read -r p; do
+    [[ -n "$p" ]] || continue
     body="$(apigee_get "$(apigee_org_path)/apiproducts/$(apigee_urlencode "$p")")" || exit 1
     printf '%s' "$body" | apigee_json pretty | export_write "$out/$p.json"
     n=$((n + 1))
-  done
+  done <<EOF
+$list
+EOF
   apigee_info "exported $n API products to $out"
 }
 
