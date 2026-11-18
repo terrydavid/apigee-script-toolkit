@@ -238,4 +238,35 @@ EOF
   done
 }
 
+test_x_token_for_another_account_is_refused() {
+  use_x
+  export CLOUDSDK_CORE_ACCOUNT=me@example.com
+  route POST 'oauth2.googleapis.com/tokeninfo$' 200 '{"email":"someone.else@gmail.com"}'
+  route GET '/organizations/org1$' 200 '{"name":"org1"}'
+  run "$APIGEE" org get
+  assert_status "refused" 1
+  assert_contains "names both" "$ERR" "token for 'someone.else@gmail.com', but CLOUDSDK_CORE_ACCOUNT is 'me@example.com'"
+  assert_eq "no management call" "" "$(grep '=== GET.*organizations' "$FAKE_CURL_LOG")"
+}
+
+test_x_token_for_the_expected_account_is_accepted() {
+  use_x
+  export CLOUDSDK_CORE_ACCOUNT=me@example.com
+  route POST 'oauth2.googleapis.com/tokeninfo$' 200 '{"email":"me@example.com"}'
+  route GET '/organizations/org1$' 200 '{"name":"org1"}'
+  run "$APIGEE" org get
+  assert_status "ok" 0
+}
+
+test_identity_check_fails_open_and_can_be_skipped() {
+  use_x
+  export CLOUDSDK_CORE_ACCOUNT=me@example.com
+  route GET '/organizations/org1$' 200 '{"name":"org1"}'
+  run "$APIGEE" org get
+  assert_status "no tokeninfo answer is not fatal" 0
+  route POST 'oauth2.googleapis.com/tokeninfo$' 200 '{"email":"x@y.z"}'
+  APIGEE_SKIP_IDENTITY_CHECK=1 run "$APIGEE" org get
+  assert_status "skipped" 0
+}
+
 run_tests
