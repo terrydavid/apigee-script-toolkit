@@ -21,6 +21,8 @@ setup/install.sh                  # install missing tools with Homebrew (asks fi
 cp config/profiles/example-x.env config/profiles/my-x.env   # edit org/env
 bin/apigee profile use my-x
 setup/doctor.sh                   # tools, config, auth and a read-only org GET
+setup/gcloud-login.sh             # wrong account or 403s? reset and verify the gcloud login
+setup/gcloud-impersonate.sh       # no more hourly re-logins: use a service account (see Authentication)
 
 bin/apigee proxy list
 bin/apigee proxy deployed my-proxy --all-envs
@@ -154,25 +156,100 @@ config file in a per-command temporary directory that is removed on exit.
 **Apigee X / hybrid** uses `gcloud auth print-access-token` (set
 `CLOUDSDK_CORE_ACCOUNT` to pin an account). Run `gcloud auth login` first.
 
-When `CLOUDSDK_CORE_ACCOUNT` is set, the toolkit checks (via Google's tokeninfo
-endpoint) that the token really belongs to that account, or to the impersonated
-service account if one is configured, and stops before any Apigee call if not.
-`env import` does this once, up front. Skip with `APIGEE_SKIP_IDENTITY_CHECK=1`.
+### Fixing gcloud authentication problems (Apigee X / hybrid)
 
-*Wrong account or repeated 403s.* gcloud can hold a credential saved under one
-account name that actually belongs to another (usually from a browser login with
-several Google accounts signed in). `setup/gcloud-login.sh [ACCOUNT]` revokes
-that credential, clears the token cache, prints the login URL (open it in a
-private window and sign in as ACCOUNT only), then checks that the tokens are
-ACCOUNT's. `setup/gcloud-login.sh --check` runs the checks alone.
+**The identity check.** When `CLOUDSDK_CORE_ACCOUNT` is set, the toolkit asks
+Google's tokeninfo endpoint whose token gcloud handed over and refuses to
+continue if it is not that account's. If you impersonate a service account (see
+below), the token must be the service account's instead. The check runs before
+the first Apigee call, so a wrong identity can never create or change anything.
+`env import` authenticates once, before its confirmation prompt, so a mismatch
+stops the whole import with a single message. The check fails open (it does
+nothing if tokeninfo cannot be reached). Skip it with
+`APIGEE_SKIP_IDENTITY_CHECK=1`.
 
-*No hourly re-login.* `setup/gcloud-impersonate.sh --project PROJECT --user ACCOUNT`
-creates a service account (`apigee-toolkit`), grants it `roles/apigee.admin`
-(`--read-only` for `roles/apigee.readOnlyAdmin`), lets you create tokens for it
-(Token Creator on that service account only) and sets
-`auth/impersonate_service_account` in the active gcloud configuration. gcloud then
-mints a fresh token for the service account on every call. Use `-n` to preview,
-`--no-config` to leave gcloud's configuration alone, `--undo` to stop impersonating.
+```
+apigee: error: gcloud gave a token for 'you@gmail.com', but CLOUDSDK_CORE_ACCOUNT is 'you@corp.example'.
+```
+
+**What goes wrong.** gcloud keeps one stored credential per account name. After
+a browser login with several Google accounts signed in, the credential saved
+under `you@corp.example` can belong to a different account. gcloud then returns
+that other account's token, and Apigee answers 403 (the other account has no
+rights on the org), or the identity check stops you. Confirm it with:
+
+```bash
+curl -s "https://oauth2.googleapis.com/tokeninfo?access_token=$(gcloud auth print-access-token --account=you@corp.example)" | grep email
+```
+
+If the email shown is not `you@corp.example`, use the reset script.
+
+#### `setup/gcloud-login.sh` - reset and verify a login
+
+```bash
+setup/gcloud-login.sh [ACCOUNT]          # default ACCOUNT: $CLOUDSDK_CORE_ACCOUNT
+setup/gcloud-login.sh --check [ACCOUNT]  # run only the checks, change nothing
+```
+
+It does four things in order:
+
+1. Revokes the stored credential for ACCOUNT (other accounts are untouched).
+2. Deletes gcloud's token cache (`~/.config/gcloud/access_tokens.db`).
+3. Runs `gcloud auth login ACCOUNT --no-launch-browser`, which prints a URL.
+   **Open that URL in a private/incognito window** and sign in as ACCOUNT only.
+   A normal window with several Google accounts is what caused the problem.
+4. Checks that the token for `--account=ACCOUNT` and the default token both
+   belong to ACCOUNT, that `credentials.db` holds one entry for it (needs
+   `sqlite3`), and that no other account is selected in this shell.
+
+It exits 0 when every check passes, 1 when one fails (the output says which
+and what to do), and 2 for a usage problem. Put it on your `PATH` if you like:
+`ln -s "$PWD/setup/gcloud-login.sh" ~/bin/gcloud-login`.
+
+#### `setup/gcloud-impersonate.sh` - stop depending on a browser login
+
+A login token expires after an hour, and the credential behind it can be the
+wrong one. With service-account impersonation, gcloud uses your login only to
+ask Google for a short-lived token for a dedicated service account, and it does
+that again on every call. There is no hourly re-login, and every request is made
+as the same identity. (Each token still lasts one hour; gcloud simply gets a new
+one when needed. A longer token lifetime needs an organization policy.)
+
+```bash
+setup/gcloud-impersonate.sh -n --project my-org --user you@corp.example   # preview
+setup/gcloud-impersonate.sh    --project my-org --user you@corp.example   # do it (asks first)
+setup/gcloud-impersonate.sh --undo                                        # stop impersonating
+```
+
+| Option | Meaning |
+|--------|---------|
+| `--project ID` | Project holding the Apigee org (default: gcloud's current project). |
+| `--user ACCOUNT` | Person allowed to impersonate (default: `$CLOUDSDK_CORE_ACCOUNT`). |
+| `--sa NAME` | Service account name (default `apigee-toolkit`). |
+| `--read-only` | Grant `roles/apigee.readOnlyAdmin` instead of `roles/apigee.admin`. |
+| `--role ROLE` | Grant this role instead; repeat for several (use a narrower role than admin if you can). |
+| `--no-config` | Leave gcloud's configuration alone and print the command to enable it later. |
+| `-y`, `-n` | Skip the confirmation / print the commands and change nothing. |
+| `--undo` | Run `gcloud config unset auth/impersonate_service_account`. |
+
+What it changes, each step safe to repeat:
+
+1. Enables the IAM Service Account Credentials API on the project.
+2. Creates the service account `NAME@PROJECT.iam.gserviceaccount.com` if missing.
+3. Grants that service account its Apigee role on the project.
+4. Grants `--user` `roles/iam.serviceAccountTokenCreator` on that service
+   account only (not project-wide).
+5. Sets `auth/impersonate_service_account` in the **active** gcloud
+   configuration, so every gcloud command in that configuration impersonates.
+   To limit it to one shell instead, use `--no-config` and
+   `export CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT=SA_EMAIL`.
+6. Requests a token and confirms with tokeninfo that it belongs to the service
+   account. IAM changes can take a minute to apply, so it retries for up to a minute.
+
+You need permission to create service accounts and edit the project's IAM policy
+(for example Owner). Impersonation still needs a valid login for `--user`; if
+that stored credential is the wrong one, you will get a clear permission error
+instead of a silently wrong identity. Run `setup/gcloud-login.sh` first if so.
 
 **Apigee Edge** supports three modes (`APIGEE_EDGE_AUTH`):
 
