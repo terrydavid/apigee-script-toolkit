@@ -320,6 +320,10 @@ preserved the same way in `get` and `export`.
 
 ## Tools
 
+* `tools/compare_envs.py --org ORG SRC DST` — read-only check that DST has what SRC has:
+  the same proxy and shared flow revisions deployed (and each READY, since a deploy can be
+  accepted and still fail), the same target servers, and the same KVMs with equal entry
+  counts. Uses `APIGEE_TOKEN` or gcloud. Run it after `env import`.
 * `tools/cvtPEM2JWK.js` — convert a PEM public key into a JWK (with thumbprint)
   for JWT/JWKS configuration. `cd tools && npm install`, then
   `node cvtPEM2JWK.js key.pem`.
