@@ -10,8 +10,8 @@
 
 org_verbs() { printf '%s\n' get; }
 env_verbs() { printf '%s\n' list get health export import; }
-cache_verbs() { printf '%s\n' list clear; }
-virtualhost_verbs() { printf '%s\n' list get; }
+cache_verbs() { printf '%s\n' list get create delete clear; }
+virtualhost_verbs() { printf '%s\n' list get create update delete; }
 envgroup_verbs() { printf '%s\n' list get attachments attach; }
 user_verbs() { printf '%s\n' list; }
 
@@ -104,8 +104,9 @@ EOF
 
 cache_help() {
   case "${1:-}" in
-    "") printf 'Usage: apigee cache <verb>   (Apigee Edge only)\n\nVerbs:\n  list          List caches in --env\n  clear NAME    Clear all entries of a cache\n' ;;
+    "") printf 'Usage: apigee cache <verb>   (Apigee Edge only)\n\nVerbs:\n  list          List caches in --env\n  get NAME      Show a cache definition\n  create NAME [--description T] [--timeout SEC] [--max-elements N] [--max-elements-disk N] [--size-kb N] [--disk-mb N] [--overflow-to-disk] [--persistent]\n  delete NAME   Delete a cache (mutating)\n  clear NAME    Clear all entries of a cache\n' ;;
     list) printf 'Usage: apigee cache list\n\nList caches in --env (Apigee Edge only).\n' ;;
+    get | create | delete) printf 'Usage: apigee cache %s NAME [options]\n\nCache definition (Apigee Edge only). create/delete are mutating and ask for confirmation.\n' "$1" ;;
     clear) printf 'Usage: apigee cache clear NAME [--prefix PREFIX]\n\nClear cache entries (Apigee Edge only). Mutating: asks for confirmation.\n' ;;
     *) apigee_die "unknown cache verb '$1'" ;;
   esac
@@ -113,9 +114,10 @@ cache_help() {
 
 virtualhost_help() {
   case "${1:-}" in
-    "") printf 'Usage: apigee virtualhost <verb>   (Apigee Edge only)\n\nVerbs:\n  list         List virtual hosts in --env\n  get NAME     Show a virtual host\n\nOn Apigee X/hybrid use environment groups (apigee envgroup).\n' ;;
+    "") printf 'Usage: apigee virtualhost <verb>   (Apigee Edge only)\n\nVerbs:\n  list         List virtual hosts in --env\n  get NAME     Show a virtual host\n  create NAME --port P [--alias HOST]... [--keystore KS --key-alias A] | --from-file F\n  update NAME [--port P] [--alias HOST]... | --from-file F\n  delete NAME  (create/update/delete are mutating and ask for confirmation)\n\nOn Apigee X/hybrid use environment groups (apigee envgroup).\n' ;;
     list) printf 'Usage: apigee virtualhost list\n\nList virtual hosts in --env (Apigee Edge only).\n' ;;
     get) printf 'Usage: apigee virtualhost get NAME\n\nShow a virtual host (Apigee Edge only).\n' ;;
+    create | update | delete) printf 'Usage: apigee virtualhost %s NAME [--port P] [--alias HOST]... [--keystore KS --key-alias A] [--from-file F]\n\nMutating (Apigee Edge only): asks for confirmation.\n' "$1" ;;
     *) apigee_die "unknown virtualhost verb '$1'" ;;
   esac
 }
@@ -441,6 +443,7 @@ cache_main() {
       apigee_request POST "$(apigee_env_path)/caches/$(apigee_urlencode "$name")/entries?$q" \
         --content-type application/octet-stream >/dev/null
       ;;
+    create | get | delete) cache_write "$verb" "$@" ;;
     *) apigee_die "unknown cache verb '$verb' (see 'apigee cache --help')" ;;
   esac
 }
@@ -457,6 +460,7 @@ virtualhost_main() {
       [[ -n "${2:-}" ]] || apigee_die "missing NAME"
       apigee_get "$(apigee_env_path)/virtualhosts/$(apigee_urlencode "$2")" | apigee_json pretty
       ;;
+    create | update | delete) vhost_write "$@" ;;
     *) apigee_die "unknown virtualhost verb '${1:-}' (see 'apigee virtualhost --help')" ;;
   esac
 }

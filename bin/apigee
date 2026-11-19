@@ -119,7 +119,7 @@ apigee_resource_module() {
 
 apigee_load_modules() {
   local m
-  for m in bundle.sh kvm.sh targetserver.sh keystore.sh apps.sh provision.sh env.sh instance.sh analytics.sh opdk.sh session.sh; do
+  for m in bundle.sh kvm.sh targetserver.sh keystore.sh apps.sh provision.sh edgeadmin.sh env.sh instance.sh analytics.sh opdk.sh session.sh; do
     # shellcheck disable=SC1090
     . "$APIGEE_TOOLKIT_HOME/libexec/$m"
   done

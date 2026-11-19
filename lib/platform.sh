@@ -530,7 +530,8 @@ apigee_curl_fail_flag() {
 # apigee_request METHOD PATH_OR_URL [options]
 #   --json BODY          JSON request body (string)
 #   --data-file FILE     request body from FILE (default content type JSON)
-#   --form FIELD=@FILE   multipart/form-data upload
+#   --form FIELD=@FILE   multipart/form-data upload (repeatable)
+#   --form-secret F=V    multipart text field whose value stays off the command line (curl config file)
 #   --content-type CT    override Content-Type
 #   --accept TYPE        Accept header (default application/json)
 #   --output FILE        write the response body to FILE
@@ -542,12 +543,13 @@ apigee_curl_fail_flag() {
 apigee_request() {
   local method="$1" target="$2"
   shift 2
-  local body="" body_file="" form="" ctype="" accept="application/json" output="" ok="" auth=mgmt readonly_post=""
+  local f body="" body_file="" forms=() secret_forms=() ctype="" accept="application/json" output="" ok="" auth=mgmt readonly_post=""
   while (($#)); do
     case "$1" in
       --json) body="$2"; shift 2 ;;
       --data-file) body_file="$2"; shift 2 ;;
-      --form) form="$2"; shift 2 ;;
+      --form) forms+=("$2"); shift 2 ;;
+      --form-secret) secret_forms+=("$2"); shift 2 ;;
       --content-type) ctype="$2"; shift 2 ;;
       --accept) accept="$2"; shift 2 ;;
       --output) output="$2"; shift 2 ;;
@@ -580,7 +582,8 @@ apigee_request() {
       fi
       if [[ -n "$ctype" ]]; then printf 'DRY-RUN:   Content-Type: %s\n' "$ctype"; fi
       if [[ -n "$body_file" ]]; then printf 'DRY-RUN:   body: %s bytes\n' "$(wc -c <"$body_file" | tr -d ' ')"; fi
-      if [[ -n "$form" ]]; then printf 'DRY-RUN:   form: %s\n' "$form"; fi
+      for f in ${forms[@]+"${forms[@]}"}; do printf 'DRY-RUN:   form: %s\n' "$f"; done
+      for f in ${secret_forms[@]+"${secret_forms[@]}"}; do printf 'DRY-RUN:   form: %s=(hidden)\n' "${f%%=*}"; done
     } | apigee_user_out
     printf '000' >"$status_file"
     return 0
@@ -601,8 +604,14 @@ apigee_request() {
     fi
     args+=(--config "$cfg")
   fi
-  if [[ -n "$form" ]]; then
-    args+=(-F "$form")
+  if ((${#forms[@]} + ${#secret_forms[@]})); then
+    for f in ${forms[@]+"${forms[@]}"}; do args+=(-F "$f"); done
+    if ((${#secret_forms[@]})); then
+      local fcfg
+      fcfg="$(apigee_mktemp formcfg)"
+      for f in "${secret_forms[@]}"; do printf 'form-string = %s\n' "$(apigee_curl_cfg_quote "$f")" >>"$fcfg"; done
+      args+=(--config "$fcfg")
+    fi
   elif [[ -n "$body_file" ]]; then
     args+=(-H "Content-Type: $ctype" --data-binary "@$body_file")
   elif [[ "$method" == POST || "$method" == PUT ]]; then
@@ -613,6 +622,7 @@ apigee_request() {
   local code rc=0
   code="$(curl "${args[@]}" "$url")" || rc=$?
   [[ -n "${cfg:-}" ]] && rm -f "$cfg"
+  [[ -n "${fcfg:-}" ]] && rm -f "$fcfg"
   printf '%s' "$code" >"$status_file"
 
   local accepted=0

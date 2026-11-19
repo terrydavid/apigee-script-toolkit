@@ -47,14 +47,14 @@ _apigee_verbs_for() {
     proxy | sharedflow) echo "$_apigee_bundle_verbs" ;;
     kvm) echo "list get create delete put export import" ;;
     targetserver) echo "list get create update delete" ;;
-    keystore | truststore) echo "list get" ;;
+    keystore | truststore) echo "list get create delete upload-cert" ;;
     app) echo "list get approve revoke create delete export import" ;;
     developer) echo "list get create delete export import" ;;
     product) echo "list get create delete attach-proxy detach-proxy proxies find export import" ;;
     credential) echo "list get add set-products delete delete-all" ;;
-    cache) echo "list clear" ;;
+    cache) echo "list get create delete clear" ;;
     env) echo "list get health export import" ;;
-    virtualhost) echo "list get" ;;
+    virtualhost) echo "list get create update delete" ;;
     envgroup) echo "list get attachments attach" ;;
     instance) echo "list attachments attach" ;;
     stats) echo "traffic query" ;;
@@ -77,6 +77,9 @@ _apigee_verb_opts() { # resource verb
     "proxy stale" | "sharedflow stale") echo "--include-undeployed" ;;
     "app create" | "developer create") echo "--developer --first --last --user --attr --from-file --product --callback" ;;
     "app delete") echo "--developer --prefix" ;;
+    "cache create") echo "--description --timeout --max-elements --max-elements-disk --size-kb --disk-mb --overflow-to-disk --persistent" ;;
+    "virtualhost create" | "virtualhost update") echo "--port --alias --keystore --key-alias --from-file" ;;
+    *" upload-cert") echo "--alias --cert-file --key-file" ;;
     "product create") echo "--proxy --environment --scope --display-name --description --approval --quota --quota-interval --quota-unit" ;;
     "product find") echo "--proxy" ;;
     "stats traffic") echo "--by --select --time-unit" ;;

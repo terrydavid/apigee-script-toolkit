@@ -22,7 +22,8 @@ while (($#)); do
     --config | -K) cfgs+=("$2"); shift 2 ;;
     -H) headers+=("$2"); shift 2 ;;
     --data-binary | --data | -d) data="$2"; have_data=1; shift 2 ;;
-    -F) form="$2"; shift 2 ;;
+    -F) form="${form:+$form
+}$2"; shift 2 ;;
     http://* | https://*) url="$1"; shift ;;
     *) printf 'fake curl: unsupported argument %s\n' "$1" >&2; exit 2 ;;
   esac
@@ -42,7 +43,7 @@ done
       printf 'body: %s\n' "$data"
     fi
   fi
-  [[ -n "$form" ]] && printf 'form: %s\n' "$form"
+  [[ -n "$form" ]] && printf 'form: %b\n' "$form"
 } >>"$log"
 
 code=200
