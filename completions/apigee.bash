@@ -8,8 +8,8 @@
 # per resource, per-verb options, and profile names. The verb table is checked
 # against the modules in libexec/ by tests/test_completion.sh.
 
-_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product cache env virtualhost envgroup instance server stats report user org token profile doctor"
-_apigee_aliases="proxies api apis sharedflows sf kvms keyvaluemap target-servers targetserver ts keystores truststores apps developers dev products apiproduct caches envs environment environments virtualhosts vhost envgroups instances servers stat reports users organization profiles"
+_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product credential cache env virtualhost envgroup instance server stats report user org token profile doctor"
+_apigee_aliases="proxies api apis sharedflows sf kvms keyvaluemap target-servers targetserver ts keystores truststores apps developers dev products apiproduct credentials key keys caches envs environment environments virtualhosts vhost envgroups instances servers stat reports users organization profiles"
 _apigee_global_opts="--platform --org --env --profile -n --dry-run -y --yes --debug --json-engine --version -h --help"
 _apigee_bundle_verbs="list revisions latest deployed stale download import deploy undeploy delete-revision clean-revisions compare"
 
@@ -23,6 +23,7 @@ _apigee_canon() {
     keystore | keystores) echo keystore ;;
     truststore | truststores) echo truststore ;;
     app | apps) echo app ;;
+    credential | credentials | key | keys) echo credential ;;
     developer | developers | dev) echo developer ;;
     product | products | apiproduct) echo product ;;
     cache | caches) echo cache ;;
@@ -47,8 +48,10 @@ _apigee_verbs_for() {
     kvm) echo "list get create delete put export import" ;;
     targetserver) echo "list get create update delete" ;;
     keystore | truststore) echo "list get" ;;
-    app) echo "list get approve revoke export import" ;;
-    developer | product) echo "list get export import" ;;
+    app) echo "list get approve revoke create delete export import" ;;
+    developer) echo "list get create delete export import" ;;
+    product) echo "list get create delete attach-proxy detach-proxy proxies find export import" ;;
+    credential) echo "list get add set-products delete delete-all" ;;
     cache) echo "list clear" ;;
     env) echo "list get health export import" ;;
     virtualhost) echo "list get" ;;
@@ -72,6 +75,10 @@ _apigee_verb_opts() { # resource verb
     "kvm export") echo "--format --out" ;;
     "proxy compare" | "sharedflow compare") echo "--dir" ;;
     "proxy stale" | "sharedflow stale") echo "--include-undeployed" ;;
+    "app create" | "developer create") echo "--developer --first --last --user --attr --from-file --product --callback" ;;
+    "app delete") echo "--developer --prefix" ;;
+    "product create") echo "--proxy --environment --scope --display-name --description --approval --quota --quota-interval --quota-unit" ;;
+    "product find") echo "--proxy" ;;
     "stats traffic") echo "--by --select --time-unit" ;;
     "stats query") echo "--select --range --filter --limit --time-unit --sort --sortby" ;;
     "proxy deploy" | "sharedflow deploy") echo "--latest --service-account" ;;

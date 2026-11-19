@@ -159,4 +159,23 @@ test_json_string_escaping() {
   assert_eq "valid json" $'a"b\\c\nd\te' "$(printf '%s' "$out" | jq -r .)"
 }
 
+test_values_lists_array_elements() {
+  jrun '{"proxies":["a","b c"],"x":1}' values proxies
+  assert_eq "strings" "a
+b c" "$OUT"
+  jrun '{"x":1}' values proxies
+  assert_eq "missing is empty" "" "$OUT"
+  jrun '{"proxies":[]}' values proxies
+  assert_eq "empty array" "" "$OUT"
+}
+
+test_credential_keys_lists_key_and_status() {
+  jrun '{"credentials":[{"consumerKey":"k1","consumerSecret":"s1","status":"approved"},{"consumerKey":"k2","status":"revoked"}]}' credential-keys
+  assert_eq "keys" "k1 approved
+k2 revoked" "$OUT"
+  assert_not_contains "no secret" "$OUT" "s1"
+  jrun '{"name":"a"}' credential-keys
+  assert_eq "none" "" "$OUT"
+}
+
 run_tests

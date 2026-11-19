@@ -253,7 +253,21 @@ def op_pretty(_args):
     print(json.dumps(load_stdin(), indent=2, ensure_ascii=False))
 
 
+def op_values(args):
+    doc = load_stdin() or {}
+    for v in doc.get(args[0]) or []:
+        print(v if isinstance(v, str) else json.dumps(v, separators=(",", ":")))
+
+
+def op_credential_keys(args):
+    doc = load_stdin() or {}
+    for c in doc.get("credentials") or []:
+        print("%s %s" % (c.get("consumerKey"), c.get("status") or "-"))
+
+
 OPS = {
+    "values": op_values,
+    "credential-keys": op_credential_keys,
     "pretty": op_pretty,
     "names": op_names,
     "get": op_get,

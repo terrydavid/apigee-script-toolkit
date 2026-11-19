@@ -2,9 +2,9 @@
 #
 # apigee app|developer|product <verb> — developer apps, developers, API products.
 
-app_verbs() { printf '%s\n' list get approve revoke export import; }
-developer_verbs() { printf '%s\n' list get export import; }
-product_verbs() { printf '%s\n' list get export import; }
+app_verbs() { printf '%s\n' list get approve revoke create delete export import; }
+developer_verbs() { printf '%s\n' list get create delete export import; }
+product_verbs() { printf '%s\n' list get create delete attach-proxy detach-proxy proxies find export import; }
 
 app_help() {
   case "${1:-}" in
@@ -58,7 +58,7 @@ Mutating: asks for confirmation.
 EOF
       ;;
     revoke) printf 'Usage: apigee app revoke --developer EMAIL APP_NAME\n\nRevoke an app. Mutating: asks for confirmation.\n' ;;
-    *) apigee_die "unknown app verb '$1' (see 'apigee app --help')" ;;
+    *) prov_help app "$1" || apigee_die "unknown app verb '$1' (see 'apigee app --help')" ;;
   esac
 }
 
@@ -69,7 +69,7 @@ developer_help() {
     import) printf 'Usage: apigee developer import DIR [--overwrite]\n\nCreate developers from DIR/developers/*.json (or DIR). Existing developers are\nskipped, or updated with --overwrite. Mutating: asks for confirmation.\n' ;;
     list) printf 'Usage: apigee developer list\n\nList developer emails, one per line.\n' ;;
     get) printf 'Usage: apigee developer get EMAIL\n\nPrint the developer as JSON.\n' ;;
-    *) apigee_die "unknown developer verb '$1' (see 'apigee developer --help')" ;;
+    *) prov_help developer "$1" || apigee_die "unknown developer verb '$1' (see 'apigee developer --help')" ;;
   esac
 }
 
@@ -80,7 +80,7 @@ product_help() {
     import) printf 'Usage: apigee product import DIR [--overwrite]\n\nCreate API products from DIR/products/*.json (or DIR). Existing products are\nskipped, or updated with --overwrite. Mutating: asks for confirmation.\n' ;;
     list) printf 'Usage: apigee product list\n\nList API product names, one per line.\n' ;;
     get) printf 'Usage: apigee product get NAME\n\nPrint the API product as JSON.\n' ;;
-    *) apigee_die "unknown product verb '$1' (see 'apigee product --help')" ;;
+    *) prov_help product "$1" || apigee_die "unknown product verb '$1' (see 'apigee product --help')" ;;
   esac
 }
 
@@ -472,6 +472,8 @@ app_main() {
       apigee_confirm "Set app '$APP_NAME' of developer '$APP_DEV' to '$verb'."
       app_set_status "$verb" "$APP_DEV" "$APP_NAME"
       ;;
+    create) app_create "$@" ;;
+    delete) app_delete "$@" ;;
     *) apigee_die "unknown app verb '$verb' (see 'apigee app --help')" ;;
   esac
 }
@@ -487,6 +489,8 @@ developer_main() {
       ;;
     export) developer_export "$@" ;;
     import) developer_import "$@" ;;
+    create) developer_create "$@" ;;
+    delete) developer_delete "$@" ;;
     *) apigee_die "unknown developer verb '$verb' (see 'apigee developer --help')" ;;
   esac
 }
@@ -506,6 +510,12 @@ product_main() {
       ;;
     export) product_export "$@" ;;
     import) product_import "$@" ;;
+    create) product_create "$@" ;;
+    delete) product_delete "$@" ;;
+    attach-proxy) product_change_proxy attach "$@" ;;
+    detach-proxy) product_change_proxy detach "$@" ;;
+    proxies) product_proxies "$@" ;;
+    find) product_find "$@" ;;
     *) apigee_die "unknown product verb '$verb' (see 'apigee product --help')" ;;
   esac
 }
