@@ -45,6 +45,7 @@ Resources and verbs:
   env            list get health export import
   virtualhost    list get                        (Edge only)
   envgroup       list get                        (X/hybrid only)
+  instance       list attachments attach         (X/hybrid only)
   user           list                            (Edge only)
   org            get
   token          print an access token
@@ -82,6 +83,7 @@ apigee_canonical_resource() {
     env | envs | environment | environments) printf 'env\n' ;;
     virtualhost | virtualhosts | vhost) printf 'virtualhost\n' ;;
     envgroup | envgroups) printf 'envgroup\n' ;;
+    instance | instances) printf 'instance\n' ;;
     user | users) printf 'user\n' ;;
     org | organization) printf 'org\n' ;;
     token) printf 'token\n' ;;
@@ -99,13 +101,14 @@ apigee_resource_module() {
     keystore | truststore) printf 'keystore.sh\n' ;;
     app | developer | product) printf 'apps.sh\n' ;;
     org | env | cache | virtualhost | envgroup | user) printf 'env.sh\n' ;;
+    instance) printf 'instance.sh\n' ;;
     token | profile) printf 'session.sh\n' ;;
   esac
 }
 
 apigee_load_modules() {
   local m
-  for m in bundle.sh kvm.sh targetserver.sh keystore.sh apps.sh env.sh session.sh; do
+  for m in bundle.sh kvm.sh targetserver.sh keystore.sh apps.sh env.sh instance.sh session.sh; do
     # shellcheck disable=SC1090
     . "$APIGEE_TOOLKIT_HOME/libexec/$m"
   done
