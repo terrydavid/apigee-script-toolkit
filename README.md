@@ -148,6 +148,14 @@ Key variables: `APIGEE_PLATFORM` (`x`, `hybrid`, `edge`), `APIGEE_ORG`,
 `APIGEE_ENV`, `APIGEE_X_API_URL`, `APIGEE_EDGE_MGMT_URL`, `APIGEE_EDGE_AUTH`,
 `APIGEE_EDGE_USER`, `APIGEE_EDGE_TOKEN_URL`, `APIGEE_KVM_READER_URL`.
 
+## Shell completion
+
+`setup/install-completion.sh` appends a marked block to `~/.bashrc` that sources
+`completions/apigee.bash` (`--zsh` uses `~/.zshrc` through bashcompinit, `--rc FILE` another file,
+`--uninstall` removes the block; re-running never duplicates it). It completes resources and
+aliases, verbs, global options and their values, per-verb options (for example the `env import`
+flags) and profile names. Legacy scripts that were dropped are listed in `docs/DROPPED.md`.
+
 ## Authentication
 
 Credentials are never accepted as command-line arguments, never echoed, and
