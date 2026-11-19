@@ -49,6 +49,8 @@ Resources and verbs:
   credential     list get add set-products delete delete-all
   role           list create delete add-user remove-user users permissions   (Edge/OPDK)
   resourcefile   list get upload delete
+  audit          products apps                   (find broken links)
+  raw            METHOD PATH [--json BODY]       (raw management API call)
   server         list get env-servers ips attach ... (OPDK only)
   stats          traffic query                   (analytics, read-only)
   report         list get                        (saved custom reports)
@@ -94,6 +96,8 @@ apigee_canonical_resource() {
     server | servers) printf 'server\n' ;;
     credential | credentials | key | keys) printf 'credential\n' ;;
     role | roles | userrole | userroles) printf 'role\n' ;;
+    audit) printf 'audit\n' ;;
+    raw) printf 'raw\n' ;;
     resourcefile | resourcefiles | resource) printf 'resourcefile\n' ;;
     report | reports) printf 'report\n' ;;
     user | users) printf 'user\n' ;;
@@ -117,7 +121,7 @@ apigee_resource_module() {
     stats | report) printf 'analytics.sh\n' ;;
     server) printf 'opdk.sh\n' ;;
     credential) printf 'provision.sh\n' ;;
-    role | resourcefile) printf 'admin.sh\n' ;;
+    role | resourcefile | audit | raw) printf 'admin.sh\n' ;;
     token | profile) printf 'session.sh\n' ;;
   esac
 }

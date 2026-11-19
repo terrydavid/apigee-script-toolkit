@@ -19,6 +19,7 @@
 #   apigee_json masked-keys            names of entries whose value is all asterisks
 #   apigee_json values FIELD           elements of the array FIELD, one per line
 #   apigee_json credential-keys        "consumerKey status" per credential of an app (no secrets)
+#   apigee_json app-products           "app product" per product credential of an apps?expand=true list
 #   apigee_json resourcefiles          "type name" per resource file of a list response
 #   apigee_json app-statuses           "status name" per app (status lowercased, "-" if unset)
 #   apigee_json items [FIELD]          each element of a list response as compact JSON
@@ -84,6 +85,7 @@ apigee_json() {
     masked-keys) jq -r 'select((.value | type) == "string" and (.value | test("\\A\\*+\\z"))) | .name | tostring' ;;
     values) jq -r --arg f "$1" '(.[$f] // [])[] | if type == "string" then . else tojson end' ;;
     credential-keys) jq -r '(.credentials // [])[] | "\(.consumerKey) \(.status // "-")"' ;;
+    app-products) jq -r '(.app // [])[] | .name as $a | ((.credentials // [])[] | (.apiProducts // [])[] | "\($a) \(.apiproduct)")' | sort -u ;;
     resourcefiles) jq -r '(.resourceFile // [])[] | "\(.type) \(.name)"' ;;
     app-statuses)
       jq -r '(if type == "array" then . else (.app // []) end)[] | select(type == "object")

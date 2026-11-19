@@ -203,3 +203,72 @@ resourcefile_main() {
     *) apigee_die "unknown resourcefile verb '$verb' (see 'apigee resourcefile --help')" ;;
   esac
 }
+
+# --- audit (orphan finder) and raw API --------------------------------------------------
+
+audit_verbs() { printf '%s\n' products apps; }
+raw_verbs() { printf '%s\n' GET POST PUT DELETE; }
+
+audit_help() {
+  case "${1:-}" in
+    "") printf 'Usage: apigee audit <verb>\n\nVerbs:\n  products   API products that list a proxy which no longer exists ("PRODUCT PROXY")\n  apps       App credentials that reference an API product which no longer exists ("APP PRODUCT")\n\nPrints findings, exits 1 when any are found. Replaces findBrokenProducts/findBrokenApiProxies/findBrokenApps.\n' ;;
+    products | apps) audit_help "" ;;
+    *) apigee_die "unknown audit verb '$1'" ;;
+  esac
+}
+
+raw_help() {
+  printf 'Usage: apigee raw METHOD PATH [--json BODY | --data-file FILE] [--ok CODES]\n\nCall any management API path under the selected platform (PATH starts with /).\nGET prints the JSON; other methods ask for confirmation. Absolute URLs are refused so\ncredentials only go to the configured management host.\n'
+}
+
+audit_main() {
+  local verb="${1:-}" findings="" p n known prods
+  case "$verb" in
+    "" | -h | --help | help) audit_help ""; return 0 ;;
+    products)
+      known="$(apigee_get "$(apigee_org_path)/apis" | apigee_json names proxies | sort -u)" || exit 1
+      prods="$(apigee_get "$(apigee_org_path)/apiproducts" | apigee_json names apiProduct)" || exit 1
+      while IFS= read -r n; do
+        [[ -n "$n" ]] || continue
+        while IFS= read -r p; do
+          [[ -n "$p" ]] || continue
+          printf '%s\n' "$known" | grep -Fx -- "$p" >/dev/null || findings="$findings$n $p"$'\n'
+        done < <(apigee_get "$(apigee_org_path)/apiproducts/$(apigee_urlencode "$n")" | apigee_json values proxies)
+      done <<EOF
+$prods
+EOF
+      ;;
+    apps)
+      known="$(apigee_get "$(apigee_org_path)/apiproducts" | apigee_json names apiProduct | sort -u)" || exit 1
+      while IFS= read -r p; do
+        [[ -n "$p" ]] || continue
+        printf '%s\n' "$known" | grep -Fx -- "${p#* }" >/dev/null || findings="$findings$p"$'\n'
+      done < <(apigee_get "$(apigee_org_path)/apps?expand=true" | apigee_json app-products)
+      ;;
+    *) apigee_die "unknown audit verb '$verb' (see 'apigee audit --help')" ;;
+  esac
+  if [[ -n "$findings" ]]; then
+    printf '%s' "$findings"
+    return 1
+  fi
+  apigee_info "audit $verb: nothing broken"
+}
+
+raw_main() {
+  local method="${1:-}" path="${2:-}"
+  case "$method" in
+    "" | -h | --help | help) api_help; return 0 ;;
+  esac
+  [[ -n "$path" ]] || apigee_die "usage: apigee raw METHOD PATH [--json BODY | --data-file FILE]"
+  shift 2
+  method="$(printf '%s' "$method" | tr '[:lower:]' '[:upper:]')"
+  [[ "$path" == /* ]] || apigee_die "PATH must start with / (absolute URLs are refused)"
+  case "$method" in
+    GET) apigee_request GET "$path" "$@" | apigee_json pretty ;;
+    POST | PUT | DELETE | PATCH)
+      apigee_confirm "$method $path on $(apigee_platform_label) org '${APIGEE_ORG:-?}'."
+      apigee_request "$method" "$path" "$@"
+      ;;
+    *) apigee_die "unsupported method '$method'" ;;
+  esac
+}

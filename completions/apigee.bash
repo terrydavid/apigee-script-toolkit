@@ -8,7 +8,7 @@
 # per resource, per-verb options, and profile names. The verb table is checked
 # against the modules in libexec/ by tests/test_completion.sh.
 
-_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product credential role resourcefile cache env virtualhost envgroup instance server stats report user org token profile doctor"
+_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product credential role resourcefile audit raw cache env virtualhost envgroup instance server stats report user org token profile doctor"
 _apigee_aliases="proxies api apis sharedflows sf kvms keyvaluemap target-servers targetserver ts keystores truststores apps developers dev products apiproduct credentials key keys roles resource resourcefiles caches envs environment environments virtualhosts vhost envgroups instances servers stat reports users organization profiles"
 _apigee_global_opts="--platform --org --env --profile -n --dry-run -y --yes --debug --json-engine --version -h --help"
 _apigee_bundle_verbs="list revisions latest deployed stale download import deploy undeploy delete delete-revision clean-revisions compare"
@@ -56,6 +56,8 @@ _apigee_verbs_for() {
     credential) echo "list get add set-products delete delete-all" ;;
     role) echo "list create delete add-user remove-user users permissions" ;;
     resourcefile) echo "list get upload delete" ;;
+    audit) echo "products apps" ;;
+    raw) echo "GET POST PUT DELETE" ;;
     cache) echo "list get create delete clear" ;;
     env) echo "list get create delete health export import" ;;
     virtualhost) echo "list get create update delete" ;;

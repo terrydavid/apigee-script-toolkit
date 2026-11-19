@@ -271,7 +271,19 @@ def op_resourcefiles(_args):
         print("%s %s" % (r.get("type"), r.get("name")))
 
 
+def op_app_products(_args):
+    doc = load_stdin() or {}
+    out = set()
+    for app in doc.get("app") or []:
+        for cred in app.get("credentials") or []:
+            for prod in cred.get("apiProducts") or []:
+                out.add("%s %s" % (app.get("name"), prod.get("apiproduct")))
+    for line in sorted(out):
+        print(line)
+
+
 OPS = {
+    "app-products": op_app_products,
     "resourcefiles": op_resourcefiles,
     "values": op_values,
     "credential-keys": op_credential_keys,
