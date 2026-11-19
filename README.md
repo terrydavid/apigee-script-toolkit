@@ -433,7 +433,8 @@ apigee env import ./snap --env test --deploy  # recreate it somewhere else
 - **Deployment service account (Apigee X):** bundles that need a service account (error
   `MISSING_SERVICE_ACCOUNT`) are deployed with `--service-account EMAIL` on `env import`,
   as with `proxy deploy`. The export does not record which service account each
-  deployment used.
+  deployment used; `--service-account-from ENV` reads it from the deployment of the same
+  revision in ENV (for example `dev`) and gives each bundle its own, or none if it had none.
 - **App credentials:** consumer keys and secrets are shown as `"<redacted>"` by `app get`,
   `app export` and `env export`. Add `--show-credentials` to include them. Exports made that
   way are restored on import (the key Apigee generates is removed); redacted ones are not,

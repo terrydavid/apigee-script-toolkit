@@ -402,4 +402,21 @@ test_env_import_existing_revisions_needs_deploy() {
   assert_contains "reason" "$ERR" "--existing-revisions needs --deploy"
 }
 
+test_env_import_copies_each_service_account_from_another_env() {
+  use_x
+  make_export "$APP_JSON"
+  mkdir -p "$T/in/proxies" "$T/in/sharedflows"
+  printf 'zipdata' >"$T/in/proxies/p1-rev3.zip"
+  printf 'zipdata' >"$T/in/sharedflows/s1-rev1.zip"
+  route GET "$ORGP/environments/dev/apis/p1/revisions/3/deployments\$" 200 '{"serviceAccount":"projects/-/serviceAccounts/sa1@proj.iam.gserviceaccount.com"}'
+  route GET "$ORGP/environments/dev/sharedflows/s1/revisions/1/deployments\$" 200 '{"state":"READY"}'
+  run "$APIGEE" --yes env import "$T/in" --deploy --existing-revisions --service-account-from dev --service-account ignored@x --no-targetservers --no-kvms --no-developers --no-products --no-apps
+  assert_status "ok" 0
+  local p; p="$(posts)"
+  assert_contains "proxy gets dev's service account" "$p" "apis/p1/revisions/3/deployments?override=true&serviceAccount=sa1%40proj.iam.gserviceaccount.com"
+  assert_contains "shared flow deployed" "$p" "sharedflows/s1/revisions/1/deployments?override=true"
+  assert_not_contains "none for a deployment that has none" "$p" "sharedflows/s1/revisions/1/deployments?override=true&serviceAccount"
+  assert_not_contains "the default is overridden" "$p" "ignored"
+}
+
 run_tests

@@ -89,6 +89,9 @@ Options:
   --service-account EMAIL
                   service account for the deployments (Apigee X; bundles that use
                   Google authentication or similar require one)
+  --service-account-from ENV
+                  give each bundle the same service account as its deployment in ENV
+                  (none if that deployment has none). Overrides --service-account.
   --overwrite     update things that already exist (default: skip them)
   --allow-masked  import KVM values that are all asterisks (see 'apigee kvm import --help')
 
@@ -235,15 +238,28 @@ env_export() {
   fi
 }
 
+# The service account (email) of NAME's revision REV deployed in environment ENV, or nothing.
+bundle_source_service_account() {
+  local label="$1" name="$2" rev="$3" env="$4"
+  apigee_get "$(apigee_org_path)/environments/$(apigee_urlencode "$env")/$(bundle_collection "$label")/$(apigee_urlencode "$name")/revisions/$rev/deployments" 2>/dev/null |
+    apigee_json get serviceAccount 2>/dev/null | sed 's|.*/serviceAccounts/||' || true
+}
+
 env_import_bundles() {
-  local label="$1" sub="$2" dir="$3" deploy="$4" results="$5" sa="${6:-}" existing="${7:-false}" zip base name rev
+  local label="$1" sub="$2" dir="$3" deploy="$4" results="$5" sa_default="${6:-}" existing="${7:-false}" sa_from="${8:-}" zip base name rev sa
   [[ -d "$dir/$sub" ]] || return 0
   local sa_args=()
-  [[ -n "$sa" ]] && sa_args=(--service-account "$sa")
   for zip in "$dir/$sub"/*.zip; do
     [[ -f "$zip" ]] || continue
     base="$(basename "$zip" .zip)"
     name="${base%-rev*}"
+    sa="$sa_default"
+    if [[ -n "$sa_from" ]]; then
+      rev="${base##*-rev}"
+      sa="$(bundle_source_service_account "$label" "$name" "$rev" "$sa_from")"
+    fi
+    sa_args=()
+    [[ -n "$sa" ]] && sa_args=(--service-account "$sa")
     if [[ "$existing" == true ]]; then
       rev="${base##*-rev}"
       if [[ ! "$rev" =~ ^[0-9]+$ ]]; then
@@ -286,7 +302,7 @@ env_import_bundles() {
 }
 
 env_import() {
-  local dir="" ts=true kvms=true developers=true products=true apps=true bundles=true deploy=false overwrite=false masked="" res sa="" existing=false
+  local dir="" ts=true kvms=true developers=true products=true apps=true bundles=true deploy=false overwrite=false masked="" res sa="" sa_from="" existing=false
   bundles=true
   while (($#)); do
     case "$1" in
@@ -298,6 +314,7 @@ env_import() {
       --no-bundles) bundles=false; shift ;;
       --deploy) deploy=true; shift ;;
       --existing-revisions) existing=true; shift ;;
+      --service-account-from) [[ $# -ge 2 ]] || apigee_die "--service-account-from needs an ENV"; sa_from="$2"; shift 2 ;;
       --service-account) [[ $# -ge 2 ]] || apigee_die "--service-account needs an EMAIL"; sa="$2"; shift 2 ;;
       --overwrite) overwrite=true; shift ;;
       --allow-masked) masked=--allow-masked; shift ;;
@@ -368,8 +385,8 @@ env_import() {
   fi
   if [[ "$bundles" == true ]]; then
     : >"$results"
-    env_import_bundles sharedflow sharedflows "$dir" "$deploy" "$results" "$sa" "$existing"
-    env_import_bundles proxy proxies "$dir" "$deploy" "$results" "$sa" "$existing"
+    env_import_bundles sharedflow sharedflows "$dir" "$deploy" "$results" "$sa" "$existing" "$sa_from"
+    env_import_bundles proxy proxies "$dir" "$deploy" "$results" "$sa" "$existing" "$sa_from"
     if [[ -s "$results" ]]; then import_report "bundles" "$results" || failed=1; fi
   fi
   return "$failed"

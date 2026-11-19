@@ -134,7 +134,12 @@ def main():
                 st, why = state_of(api, a.org, a.dst, kind, n, d[n].get("revision"))
                 if st != "READY":
                     bad.append((n, d[n].get("revision"), st, why))
-            shown = "; ".join(f"{n} rev {r} is {st}" for n, r, st, _ in bad[:8])
+            def src_state(n):
+                if n not in s:
+                    return ""
+                return f" (in {a.src}: {state_of(api, a.org, a.src, kind, n, s[n].get('revision'))[0]})"
+
+            shown = "; ".join(f"{n} rev {r} is {st}{src_state(n)}" for n, r, st, _ in bad[:8])
             if len(bad) > 8:
                 shown += f"; ... and {len(bad) - 8} more"
             report(f"every {a.dst} deployment is READY", not bad, f"{len(bad)} of {len(d)} not READY: {shown}" if bad else "")

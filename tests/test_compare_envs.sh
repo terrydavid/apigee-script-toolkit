@@ -44,6 +44,7 @@ r = {
   f"{E}/tst/deployments": {"deployments": [dep("p1", p1rev)] + ([dep("p2", "5")] if p2state != "MISSING" else [])},
   f"{E}/tst/sharedflows/sf1/revisions/1/deployments": {"state": "READY"},
   f"{E}/tst/apis/p1/revisions/{p1rev}/deployments": {"state": "READY"},
+  f"{E}/dev/apis/p2/revisions/5/deployments": {"state": "READY"},
   f"{E}/tst/apis/p2/revisions/5/deployments": ({"state": p2state, "errors": [{"message": "environment is not attached to an instance"}]} if p2state == "ERROR" else {"state": p2state}),
   f"{E}/dev/targetservers": ["ts1", "ts2"],
   f"{E}/tst/targetservers": ["ts1", "ts2"],
@@ -73,7 +74,7 @@ test_compare_reports_each_kind_of_difference() {
   stop_api
   assert_status "differences" 1
   assert_contains "revision" "$OUT" "p1 (dev 3, tst 4)"
-  assert_contains "state" "$OUT" "p2 rev 5 is ERROR"
+  assert_contains "state" "$OUT" "p2 rev 5 is ERROR (in dev: READY)"
   assert_contains "reason from Apigee" "$OUT" "reason x1: environment is not attached to an instance"
   assert_contains "count" "$OUT" "1 of 2 not READY"
   assert_contains "kvm count" "$OUT" "kv1 (dev 2, tst 1)"
