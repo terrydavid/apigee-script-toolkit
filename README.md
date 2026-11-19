@@ -158,7 +158,7 @@ source bin/apigee-env my-edge     # bash or zsh; `source bin/apigee-env --unset`
 for example `APIGEE_EDGE_SSO_CLIENT` and `APIGEE_EDGE_MFA_CODE`. This also
 hides harmless settings such as `APIGEE_EDGE_TOKEN_URL`.
 
-Key variables: `APIGEE_PLATFORM` (`x`, `hybrid`, `edge`), `APIGEE_ORG`,
+Key variables: `APIGEE_PLATFORM` (`x`, `hybrid`, `edge`, `opdk`), `APIGEE_ORG`,
 `APIGEE_ENV`, `APIGEE_X_API_URL`, `APIGEE_EDGE_MGMT_URL`, `APIGEE_EDGE_AUTH`,
 `APIGEE_EDGE_USER`, `APIGEE_EDGE_TOKEN_URL`, `APIGEE_KVM_READER_URL`.
 
