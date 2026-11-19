@@ -227,7 +227,7 @@ audit_help() {
 }
 
 raw_help() {
-  printf 'Usage: apigee raw METHOD PATH [--json BODY | --data-file FILE] [--ok CODES]\n\nCall any management API path under the selected platform (PATH starts with /).\nGET prints the JSON; other methods ask for confirmation. Absolute URLs are refused so\ncredentials only go to the configured management host.\n'
+  printf 'Usage: apigee raw METHOD PATH [--json BODY | --data-file FILE] [--ok CODES] [--wait]\n\nCall any management API path under the selected platform (PATH starts with /).\nGET prints the JSON; other methods ask for confirmation. --wait polls the returned\nlong-running operation (every APIGEE_WAIT_INTERVAL seconds, default 10) until it is done; exit 1 on error. Absolute URLs are refused so\ncredentials only go to the configured management host.\n'
 }
 
 audit_main() {
@@ -270,14 +270,47 @@ raw_main() {
   esac
   [[ -n "$path" ]] || apigee_die "usage: apigee raw METHOD PATH [--json BODY | --data-file FILE]"
   shift 2
+  local wait="" a rest=()
+  for a in "$@"; do
+    if [[ "$a" == --wait ]]; then wait=1; else rest+=("$a"); fi
+  done
+  set -- ${rest[@]+"${rest[@]}"}
   method="$(printf '%s' "$method" | tr '[:lower:]' '[:upper:]')"
   [[ "$path" == /* ]] || apigee_die "PATH must start with / (absolute URLs are refused)"
   case "$method" in
     GET) apigee_request GET "$path" "$@" | apigee_json pretty ;;
     POST | PUT | DELETE | PATCH)
       apigee_confirm "$method $path on $(apigee_platform_label) org '${APIGEE_ORG:-?}'."
-      apigee_request "$method" "$path" "$@"
+      if [[ -n "$wait" ]]; then
+        local resp
+        resp="$(apigee_request "$method" "$path" "$@")" || exit 1
+        printf '%s\n' "$resp"
+        raw_wait_operation "$resp"
+      else
+        apigee_request "$method" "$path" "$@"
+      fi
       ;;
     *) apigee_die "unsupported method '$method'" ;;
   esac
+}
+
+raw_wait_operation() { # response JSON of a call that returned a long-running operation
+  local resp="$1" op finished err tries=0 doc interval="${APIGEE_WAIT_INTERVAL:-10}" max="${APIGEE_WAIT_MAX:-360}"
+  op="$(printf '%s' "$resp" | apigee_json get name)"
+  [[ "$op" == */operations/* ]] || return 0
+  while :; do
+    doc="$(apigee_get "/$op")" || exit 1
+    finished="$(printf '%s' "$doc" | apigee_json get done)"
+    if [[ "$finished" == true ]]; then
+      err="$(printf '%s' "$doc" | apigee_json get error)"
+      if [[ -n "$err" && "$err" != null ]]; then
+        apigee_die "operation $op failed: $(printf '%s' "$doc" | apigee_json get error.message 2>/dev/null || printf '%s' "$err")"
+      fi
+      apigee_info "operation $op is done"
+      return 0
+    fi
+    tries=$((tries + 1))
+    ((tries <= max)) || apigee_die "operation $op still running after $((tries * interval))s; check it with: apigee operation get ${op##*/}"
+    sleep "$interval"
+  done
 }

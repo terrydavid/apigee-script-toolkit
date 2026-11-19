@@ -74,6 +74,7 @@ apigee --help | apigee <resource> --help | apigee <resource> <verb> --help
 | `report` | list get (saved custom reports) | X / Edge |
 | `raw` | `raw METHOD PATH [--json BODY]` for any management API path (absolute URLs refused; writes ask for confirmation) | all |
 | `token` | print an access token (`--header` for an `Authorization:` line) | both |
+| `sa` | create status undo | X / hybrid (service account to run toolkit commands as; `--save-profile NAME` keeps it in a profile; `--impersonate SA_EMAIL` for one command) |
 | `profile` | list use show current clear | n/a |
 | `doctor` | runs `setup/doctor.sh` | both |
 
@@ -488,3 +489,7 @@ apigee env import ./snap --env test --deploy  # recreate it somewhere else
 
 
 See `docs/APIGEECLI.md` for how each `apigeecli` command group maps to this toolkit.
+
+## Landing zones
+
+`setup/landing-zone.sh` plans or applies Apigee X org presets (peered or PSC, own or Shared VPC, data residency). See [docs/LANDING-ZONE.md](docs/LANDING-ZONE.md).

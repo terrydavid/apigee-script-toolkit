@@ -60,4 +60,24 @@ test_api_rejects_absolute_urls() {
   assert_eq "nothing sent" "" "$(grep '^=== GET' "$FAKE_CURL_LOG")"
 }
 
+test_raw_wait_polls_the_operation() {
+  use_x
+  export APIGEE_WAIT_INTERVAL=0
+  route POST '/organizations/org1/instances$' 200 '{"name":"organizations/org1/operations/op9","done":false}'
+  route GET '/operations/op9$' 200 '{"name":"organizations/org1/operations/op9","done":true}'
+  run "$APIGEE" --yes raw POST /organizations/org1/instances --json '{"name":"i"}' --wait
+  assert_status "wait ok" 0
+  assert_contains "polled" "$(curl_log)" "=== GET https://apigee.googleapis.com/v1/organizations/org1/operations/op9"
+}
+
+test_raw_wait_fails_when_the_operation_errors() {
+  use_x
+  export APIGEE_WAIT_INTERVAL=0
+  route POST '/organizations/org1/instances$' 200 '{"name":"organizations/org1/operations/op9","done":false}'
+  route GET '/operations/op9$' 200 '{"name":"organizations/org1/operations/op9","done":true,"error":{"message":"quota exceeded"}}'
+  run "$APIGEE" --yes raw POST /organizations/org1/instances --json '{"name":"i"}' --wait
+  assert_status "wait fails" 1
+  assert_contains "message" "$ERR" "quota exceeded"
+}
+
 run_tests

@@ -8,7 +8,7 @@
 # per resource, per-verb options, and profile names. The verb table is checked
 # against the modules in libexec/ by tests/test_completion.sh.
 
-_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product credential role resourcefile audit raw appgroup datacollector datastore reference securityprofile site endpoint operation apicategory apidoc flowhook trace iam sync cache env virtualhost envgroup instance server stats report user org token profile doctor"
+_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product credential role resourcefile audit raw appgroup datacollector datastore reference securityprofile site endpoint operation apicategory apidoc flowhook trace iam sync cache env virtualhost envgroup instance server stats report user org token sa profile doctor"
 _apigee_aliases="proxies api apis sharedflows sf kvms keyvaluemap target-servers targetserver ts keystores truststores apps developers dev products apiproduct credentials key keys roles resource resourcefiles caches envs environment environments virtualhosts vhost envgroups instances servers stat reports users organization profiles"
 _apigee_global_opts="--platform --org --env --profile -n --dry-run -y --yes --debug --json-engine --version -h --help"
 _apigee_bundle_verbs="list revisions latest deployed stale export download import deploy undeploy delete delete-revision clean-revisions compare"
@@ -39,6 +39,7 @@ _apigee_canon() {
     user | users) echo user ;;
     org | organization) echo org ;;
     token) echo token ;;
+    sa | serviceaccount | service-account) echo sa ;;
     profile | profiles) echo profile ;;
     doctor) echo doctor ;;
   esac
@@ -75,6 +76,7 @@ _apigee_verbs_for() {
     user) echo "list create delete roles" ;;
     org) echo "get delete" ;;
     token) echo "print header" ;;
+    sa) echo "create status undo" ;;
     profile) echo "list use show current clear" ;;
   esac
 }

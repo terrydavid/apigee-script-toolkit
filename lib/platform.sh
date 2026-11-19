@@ -166,7 +166,14 @@ apigee_platform_init() {
   fi
   local base
   if [[ "$APIGEE_KIND" == x ]]; then
-    base="${APIGEE_X_API_URL:-$APIGEE_X_API_URL_DEFAULT}"
+    # Data residency: APIGEE_CONTROL_PLANE_LOCATION (for example us or eu) selects the
+    # regional endpoint apigee.LOCATION.rep.googleapis.com; APIGEE_X_API_URL overrides it
+    # (for example https://LOCATION-apigee.googleapis.com/v1).
+    base="${APIGEE_X_API_URL:-}"
+    if [[ -z "$base" && -n "${APIGEE_CONTROL_PLANE_LOCATION:-}" ]]; then
+      base="https://apigee.${APIGEE_CONTROL_PLANE_LOCATION}.rep.googleapis.com/v1"
+    fi
+    base="${base:-$APIGEE_X_API_URL_DEFAULT}"
     base="${base%/}"
   else
     base="${APIGEE_EDGE_MGMT_URL:-$APIGEE_EDGE_MGMT_URL_DEFAULT}"
