@@ -7,19 +7,20 @@
 # Legacy "lines" format (one "key;value" per line; values starting with
 # -----BEGIN may continue over several lines until the -----END line).
 
-kvm_verbs() { printf '%s\n' list get create delete put export import; }
+kvm_verbs() { printf '%s\n' list get create delete flush put export import; }
 
 kvm_help() {
   case "${1:-}" in
     "")
       cat <<'EOF'
-Usage: apigee kvm <verb> [--scope env|org|proxy:NAME] [options]
+Usage: apigee kvm <verb> [--scope env|org|proxy:NAME|company:NAME] [options]
 
 Verbs:
   list                         List key value maps in the scope
   get MAP [KEY]                Print a map (export document) or one value
   create MAP [--no-encrypt]    Create a map (encrypted by default)
   delete MAP [KEY]             Delete a map, or one entry
+  flush MAP                    Delete every entry but keep the map
   put MAP KEY [VALUE]          Create or update an entry (--value-file, --value-stdin)
   export [MAP...]              Write maps to files (--out DIR, --format json|lines)
   import FILE|DIR...           Load maps from export files (creates missing maps)
@@ -30,7 +31,7 @@ to read them through a helper proxy that answers GET URL?mapname=M&key=K.
 Run 'apigee kvm <verb> --help' for details.
 EOF
       ;;
-    list) printf 'Usage: apigee kvm list [--scope env|org|proxy:NAME]\n\nList map names, one per line.\n' ;;
+    list) printf 'Usage: apigee kvm list [--scope env|org|proxy:NAME|company:NAME]\n\nList map names, one per line.\n' ;;
     get)
       cat <<'EOF'
 Usage: apigee kvm get MAP [KEY] [--json] [--reader-url URL] [--scope ...]
@@ -90,6 +91,7 @@ and key names are listed). Pass --allow-masked to import such values anyway,
 for example when a value really is a run of asterisks.
 EOF
       ;;
+    flush) printf 'Usage: apigee kvm flush MAP [--scope ...]\n\nDelete every entry of MAP and keep the map itself. Mutating: asks for confirmation.\n' ;;
     *) apigee_die "unknown kvm verb '$1' (see 'apigee kvm --help')" ;;
   esac
 }
@@ -102,7 +104,11 @@ kvm_prefix() {
     env) printf '%s/keyvaluemaps\n' "$(apigee_env_path)" ;;
     org) printf '%s/keyvaluemaps\n' "$(apigee_org_path)" ;;
     proxy:?*) printf '%s/apis/%s/keyvaluemaps\n' "$(apigee_org_path)" "$(apigee_urlencode "${KVM_SCOPE#proxy:}")" ;;
-    *) apigee_die "bad --scope '$KVM_SCOPE' (use env, org or proxy:NAME)" ;;
+    company:?*)
+      apigee_require_platform edge "company-scope key value maps"
+      printf '%s/companies/%s/keyvaluemaps\n' "$(apigee_org_path)" "$(apigee_urlencode "${KVM_SCOPE#company:}")"
+      ;;
+    *) apigee_die "bad --scope '$KVM_SCOPE' (use env, org, proxy:NAME or company:NAME)" ;;
   esac
 }
 
@@ -110,6 +116,7 @@ kvm_scope_label() {
   case "$KVM_SCOPE" in
     env) apigee_env ;;
     org) printf 'org\n' ;;
+    company:*) printf 'company-%s\n' "${KVM_SCOPE#company:}" ;;
     *) printf 'proxy-%s\n' "${KVM_SCOPE#proxy:}" ;;
   esac
 }
@@ -252,6 +259,28 @@ kvm_delete() {
     apigee_confirm "Delete key value map '$map' and all of its entries."
     apigee_request DELETE "$(kvm_map_path "$map")" >/dev/null || exit 1
   fi
+}
+
+kvm_flush() {
+  local map="${1:-}" line key keys=""
+  [[ -n "$map" ]] || apigee_die "missing MAP"
+  KVM_READER_URL=""
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    key="$(printf '%s' "$line" | apigee_json get name)"
+    keys="$keys$key"$'\n'
+  done < <(kvm_fetch_entries "$map")
+  if [[ -z "$keys" ]]; then
+    apigee_info "key value map '$map' has no entries"
+    return 0
+  fi
+  apigee_confirm "Delete all $(printf '%s' "$keys" | grep -c .) entries of key value map '$map' (the map is kept)."
+  while IFS= read -r key; do
+    [[ -n "$key" ]] || continue
+    apigee_request DELETE "$(kvm_map_path "$map")/entries/$(apigee_urlencode "$key")" >/dev/null || exit 1
+  done <<EOF
+$keys
+EOF
 }
 
 # Create or update one entry. $2 is a file holding the compact entry JSON.
@@ -511,11 +540,15 @@ kvm_main() {
     esac
   done
   set -- ${args[@]+"${args[@]}"}
+  case "$KVM_SCOPE" in
+    company:?*) apigee_require_platform edge "company-scope key value maps" ;;
+  esac
   case "$verb" in
     list) kvm_list ;;
     get) kvm_get "$@" ;;
     create) kvm_create "$@" ;;
     delete) kvm_delete "$@" ;;
+    flush) kvm_flush "$@" ;;
     put) kvm_put "$@" ;;
     export) kvm_export "$@" ;;
     import) kvm_import "$@" ;;

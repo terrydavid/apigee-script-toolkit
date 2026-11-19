@@ -8,7 +8,7 @@
 # New-user passwords come from APIGEE_NEW_USER_PASSWORD, never from arguments.
 
 role_verbs() { printf '%s\n' list create delete add-user remove-user users permissions; }
-resourcefile_verbs() { printf '%s\n' list get upload delete; }
+resourcefile_verbs() { printf '%s\n' list get upload delete revision; }
 
 admin_esc() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
 
@@ -22,7 +22,7 @@ admin_help() { # resource verb -> 0 when handled
     "org delete") printf 'Usage: apigee org delete --confirm-name ORG\n\nDelete the organization (Apigee OPDK only). --confirm-name must equal --org even with --yes.\nUse --dry-run to see the request first.\n' ;;
     "role ") printf 'Usage: apigee role <verb>   (Apigee Edge/OPDK only)\n\nVerbs:\n  list                    List roles\n  create NAME             Create a role\n  delete NAME             Delete a role\n  add-user ROLE EMAIL     Give a user a role\n  remove-user ROLE EMAIL  Take a role from a user\n  users ROLE              List the users of a role\n  permissions ROLE        Show the role'"'"'s resource permissions\n\nMutating verbs ask for confirmation unless --yes.\n' ;;
     "role "*) printf 'Usage: apigee role %s ...\n\nSee "apigee role --help". Apigee Edge/OPDK only; mutating verbs ask for confirmation.\n' "$2" ;;
-    "resourcefile ") printf 'Usage: apigee resourcefile <verb>   (uses --env)\n\nVerbs:\n  list                     "type name" per resource file\n  get TYPE NAME            Print a resource file\n  upload TYPE FILE [--name N]  Upload FILE (types: jsc java py node xsl wsdl xsd properties)\n  delete TYPE NAME         Delete a resource file\n\nMutating verbs ask for confirmation unless --yes.\n' ;;
+    "resourcefile ") printf 'Usage: apigee resourcefile <verb>   (uses --env)\n\nVerbs:\n  list [--scope org]     "type name" per resource file (--env, or the org with --scope org)\n  revision PROXY REV       Resources inside a proxy revision\n  get TYPE NAME            Print a resource file\n  upload TYPE FILE [--name N]  Upload FILE (types: jsc java py node xsl wsdl xsd properties)\n  delete TYPE NAME         Delete a resource file\n\nMutating verbs ask for confirmation unless --yes.\n' ;;
     "resourcefile "*) admin_help resourcefile "" ;;
     "proxy delete" | "sharedflow delete") printf 'Usage: apigee %s delete NAME\n\nDelete the whole %s (all revisions). Refuses while any revision is deployed.\nMutating: asks for confirmation.\n' "$1" "$1" ;;
     *) return 1 ;;
@@ -172,9 +172,18 @@ resourcefile_main() {
     "" | -h | --help | help) admin_help resourcefile ""; return 0 ;;
   esac
   local base type="${1:-}" name="${2:-}"
-  base="$(apigee_env_path)/resourcefiles"
   case "$verb" in
-    list) apigee_get "$base" | apigee_json resourcefiles ;;
+    list | get | upload | delete) base="$(apigee_env_path)/resourcefiles" ;;
+  esac
+  case "$verb" in
+    list)
+      if [[ "$type" == --scope && "$name" == org ]]; then base="$(apigee_org_path)/resourcefiles"; fi
+      apigee_get "$base" | apigee_json resourcefiles
+      ;;
+    revision)
+      [[ -n "$type" && -n "$name" ]] || apigee_die "usage: apigee resourcefile revision PROXY REV"
+      apigee_get "$(apigee_org_path)/apis/$(apigee_urlencode "$type")/revisions/$(apigee_urlencode "$name")/resources" | apigee_json names
+      ;;
     get)
       [[ -n "$type" && -n "$name" ]] || apigee_die "usage: apigee resourcefile get TYPE NAME"
       apigee_request GET "$base/$type/$(apigee_urlencode "$name")" --accept '*/*'

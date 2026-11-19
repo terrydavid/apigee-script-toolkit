@@ -47,7 +47,7 @@ _apigee_canon() {
 _apigee_verbs_for() {
   case "$1" in
     proxy | sharedflow) echo "$_apigee_bundle_verbs" ;;
-    kvm) echo "list get create delete put export import" ;;
+    kvm) echo "list get create delete flush put export import" ;;
     targetserver) echo "list get create update delete" ;;
     keystore | truststore) echo "list get create delete upload-cert" ;;
     app) echo "list get approve revoke create delete export import" ;;
@@ -55,7 +55,7 @@ _apigee_verbs_for() {
     product) echo "list get create delete attach-proxy detach-proxy proxies find export import" ;;
     credential) echo "list get add set-products delete delete-all" ;;
     role) echo "list create delete add-user remove-user users permissions" ;;
-    resourcefile) echo "list get upload delete" ;;
+    resourcefile) echo "list get upload delete revision" ;;
     audit) echo "products apps" ;;
     raw) echo "GET POST PUT DELETE" ;;
     cache) echo "list get create delete clear" ;;

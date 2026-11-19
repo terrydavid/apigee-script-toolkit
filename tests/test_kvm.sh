@@ -212,4 +212,30 @@ test_x_rejects_unencrypted_map() {
   assert_contains "msg" "$ERR" "always encrypted"
 }
 
+test_company_scope_is_edge_only() {
+  use_edge
+  route GET '/organizations/org1/companies/Acme/keyvaluemaps$' 200 '["cm"]'
+  run "$APIGEE" kvm list --scope company:Acme
+  assert_status "edge" 0
+  assert_eq "company map" "cm" "$OUT"
+  use_x
+  run "$APIGEE" kvm list --scope company:Acme
+  assert_status "x refused" 1
+  assert_contains "why" "$ERR" "Edge"
+}
+
+test_flush_deletes_every_entry_but_keeps_the_map() {
+  use_edge
+  route GET '/keyvaluemaps/m1$' 200 '{"name":"m1","encrypted":false,"entry":[{"name":"a","value":"1"},{"name":"b","value":"2"}]}'
+  run "$APIGEE" kvm flush m1
+  assert_status "needs yes" 1
+  assert_eq "nothing deleted" "" "$(grep '^=== DELETE' "$FAKE_CURL_LOG")"
+  run "$APIGEE" --yes kvm flush m1
+  assert_status "flush" 0
+  assert_contains "a" "$(curl_log)" "=== DELETE"
+  assert_contains "entry a" "$(curl_log)" "keyvaluemaps/m1/entries/a"
+  assert_contains "entry b" "$(curl_log)" "keyvaluemaps/m1/entries/b"
+  assert_eq "map itself kept" "0" "$(grep -c '^=== DELETE .*keyvaluemaps/m1$' "$FAKE_CURL_LOG" || true)"
+}
+
 run_tests

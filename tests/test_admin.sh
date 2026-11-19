@@ -147,4 +147,15 @@ xsl b.xsl" "$OUT"
   assert_contains "del url" "$(curl_log)" "/resourcefiles/jsc/a.js"
 }
 
+test_resourcefile_org_scope_and_revision() {
+  use_edge
+  route GET "/organizations/org1/resourcefiles\$" 200 '{"resourceFile":[{"name":"o.js","type":"jsc"}]}'
+  run "$APIGEE" resourcefile list --scope org
+  assert_eq "org list" "jsc o.js" "$OUT"
+  route GET "/apis/p1/revisions/3/resources\$" 200 '["jsc://a.js","xsl://b.xsl"]'
+  run "$APIGEE" resourcefile revision p1 3
+  assert_eq "revision" "jsc://a.js
+xsl://b.xsl" "$OUT"
+}
+
 run_tests
