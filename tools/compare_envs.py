@@ -53,7 +53,13 @@ def get_token():
     if tok:
         return tok
     try:
-        out = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True, timeout=60)
+        env = dict(os.environ)
+        key = env.get("APIGEE_SA_KEY") or os.path.join(
+            env.get("APIGEE_CONFIG_HOME") or os.path.join(env.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "apigee-toolkit"),
+            "sa-key.json")
+        if os.path.isfile(key) and os.path.getsize(key) > 0:
+            env["CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE"] = key
+        out = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, text=True, timeout=60, env=env)
     except (OSError, subprocess.TimeoutExpired):
         out = None
     if out is None or out.returncode != 0 or not out.stdout.strip():
@@ -137,9 +143,12 @@ def main():
             def src_state(n):
                 if n not in s:
                     return ""
-                return f" (in {a.src}: {state_of(api, a.org, a.src, kind, n, s[n].get('revision'))[0]})"
+                return state_of(api, a.org, a.src, kind, n, s[n].get("revision"))[0]
 
-            shown = "; ".join(f"{n} rev {r} is {st}{src_state(n)}" for n, r, st, _ in bad[:8])
+            # Not READY in the destination, but equally broken in the source: inherited, not a copy error.
+            inherited = [b for b in bad if src_state(b[0]) == b[2]]
+            bad = [b for b in bad if b not in inherited]
+            shown = "; ".join(f"{n} rev {r} is {st} (in {a.src}: {src_state(n) or 'not deployed'})" for n, r, st, _ in bad[:8])
             if len(bad) > 8:
                 shown += f"; ... and {len(bad) - 8} more"
             report(f"every {a.dst} deployment is READY", not bad, f"{len(bad)} of {len(d)} not READY: {shown}" if bad else "")
@@ -148,6 +157,8 @@ def main():
                 reasons[why or "(no reason given)"] = reasons.get(why or "(no reason given)", 0) + 1
             for why, count in sorted(reasons.items(), key=lambda kv: -kv[1])[:5]:
                 print(f"          reason x{count}: {why}")
+            for n, r, st, why in inherited:
+                print(f"  note  {n} rev {r} is {st} in {a.src} too" + (f" ({why})" if why else "") + " - not caused by the copy")
         extra = sorted(set(d) - set(s))
         if extra:
             print(f"  note  only in {a.dst} (not an error): {', '.join(extra)}")

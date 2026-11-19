@@ -289,6 +289,19 @@ Environment alternatives: `APIGEE_EDGE_PASSWORD`, `APIGEE_EDGE_SSO_CLIENT`,
 curl -sS -H "$(apigee token --header)" "https://apigee.googleapis.com/v1/organizations/my-org/environments"
 ```
 
+### No more logins: service-account key
+
+`setup/gcloud-sa-key.sh --yes` (run once, while you have a working gcloud login) creates a key for
+`apigee-toolkit@PROJECT.iam.gserviceaccount.com`, saves it as `~/.config/apigee-toolkit/sa-key.json`
+(mode 600, outside the repository, never printed) and checks that it yields a token. From then on
+`bin/apigee` and `tools/compare_envs.py` sign in from that file for their own calls, so no browser
+login can expire or be saved under the wrong account; your own gcloud login is untouched. Set
+`APIGEE_SA_KEY=/path/key.json` to use a key elsewhere. `--check` tests the saved key, `--force`
+replaces it, `--remove` deletes the file and the service account's keys. If your organization
+enforces `constraints/iam.disableServiceAccountKeyCreation` the script says so and an organization
+admin must allow keys for the project. The service account is created by
+`setup/gcloud-impersonate.sh` (add `--no-config`) and needs `roles/apigee.admin`.
+
 ## KVM export formats
 
 `apigee kvm export` writes one file per map.

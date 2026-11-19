@@ -6,7 +6,7 @@ case "$*" in
       printf '%s\n' "$FAKE_GCLOUD_FAIL" >&2
       exit 1
     fi
-    printf 'gcloud auth print-access-token account=%s\n' "${CLOUDSDK_CORE_ACCOUNT:-}" >>"${FAKE_CURL_LOG:-/dev/null}"
+    printf 'gcloud auth print-access-token account=%s override=%s\n' "${CLOUDSDK_CORE_ACCOUNT:-}" "${CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE:-}" >>"${FAKE_CURL_LOG:-/dev/null}"
     printf '%s\n' "${FAKE_GCLOUD_TOKEN:-fake-x-token}"
     ;;
   "config get-value auth/impersonate_service_account") printf '%s\n' "${FAKE_GCLOUD_IMPERSONATE:-}" ;;

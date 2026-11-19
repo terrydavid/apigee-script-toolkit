@@ -416,6 +416,16 @@ Reset the login with setup/gcloud-login.sh $want, or clear the cache and log in 
   fi
 }
 
+# Service-account key file, if one is configured: $APIGEE_SA_KEY, else
+# <config home>/sa-key.json (written by setup/gcloud-sa-key.sh). With a key,
+# gcloud signs in from the file, so no browser login is needed or can expire.
+apigee_sa_key_file() {
+  local f="${APIGEE_SA_KEY:-}"
+  [[ -n "$f" ]] || f="$(apigee_config_home)/sa-key.json"
+  [[ -s "$f" ]] && printf '%s\n' "$f"
+  return 0
+}
+
 apigee_token() {
   if [[ -n "${APIGEE_TOKEN:-}" ]]; then
     printf '%s\n' "$APIGEE_TOKEN"
@@ -429,15 +439,20 @@ apigee_token() {
       return 0
     fi
     apigee_have gcloud || apigee_die "gcloud not found; install the Google Cloud SDK (setup/install.sh) or set APIGEE_TOKEN"
-    local gerr
+    local gerr keyfile
     gerr="$(apigee_tmpdir)/gcloud-err"
-    tok="$(gcloud auth print-access-token 2>"$gerr")" || {
+    keyfile="$(apigee_sa_key_file)"
+    tok="$(
+      [[ -z "$keyfile" ]] || export CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE="$keyfile"
+      gcloud auth print-access-token 2>"$gerr"
+    )" || {
       # gcloud's own message (e.g. "Reauthentication required") says why; show it.
       apigee_die "gcloud auth print-access-token failed; run 'gcloud auth login'${CLOUDSDK_CORE_ACCOUNT:+ for $CLOUDSDK_CORE_ACCOUNT}${gerr:+
 gcloud said: $(head -n 5 "$gerr" 2>/dev/null)}"
     }
     [[ -n "$tok" ]] || apigee_die "gcloud returned an empty token"
-    apigee_check_token_identity "$tok"
+    # A key file fixes the identity (the service account); only a login can be wrong.
+    [[ -n "$keyfile" ]] || apigee_check_token_identity "$tok"
     (umask 077 && printf '%s\n' "$tok" >"$memo")
     printf '%s\n' "$tok"
     return 0
