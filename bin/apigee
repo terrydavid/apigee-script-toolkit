@@ -49,6 +49,12 @@ Resources and verbs:
   credential     list get add set-products delete delete-all
   role           list create delete add-user remove-user users permissions   (Edge/OPDK)
   resourcefile   list get upload delete
+  appgroup datacollector datastore reference securityprofile site endpoint apicategory apidoc   list get create update delete (X)
+  operation      list get                        (X)
+  flowhook       list get attach detach          (X)
+  trace          create list get data delete     (X; debug sessions)
+  iam            get set                         (X)
+  sync           get add remove                  (X; sync identities)
   audit          products apps                   (find broken links)
   raw            METHOD PATH [--json BODY]       (raw management API call)
   server         list get env-servers ips attach ... (OPDK only)
@@ -97,6 +103,20 @@ apigee_canonical_resource() {
     credential | credentials | key | keys) printf 'credential\n' ;;
     role | roles | userrole | userroles) printf 'role\n' ;;
     audit) printf 'audit\n' ;;
+    appgroup | appgroups) printf 'appgroup\n' ;;
+    datacollector | datacollectors) printf 'datacollector\n' ;;
+    datastore | datastores) printf 'datastore\n' ;;
+    reference | references | ref) printf 'reference\n' ;;
+    securityprofile | securityprofiles) printf 'securityprofile\n' ;;
+    site | sites | portal) printf 'site\n' ;;
+    endpoint | endpoints) printf 'endpoint\n' ;;
+    operation | operations | op) printf 'operation\n' ;;
+    apicategory | apicategories) printf 'apicategory\n' ;;
+    apidoc | apidocs) printf 'apidoc\n' ;;
+    flowhook | flowhooks) printf 'flowhook\n' ;;
+    trace | debug) printf 'trace\n' ;;
+    iam) printf 'iam\n' ;;
+    sync) printf 'sync\n' ;;
     raw) printf 'raw\n' ;;
     resourcefile | resourcefiles | resource) printf 'resourcefile\n' ;;
     report | reports) printf 'report\n' ;;
@@ -122,13 +142,14 @@ apigee_resource_module() {
     server) printf 'opdk.sh\n' ;;
     credential) printf 'provision.sh\n' ;;
     role | resourcefile | audit | raw) printf 'admin.sh\n' ;;
+    appgroup | datacollector | datastore | reference | securityprofile | site | endpoint | operation | apicategory | apidoc | flowhook | trace | iam | sync) printf 'xapi.sh\n' ;;
     token | profile) printf 'session.sh\n' ;;
   esac
 }
 
 apigee_load_modules() {
   local m
-  for m in bundle.sh kvm.sh targetserver.sh keystore.sh apps.sh provision.sh edgeadmin.sh admin.sh env.sh instance.sh analytics.sh opdk.sh session.sh; do
+  for m in bundle.sh kvm.sh targetserver.sh keystore.sh apps.sh provision.sh edgeadmin.sh admin.sh xapi.sh env.sh instance.sh analytics.sh opdk.sh session.sh; do
     # shellcheck disable=SC1090
     . "$APIGEE_TOOLKIT_HOME/libexec/$m"
   done

@@ -9,7 +9,7 @@
 #   apigee user list                   (Edge only)
 
 org_verbs() { printf '%s\n' get delete; }
-env_verbs() { printf '%s\n' list get create delete health export import; }
+env_verbs() { printf '%s\n' list get create delete debugmask health export import; }
 cache_verbs() { printf '%s\n' list get create delete clear; }
 virtualhost_verbs() { printf '%s\n' list get create update delete; }
 envgroup_verbs() { printf '%s\n' list get attachments attach; }
@@ -33,6 +33,7 @@ Verbs:
   get [ENV]          Show an environment (default --env)
   create NAME        Create an environment (mutating)
   delete NAME        Delete an environment (mutating)
+  debugmask get|set  Show or replace the trace data mask (set: --from-file FILE)
   health [ENV]       Report deployments and their state; exit 1 if any failed
   export DIR         Snapshot --env: target servers, KVMs, keystores, deployed bundles,
                      plus the org's developers, API products and apps
@@ -42,6 +43,7 @@ EOF
     list) printf 'Usage: apigee env list\n\nList environment names.\n' ;;
     get) printf 'Usage: apigee env get [ENV]\n\nPrint the environment JSON.\n' ;;
     create | delete) admin_help env "$1" ;;
+    debugmask) printf 'Usage: apigee env debugmask get|set [--from-file FILE]\n\nShow or replace the environment debug mask (trace data masking). set is mutating.\n' ;;
     health)
       cat <<'EOF'
 Usage: apigee env health [ENV]
@@ -415,6 +417,7 @@ env_main() {
       apigee_get "$(apigee_env_path)" | apigee_json pretty
       ;;
     create | delete) env_lifecycle "$verb" "$@" ;;
+    debugmask) env_debugmask "$@" ;;
     health) env_health "$@" ;;
     export) env_export "$@" ;;
     import) env_import "$@" ;;

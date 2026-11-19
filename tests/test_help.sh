@@ -15,7 +15,7 @@ test_global_help() {
 
 test_every_resource_and_verb_help() {
   local res verb module
-  for res in proxy sharedflow kvm target-server keystore truststore app developer product credential role resourcefile audit raw cache env virtualhost envgroup instance server stats report user org token profile; do
+  for res in proxy sharedflow kvm target-server keystore truststore app developer product credential role resourcefile audit raw appgroup datacollector datastore reference securityprofile site endpoint operation apicategory apidoc flowhook trace iam sync cache env virtualhost envgroup instance server stats report user org token profile; do
     run "$APIGEE" "$res" --help
     assert_status "$res --help" 0
     assert_contains "$res usage" "$OUT" "Usage: apigee"

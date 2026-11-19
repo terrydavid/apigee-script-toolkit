@@ -4,7 +4,7 @@
 # Both resources share one implementation; $1 of every function is the
 # resource label ("proxy" or "sharedflow").
 
-BUNDLE_VERBS="list revisions latest deployed stale download import deploy undeploy delete delete-revision clean-revisions compare"
+BUNDLE_VERBS="list revisions latest deployed stale export download import deploy undeploy delete delete-revision clean-revisions compare"
 
 # shellcheck disable=SC2086
 proxy_verbs() { printf '%s\n' $BUNDLE_VERBS; }
@@ -42,6 +42,7 @@ Verbs:
   deployed NAME [--all-envs]   Print revision(s) deployed in --env (or every env)
   stale [--include-undeployed] List $nouns whose deployed revision is older than the latest
   download NAME [REV]          Download a revision bundle (.zip)
+  export [--dir DIR]           Download the latest revision of every $noun
   import NAME ZIP|DIR          Import a bundle as a new revision
   deploy NAME REV|--latest     Deploy a revision to --env
   undeploy NAME [REV]          Undeploy from --env (default: whatever is deployed)
@@ -70,6 +71,13 @@ Usage: apigee $label stale [--include-undeployed]
 List every $noun whose newest deployed revision in --env is older than its latest
 revision, as "NAME (latest: L, deployed: D)". --include-undeployed also lists
 those with no deployment in --env ("deployed: none").
+EOF
+      ;;
+    export)
+      cat <<EOF
+Usage: apigee $label export [--dir DIR]
+
+Download the latest revision of every $noun to DIR (default .) as NAME-revN.zip.
 EOF
       ;;
     download)
@@ -519,6 +527,7 @@ bundle_main() {
     latest) bundle_require_name "$label" "${1:-}" latest; bundle_latest "$label" "$1" ;;
     deployed) bundle_deployed "$label" "$@" ;;
     stale) bundle_stale "$label" "$@" ;;
+    export) bundle_export "$label" "$@" ;;
     download) bundle_download "$label" "$@" ;;
     import) bundle_import "$label" "$@" ;;
     deploy) bundle_deploy "$label" "$@" ;;

@@ -44,16 +44,16 @@ apigee --help | apigee <resource> --help | apigee <resource> <verb> --help
 
 | Resource | Verbs | Platforms |
 |----------|-------|-----------|
-| `proxy` | list revisions latest deployed stale download import deploy undeploy delete delete-revision clean-revisions compare (`delete` refuses while deployed) | all |
+| `proxy` | list revisions latest deployed stale export download import deploy undeploy delete delete-revision clean-revisions compare (`delete` refuses while deployed) | all |
 | `sharedflow` | same as `proxy` | all |
 | `kvm` | list get create delete flush put export import (`--scope env\|org\|proxy:NAME\|company:NAME`; company is Edge/OPDK) | all |
 | `target-server` | list get create update delete | all |
-| `keystore`, `truststore` | list get create delete upload-cert (key password from `APIGEE_KEY_PASSWORD`, never an argument) | all |
+| `keystore`, `truststore` | list get create delete upload-cert aliases alias-get alias-delete cert csr self-signed (key password from `APIGEE_KEY_PASSWORD`, never an argument) | all |
 | `app` | list get approve revoke create delete export import | all |
 | `developer` | list get create delete export import | all |
 | `product` | list get create delete attach-proxy detach-proxy proxies find export import | all |
 | `credential` | list get add set-products delete delete-all (consumer secret from `APIGEE_CONSUMER_SECRET` or `--secret-file`; `get` redacts unless `--show-credentials`) | all |
-| `env` | list get create delete health export import | all |
+| `env` | list get create delete debugmask health export import | all |
 | `org` | get; `delete --confirm-name ORG` | `delete` is OPDK only |
 | `cache` | list get create delete clear | Edge / OPDK |
 | `virtualhost` | list get create update delete | Edge / OPDK |
@@ -63,6 +63,12 @@ apigee --help | apigee <resource> --help | apigee <resource> <verb> --help
 | `envgroup` | list get attachments attach (attach is mutating) | X / hybrid only |
 | `instance` | list attachments attach | X / hybrid only. An environment runs deployments only once it is attached to an instance; an unattached one shows every deployment as `ERROR`. `attach` uses `--env`, takes several minutes and asks for confirmation. |
 | `server` | list get env-servers org-servers ips names attach detach health | OPDK only |
+| `appgroup`, `datacollector`, `datastore`, `reference`, `securityprofile`, `site`, `endpoint`, `apicategory`, `apidoc` | list get create update delete (`apicategory`/`apidoc` need `--site`; create takes `--description`, `--display-name`, `--type`, `--json` or `--from-file`) | X / hybrid only |
+| `operation` | list get | X / hybrid only |
+| `flowhook` | list get attach detach | X / hybrid only |
+| `trace` | create list get data delete (debug sessions) | X / hybrid only |
+| `iam` | get set (`--scope org\|env`) | X / hybrid only |
+| `sync` | get add remove (control-plane sync identities) | X / hybrid only |
 | `audit` | products apps (finds products that list missing proxies and apps that use missing products; exit 1 on findings) | all |
 | `stats` | traffic query (analytics, read-only) | X / Edge |
 | `report` | list get (saved custom reports) | X / Edge |
@@ -479,3 +485,6 @@ apigee env import ./snap --env test --deploy  # recreate it somewhere else
 - `tests/live_readonly.py run --write-files DIR [--show-credentials]` also runs the
   file-writing commands during the live sweep and reports what was written (never contents).
 
+
+
+See `docs/APIGEECLI.md` for how each `apigeecli` command group maps to this toolkit.

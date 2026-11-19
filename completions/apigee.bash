@@ -8,10 +8,10 @@
 # per resource, per-verb options, and profile names. The verb table is checked
 # against the modules in libexec/ by tests/test_completion.sh.
 
-_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product credential role resourcefile audit raw cache env virtualhost envgroup instance server stats report user org token profile doctor"
+_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product credential role resourcefile audit raw appgroup datacollector datastore reference securityprofile site endpoint operation apicategory apidoc flowhook trace iam sync cache env virtualhost envgroup instance server stats report user org token profile doctor"
 _apigee_aliases="proxies api apis sharedflows sf kvms keyvaluemap target-servers targetserver ts keystores truststores apps developers dev products apiproduct credentials key keys roles resource resourcefiles caches envs environment environments virtualhosts vhost envgroups instances servers stat reports users organization profiles"
 _apigee_global_opts="--platform --org --env --profile -n --dry-run -y --yes --debug --json-engine --version -h --help"
-_apigee_bundle_verbs="list revisions latest deployed stale download import deploy undeploy delete delete-revision clean-revisions compare"
+_apigee_bundle_verbs="list revisions latest deployed stale export download import deploy undeploy delete delete-revision clean-revisions compare"
 
 # canonical resource name for a typed resource/alias (empty if unknown)
 _apigee_canon() {
@@ -49,7 +49,7 @@ _apigee_verbs_for() {
     proxy | sharedflow) echo "$_apigee_bundle_verbs" ;;
     kvm) echo "list get create delete flush put export import" ;;
     targetserver) echo "list get create update delete" ;;
-    keystore | truststore) echo "list get create delete upload-cert" ;;
+    keystore | truststore) echo "list get create delete upload-cert aliases alias-get alias-delete cert csr self-signed" ;;
     app) echo "list get approve revoke create delete export import" ;;
     developer) echo "list get create delete export import" ;;
     product) echo "list get create delete attach-proxy detach-proxy proxies find export import" ;;
@@ -57,9 +57,15 @@ _apigee_verbs_for() {
     role) echo "list create delete add-user remove-user users permissions" ;;
     resourcefile) echo "list get upload delete revision" ;;
     audit) echo "products apps" ;;
+    appgroup | datacollector | datastore | reference | securityprofile | site | endpoint | apicategory | apidoc) echo "list get create update delete" ;;
+    operation) echo "list get" ;;
+    flowhook) echo "list get attach detach" ;;
+    trace) echo "create list get data delete" ;;
+    iam) echo "get set" ;;
+    sync) echo "get add remove" ;;
     raw) echo "GET POST PUT DELETE" ;;
     cache) echo "list get create delete clear" ;;
-    env) echo "list get create delete health export import" ;;
+    env) echo "list get create delete debugmask health export import" ;;
     virtualhost) echo "list get create update delete" ;;
     envgroup) echo "list get attachments attach" ;;
     instance) echo "list attachments attach" ;;
@@ -88,6 +94,11 @@ _apigee_verb_opts() { # resource verb
     *" upload-cert") echo "--alias --cert-file --key-file" ;;
     "product create") echo "--proxy --environment --scope --display-name --description --approval --quota --quota-interval --quota-unit" ;;
     "product find") echo "--proxy" ;;
+    "flowhook attach") echo "--sharedflow --continue-on-error --description" ;;
+    "trace create") echo "--session --timeout --filter" ;;
+    "iam get" | "iam set") echo "--scope --from-file" ;;
+    "keystore self-signed" | "truststore self-signed") echo "--alias --common-name --days --key-size --org-name --country" ;;
+    "proxy export" | "sharedflow export") echo "--dir" ;;
     "stats traffic") echo "--by --select --time-unit" ;;
     "stats query") echo "--select --range --filter --limit --time-unit --sort --sortby" ;;
     "proxy deploy" | "sharedflow deploy") echo "--latest --service-account" ;;

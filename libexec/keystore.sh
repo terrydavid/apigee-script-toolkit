@@ -4,8 +4,8 @@
 # Apigee stores truststores as keystores that hold only certificates, so both
 # resources use the same API; truststore get also shows each alias's certs.
 
-keystore_verbs() { printf '%s\n' list get create delete upload-cert; }
-truststore_verbs() { printf '%s\n' list get create delete upload-cert; }
+keystore_verbs() { printf '%s\n' list get create delete upload-cert aliases alias-get alias-delete cert csr self-signed; }
+truststore_verbs() { printf '%s\n' list get create delete upload-cert aliases alias-get alias-delete cert csr self-signed; }
 
 keystore_help() { keystore_help_for keystore "${1:-}"; }
 truststore_help() { keystore_help_for truststore "${1:-}"; }
@@ -22,6 +22,7 @@ Verbs:
   get NAME     Show one $label$( [[ "$label" == truststore ]] && printf ' with alias certificate details')
   create NAME  Create an empty $label (mutating)
   delete NAME  Delete a $label (mutating)
+  aliases NAME | alias-get|cert|csr|alias-delete NAME ALIAS | self-signed NAME --alias A --common-name CN
   upload-cert NAME --alias A --cert-file F [--key-file F]
                Upload a cert (PEM), or key+cert; key password from APIGEE_KEY_PASSWORD (mutating)
 
@@ -31,6 +32,7 @@ EOF
       ;;
     list) printf 'Usage: apigee %s list\n\nList keystore names in --env.\n' "$label" ;;
     get) printf 'Usage: apigee %s get NAME\n\nPrint the keystore JSON%s.\n' "$label" "$( [[ "$label" == truststore ]] && printf ', then each alias with its certificate info')" ;;
+    aliases | alias-get | alias-delete | cert | csr | self-signed) printf 'Usage: apigee %s %s NAME [ALIAS] [options]\n\nAlias operations: aliases NAME; alias-get|cert|csr|alias-delete NAME ALIAS;\nself-signed NAME --alias A --common-name CN [--days N] [--key-size N] [--org-name O] [--country C].\nalias-delete and self-signed are mutating and ask for confirmation.\n' "$label" "$2" ;;
     create | delete | upload-cert) printf 'Usage: apigee %s %s NAME%s\n\nMutating: asks for confirmation. Key passwords come from APIGEE_KEY_PASSWORD, never from arguments.\n' "$label" "$2" "$([[ "$2" == upload-cert ]] && printf ' --alias A --cert-file F [--key-file F]')" ;;
     *) apigee_die "unknown $label verb '$2' (see 'apigee $label --help')" ;;
   esac
@@ -60,6 +62,7 @@ keystore_run() {
       fi
       ;;
     create | delete | upload-cert) keystore_write "$label" "$verb" "${@:3}" ;;
+    aliases | alias-get | alias-delete | cert | csr | self-signed) keystore_alias "$label" "$verb" "${@:3}" ;;
     *) apigee_die "unknown $label verb '$verb' (see 'apigee $label --help')" ;;
   esac
 }
