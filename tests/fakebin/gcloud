@@ -16,5 +16,7 @@ case "$*" in
     printf '%s' "${FAKE_GCLOUD_LIST-p1
 p2
 }" ;;
-  *) exit 1 ;;
+  *)
+    if [[ -n "${FAKE_GCLOUD_LOG:-}" ]]; then printf '%s\n' "$*" >>"$FAKE_GCLOUD_LOG"; exit 0; fi
+    exit 1 ;;
 esac

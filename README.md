@@ -488,3 +488,7 @@ apigee env import ./snap --env test --deploy  # recreate it somewhere else
 
 
 See `docs/APIGEECLI.md` for how each `apigeecli` command group maps to this toolkit.
+
+## Landing zones
+
+`setup/landing-zone.sh` plans or applies Apigee X org presets (peered or PSC, own or Shared VPC, data residency). See [docs/LANDING-ZONE.md](docs/LANDING-ZONE.md).

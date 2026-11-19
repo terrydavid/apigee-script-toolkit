@@ -348,4 +348,13 @@ test_hybrid_is_still_x() {
   assert_contains "x url" "$(curl_log)" "apigee.googleapis.com"
 }
 
+test_control_plane_location_selects_the_regional_endpoint() {
+  export APIGEE_PLATFORM=x APIGEE_ORG=org1 APIGEE_CONTROL_PLANE_LOCATION=eu
+  run "$APIGEE" proxy list
+  assert_contains "regional host" "$(curl_log)" "=== GET https://apigee.eu.rep.googleapis.com/v1/organizations/org1/apis"
+  export APIGEE_X_API_URL=https://eu-apigee.googleapis.com/v1
+  run "$APIGEE" proxy list
+  assert_contains "explicit URL wins" "$(curl_log)" "https://eu-apigee.googleapis.com/v1/organizations/org1/apis"
+}
+
 run_tests
