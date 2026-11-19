@@ -131,6 +131,42 @@ test_virtualhost_edge_only() {
 secure" "$OUT"
 }
 
+test_envgroup_attach_posts_environment_after_confirmation() {
+  use_x
+  route POST '/envgroups/g1/attachments$' 200 '{"name":"operations/op1","done":false}'
+  run "$APIGEE" envgroup attach g1
+  assert_status "needs confirmation" 1
+  assert_eq "nothing sent" "" "$(grep '=== POST' "$FAKE_CURL_LOG")"
+  run "$APIGEE" --yes envgroup attach g1
+  assert_status "ok" 0
+  assert_contains "request" "$(cat "$FAKE_CURL_LOG")" "=== POST https://apigee.googleapis.com/v1/organizations/org1/envgroups/g1/attachments"
+  assert_contains "body" "$(cat "$FAKE_CURL_LOG")" '{"environment":"test"}'
+}
+
+test_envgroup_attach_dry_run_and_missing_name() {
+  use_x
+  run "$APIGEE" -n envgroup attach g1
+  assert_status "dry run" 0
+  assert_contains "shown" "$ERR$OUT" "DRY-RUN: POST"
+  assert_eq "nothing sent" "" "$(grep '=== POST' "$FAKE_CURL_LOG")"
+  run "$APIGEE" envgroup attach
+  assert_status "missing name" 1
+}
+
+test_envgroup_attachments_lists_only_attachments() {
+  use_x
+  route GET '/envgroups/g1/attachments$' 200 '{"environmentGroupAttachments":[{"environment":"dev"},{"environment":"tdtest"}]}'
+  run "$APIGEE" envgroup attachments g1
+  assert_status "ok" 0
+  assert_contains "env" "$OUT" '"environment": "tdtest"'
+}
+
+test_envgroup_attach_is_x_only() {
+  use_edge
+  run "$APIGEE" --yes envgroup attach g1
+  assert_status "edge refused" 1
+}
+
 test_envgroup_x_only_and_get_fetches_attachments() {
   use_edge
   run "$APIGEE" envgroup list

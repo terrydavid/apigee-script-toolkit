@@ -5,14 +5,14 @@
 #   apigee env list|get|health|export
 #   apigee cache list|clear            (Edge only)
 #   apigee virtualhost list|get        (Edge only)
-#   apigee envgroup list|get           (X/hybrid only)
+#   apigee envgroup list|get|attachments|attach   (X/hybrid only; attach is mutating)
 #   apigee user list                   (Edge only)
 
 org_verbs() { printf '%s\n' get; }
 env_verbs() { printf '%s\n' list get health export import; }
 cache_verbs() { printf '%s\n' list clear; }
 virtualhost_verbs() { printf '%s\n' list get; }
-envgroup_verbs() { printf '%s\n' list get; }
+envgroup_verbs() { printf '%s\n' list get attachments attach; }
 user_verbs() { printf '%s\n' list; }
 
 org_help() {
@@ -122,9 +122,11 @@ virtualhost_help() {
 
 envgroup_help() {
   case "${1:-}" in
-    "") printf 'Usage: apigee envgroup <verb>   (Apigee X/hybrid only)\n\nVerbs:\n  list         List environment groups\n  get NAME     Show an environment group and its attachments\n\nOn Apigee Edge use virtual hosts (apigee virtualhost).\n' ;;
+    "") printf 'Usage: apigee envgroup <verb>   (Apigee X/hybrid only)\n\nVerbs:\n  list         List environment groups\n  get NAME     Show an environment group and its attachments\n  attachments NAME  Show only the environments attached to the group\n  attach NAME  Attach --env to the group (mutating; asks for confirmation)\n\nOn Apigee Edge use virtual hosts (apigee virtualhost).\n' ;;
     list) printf 'Usage: apigee envgroup list\n\nList environment groups (Apigee X/hybrid only).\n' ;;
     get) printf 'Usage: apigee envgroup get NAME\n\nShow an environment group, then its environment attachments.\n' ;;
+    attachments) printf 'Usage: apigee envgroup attachments NAME\n\nShow the environments attached to the group (read-only).\n' ;;
+    attach) printf 'Usage: apigee envgroup attach NAME   (uses --env)\n\nAttach the environment to the group, so the group'"'"'s hostnames route to it. An\nenvironment attached to the same group as another one shares its hostnames and\nbase paths. Long-running operation. Mutating: asks for confirmation;\n-n/--dry-run shows the request.\n' ;;
     *) apigee_die "unknown envgroup verb '$1'" ;;
   esac
 }
@@ -473,6 +475,17 @@ envgroup_main() {
       path="$(apigee_org_path)/envgroups/$(apigee_urlencode "$2")"
       apigee_get "$path" | apigee_json pretty
       apigee_get "$path/attachments" | apigee_json pretty
+      ;;
+    attachments)
+      [[ -n "${2:-}" ]] || apigee_die "missing NAME"
+      apigee_get "$(apigee_org_path)/envgroups/$(apigee_urlencode "$2")/attachments" | apigee_json pretty
+      ;;
+    attach)
+      [[ -n "${2:-}" ]] || apigee_die "missing NAME"
+      local gpath
+      gpath="$(apigee_org_path)/envgroups/$(apigee_urlencode "$2")/attachments"
+      apigee_confirm "Attach environment '$(apigee_env)' to environment group '$2' in org '$(apigee_org)'."
+      apigee_request POST "$gpath" --json "$(printf '{"environment":"%s"}' "$(apigee_env)")" | apigee_json pretty
       ;;
     *) apigee_die "unknown envgroup verb '${1:-}' (see 'apigee envgroup --help')" ;;
   esac

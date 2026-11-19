@@ -56,7 +56,7 @@ apigee --help | apigee <resource> --help | apigee <resource> <verb> --help
 | `cache` | list clear | Edge only |
 | `virtualhost` | list get | Edge only |
 | `user` | list | Edge only |
-| `envgroup` | list get (with attachments) | X / hybrid only |
+| `envgroup` | list get attachments attach (attach is mutating) | X / hybrid only |
 | `instance` | list attachments attach | X / hybrid only. An environment runs deployments only once it is attached to an instance; an unattached one shows every deployment as `ERROR` ("no instances are reporting status for this environment"). `attach` uses `--env`, takes several minutes and asks for confirmation. |
 | `token` | print an access token (`--header` for an `Authorization:` line) | both |
 | `profile` | list use show current clear | n/a |

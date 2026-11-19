@@ -48,7 +48,8 @@ _apigee_verbs_for() {
     developer | product) echo "list get export import" ;;
     cache) echo "list clear" ;;
     env) echo "list get health export import" ;;
-    virtualhost | envgroup) echo "list get" ;;
+    virtualhost) echo "list get" ;;
+    envgroup) echo "list get attachments attach" ;;
     instance) echo "list attachments attach" ;;
     user) echo "list" ;;
     org) echo "get" ;;
