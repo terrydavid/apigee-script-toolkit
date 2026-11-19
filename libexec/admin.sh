@@ -295,13 +295,13 @@ raw_main() {
 }
 
 raw_wait_operation() { # response JSON of a call that returned a long-running operation
-  local resp="$1" op done err tries=0 doc interval="${APIGEE_WAIT_INTERVAL:-10}" max="${APIGEE_WAIT_MAX:-360}"
+  local resp="$1" op finished err tries=0 doc interval="${APIGEE_WAIT_INTERVAL:-10}" max="${APIGEE_WAIT_MAX:-360}"
   op="$(printf '%s' "$resp" | apigee_json get name)"
   [[ "$op" == */operations/* ]] || return 0
   while :; do
     doc="$(apigee_get "/$op")" || exit 1
-    done="$(printf '%s' "$doc" | apigee_json get done)"
-    if [[ "$done" == true ]]; then
+    finished="$(printf '%s' "$doc" | apigee_json get done)"
+    if [[ "$finished" == true ]]; then
       err="$(printf '%s' "$doc" | apigee_json get error)"
       if [[ -n "$err" && "$err" != null ]]; then
         apigee_die "operation $op failed: $(printf '%s' "$doc" | apigee_json get error.message 2>/dev/null || printf '%s' "$err")"

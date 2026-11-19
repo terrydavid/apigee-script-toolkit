@@ -130,19 +130,21 @@ NOTES=()
 [[ "$DRZ" == drz && "$CPLOC" == eu* ]] && NOTES+=("EU data residency can require external (partner-managed) keys; create them first and adjust the key names below")
 
 # 1. APIs
-SVCS="apigee.googleapis.com compute.googleapis.com"
-((CMEK)) && SVCS="$SVCS cloudkms.googleapis.com"
-((PEERED)) && SVCS="$SVCS servicenetworking.googleapis.com"
+SVCS="apigee.googleapis.com"
+if ((PEERED || SHARED)) || [[ "$EXPOSURE" == external ]]; then SVCS="$SVCS compute.googleapis.com"; fi
+if ((CMEK)); then SVCS="$SVCS cloudkms.googleapis.com"; fi
+if ((PEERED)); then SVCS="$SVCS servicenetworking.googleapis.com"; fi
 g services enable $SVCS --project="$PROJECT"
 g beta services identity create --service=apigee.googleapis.com --project="$PROJECT"
 if ((SHARED)); then
-  g services enable compute.googleapis.com ${PEERED:+servicenetworking.googleapis.com} --project="$HOST"
+  HOSTSVCS="compute.googleapis.com"
+  if ((PEERED)); then HOSTSVCS="$HOSTSVCS servicenetworking.googleapis.com"; fi
+  g services enable $HOSTSVCS --project="$HOST"
   g compute shared-vpc enable "$HOST"
   g compute shared-vpc associated-projects add "$PROJECT" --host-project "$HOST"
 fi
 
 # 2. keys
-ORGKEY=""
 if ((CMEK)); then
   mkkey "$REGION" apigee-runtime runtime-db
   if [[ "$DRZ" == drz ]]; then

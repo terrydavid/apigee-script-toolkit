@@ -23,6 +23,7 @@ test_eval_psc_plan() {
   assert_contains "analytics" "$OUT" '"analyticsRegion":"us-central1"'
   assert_contains "accept list" "$OUT" '"consumerAcceptList":["p1"]'
   assert_not_contains "no peering connect" "$OUT" "vpc-peerings connect"
+  assert_not_contains "no compute for eval" "$OUT" "compute.googleapis.com"
   assert_not_contains "no kms for eval" "$OUT" "kms keyrings"
   assert_not_contains "no drz" "$OUT" "controlPlaneEncryptionKeyName"
 }
@@ -55,6 +56,7 @@ test_paid_psc_shared_vpc_with_external_lb() {
   assert_status "plan" 0
   assert_contains "no peering" "$OUT" '"disableVpcPeering":true'
   assert_not_contains "no vpc peerings" "$OUT" "vpc-peerings connect"
+  assert_not_contains "no servicenetworking for PSC" "$OUT" "servicenetworking"
   assert_contains "accept list" "$OUT" '"consumerAcceptList":["p1"]'
   assert_contains "neg" "$OUT" "compute network-endpoint-groups create apigee-psc-neg --network-endpoint-type=private-service-connect"
   assert_contains "shared subnet" "$OUT" "--subnet=projects/host1/regions/us-central1/subnetworks/apigee-subnet"
