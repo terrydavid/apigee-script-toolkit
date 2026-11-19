@@ -53,10 +53,18 @@ sa="$sa_name@$project.iam.gserviceaccount.com"
 show() { printf '+'; printf ' %q' "$@"; printf '\n'; }
 
 verify() {
-  local tok
-  tok="$(CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE="$keyfile" gcloud auth print-access-token 2>/dev/null)"
-  if [[ -n "$tok" ]]; then echo "  token ok: $keyfile yields an access token for $sa"; return 0; fi
+  # A new key can take several seconds to become usable, so retry. The person's
+  # CLOUDSDK_CORE_ACCOUNT must not apply: the key IS the account here.
+  local tok i err="$cfg/.sa-key-verify.err"
+  mkdir -p "$cfg"
+  for ((i = 1; i <= ${GCLOUD_KEY_TRIES:-6}; i++)); do
+    tok="$(env -u CLOUDSDK_CORE_ACCOUNT CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE="$keyfile" gcloud auth print-access-token 2>"$err")"
+    if [[ -n "$tok" ]]; then rm -f "$err"; echo "  token ok: $keyfile yields an access token for $sa"; return 0; fi
+    sleep "${GCLOUD_KEY_WAIT:-5}"
+  done
   echo "  FAIL: no token from $keyfile" >&2
+  sed 's/^/  gcloud said: /' "$err" >&2
+  rm -f "$err"
   return 1
 }
 

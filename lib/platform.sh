@@ -443,7 +443,7 @@ apigee_token() {
     gerr="$(apigee_tmpdir)/gcloud-err"
     keyfile="$(apigee_sa_key_file)"
     tok="$(
-      [[ -z "$keyfile" ]] || export CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE="$keyfile"
+      [[ -z "$keyfile" ]] || { export CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE="$keyfile"; unset CLOUDSDK_CORE_ACCOUNT; }
       gcloud auth print-access-token 2>"$gerr"
     )" || {
       # gcloud's own message (e.g. "Reauthentication required") says why; show it.

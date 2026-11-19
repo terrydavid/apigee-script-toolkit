@@ -21,7 +21,9 @@ case "$a" in
     fi
     f="${a#iam service-accounts keys create }"; f="${f%% *}"
     printf '{"type":"service_account","client_email":"apigee-toolkit@proj1.iam.gserviceaccount.com"}' >"$f" ;;
-  "auth print-access-token") echo "tok-key:${CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE:-none}" ;;
+  "auth print-access-token") printf 'print-token account=%s\n' "${CLOUDSDK_CORE_ACCOUNT:-}" >>"$GLOG"
+    if [[ -n "${CLOUDSDK_CORE_ACCOUNT:-}" ]]; then echo "ERROR: account mismatch" >&2; exit 1; fi
+    echo "tok-key:${CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE:-none}" ;;
   "config get-value project") echo "proj1" ;;
   "config get-value auth/impersonate_service_account") ;;
   "iam service-accounts keys list "*) echo "KEYID1" ;;
@@ -68,6 +70,23 @@ test_script_creates_private_key_and_verifies() {
   assert_contains "create" "$(cat "$GLOG")" "iam service-accounts keys create $T/cfg/sa-key.json.new --iam-account=apigee-toolkit@proj1.iam.gserviceaccount.com"
   assert_contains "verified" "$OUT" "token ok"
   assert_not_contains "key text never printed" "$OUT$ERR" "private_key"
+}
+
+test_script_ignores_cloudsdk_core_account_when_verifying() {
+  use_key_gcloud
+  export APIGEE_CONFIG_HOME="$T/cfg" CLOUDSDK_CORE_ACCOUNT=person@example.com
+  run "$SAKEY" --yes
+  assert_status "ok" 0
+  assert_contains "verified" "$OUT" "token ok"
+}
+
+test_script_shows_gcloud_error_when_token_fails() {
+  use_key_gcloud
+  export APIGEE_CONFIG_HOME="$T/cfg" GCLOUD_KEY_WAIT=0 GCLOUD_KEY_TRIES=2
+  sed -i 's|echo "tok-key:|echo "ERROR: invalid_grant: key rejected" >\&2; exit 1; echo "tok-key:|' "$T/gbin/gcloud"
+  run "$SAKEY" --yes
+  assert_status "fails" 1
+  assert_contains "reason shown" "$ERR$OUT" "invalid_grant: key rejected"
 }
 
 test_script_dry_run_changes_nothing() {
