@@ -265,7 +265,14 @@ def op_credential_keys(args):
         print("%s %s" % (c.get("consumerKey"), c.get("status") or "-"))
 
 
+def op_resourcefiles(_args):
+    doc = load_stdin() or {}
+    for r in doc.get("resourceFile") or []:
+        print("%s %s" % (r.get("type"), r.get("name")))
+
+
 OPS = {
+    "resourcefiles": op_resourcefiles,
     "values": op_values,
     "credential-keys": op_credential_keys,
     "pretty": op_pretty,

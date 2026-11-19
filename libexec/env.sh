@@ -8,17 +8,17 @@
 #   apigee envgroup list|get|attachments|attach   (X/hybrid only; attach is mutating)
 #   apigee user list                   (Edge only)
 
-org_verbs() { printf '%s\n' get; }
-env_verbs() { printf '%s\n' list get health export import; }
+org_verbs() { printf '%s\n' get delete; }
+env_verbs() { printf '%s\n' list get create delete health export import; }
 cache_verbs() { printf '%s\n' list get create delete clear; }
 virtualhost_verbs() { printf '%s\n' list get create update delete; }
 envgroup_verbs() { printf '%s\n' list get attachments attach; }
-user_verbs() { printf '%s\n' list; }
+user_verbs() { printf '%s\n' list create delete roles; }
 
 org_help() {
   case "${1:-}" in
     "" | get) printf 'Usage: apigee org get\n\nPrint the organization (a read-only call; also used by setup/doctor.sh).\n' ;;
-    *) apigee_die "unknown org verb '$1'" ;;
+    *) admin_help org "$1" || apigee_die "unknown org verb '$1'" ;;
   esac
 }
 
@@ -31,6 +31,8 @@ Usage: apigee env <verb>
 Verbs:
   list               List environments
   get [ENV]          Show an environment (default --env)
+  create NAME        Create an environment (mutating)
+  delete NAME        Delete an environment (mutating)
   health [ENV]       Report deployments and their state; exit 1 if any failed
   export DIR         Snapshot --env: target servers, KVMs, keystores, deployed bundles,
                      plus the org's developers, API products and apps
@@ -39,6 +41,7 @@ EOF
       ;;
     list) printf 'Usage: apigee env list\n\nList environment names.\n' ;;
     get) printf 'Usage: apigee env get [ENV]\n\nPrint the environment JSON.\n' ;;
+    create | delete) admin_help env "$1" ;;
     health)
       cat <<'EOF'
 Usage: apigee env health [ENV]
@@ -136,13 +139,14 @@ envgroup_help() {
 user_help() {
   case "${1:-}" in
     "" | list) printf 'Usage: apigee user list   (Apigee Edge only)\n\nList organization users. On Apigee X/hybrid, users are Google Cloud IAM\nprincipals: use gcloud projects get-iam-policy.\n' ;;
-    *) apigee_die "unknown user verb '$1'" ;;
+    *) admin_help user "$1" || apigee_die "unknown user verb '$1'" ;;
   esac
 }
 
 org_main() {
   case "${1:-}" in
     get) apigee_get "$(apigee_org_path)" | apigee_json pretty ;;
+    delete) shift; org_delete "$@" ;;
     *) apigee_die "unknown org verb '${1:-}' (see 'apigee org --help')" ;;
   esac
 }
@@ -410,6 +414,7 @@ env_main() {
       [[ -n "${1:-}" ]] && APIGEE_ENV="$1"
       apigee_get "$(apigee_env_path)" | apigee_json pretty
       ;;
+    create | delete) env_lifecycle "$verb" "$@" ;;
     health) env_health "$@" ;;
     export) env_export "$@" ;;
     import) env_import "$@" ;;
@@ -503,6 +508,7 @@ user_main() {
       body="$(apigee_get "$(apigee_org_path)/users")" || exit 1
       printf '%s' "$body" | apigee_json names | sort
       ;;
+    create | delete | roles) user_write "$@" ;;
     *) apigee_die "unknown user verb '${1:-}' (see 'apigee user --help')" ;;
   esac
 }

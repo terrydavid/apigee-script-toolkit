@@ -4,7 +4,7 @@
 # Both resources share one implementation; $1 of every function is the
 # resource label ("proxy" or "sharedflow").
 
-BUNDLE_VERBS="list revisions latest deployed stale download import deploy undeploy delete-revision clean-revisions compare"
+BUNDLE_VERBS="list revisions latest deployed stale download import deploy undeploy delete delete-revision clean-revisions compare"
 
 # shellcheck disable=SC2086
 proxy_verbs() { printf '%s\n' $BUNDLE_VERBS; }
@@ -105,6 +105,9 @@ Usage: apigee $label undeploy NAME [REV]
 Undeploy REV (default: every revision deployed in --env).
 Mutating: asks for confirmation unless --yes.
 EOF
+      ;;
+    delete)
+      admin_help "$label" delete
       ;;
     delete-revision)
       cat <<EOF
@@ -520,6 +523,7 @@ bundle_main() {
     import) bundle_import "$label" "$@" ;;
     deploy) bundle_deploy "$label" "$@" ;;
     undeploy) bundle_undeploy "$label" "$@" ;;
+    delete) bundle_delete_all "$label" "$@" ;;
     delete-revision) bundle_delete_revision_cmd "$label" "$@" ;;
     clean-revisions) bundle_clean_revisions "$label" "$@" ;;
     compare) bundle_compare "$label" "$@" ;;

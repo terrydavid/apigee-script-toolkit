@@ -47,6 +47,8 @@ Resources and verbs:
   envgroup       list get                        (X/hybrid only)
   instance       list attachments attach         (X/hybrid only)
   credential     list get add set-products delete delete-all
+  role           list create delete add-user remove-user users permissions   (Edge/OPDK)
+  resourcefile   list get upload delete
   server         list get env-servers ips attach ... (OPDK only)
   stats          traffic query                   (analytics, read-only)
   report         list get                        (saved custom reports)
@@ -91,6 +93,8 @@ apigee_canonical_resource() {
     stats | stat) printf 'stats\n' ;;
     server | servers) printf 'server\n' ;;
     credential | credentials | key | keys) printf 'credential\n' ;;
+    role | roles | userrole | userroles) printf 'role\n' ;;
+    resourcefile | resourcefiles | resource) printf 'resourcefile\n' ;;
     report | reports) printf 'report\n' ;;
     user | users) printf 'user\n' ;;
     org | organization) printf 'org\n' ;;
@@ -113,13 +117,14 @@ apigee_resource_module() {
     stats | report) printf 'analytics.sh\n' ;;
     server) printf 'opdk.sh\n' ;;
     credential) printf 'provision.sh\n' ;;
+    role | resourcefile) printf 'admin.sh\n' ;;
     token | profile) printf 'session.sh\n' ;;
   esac
 }
 
 apigee_load_modules() {
   local m
-  for m in bundle.sh kvm.sh targetserver.sh keystore.sh apps.sh provision.sh edgeadmin.sh env.sh instance.sh analytics.sh opdk.sh session.sh; do
+  for m in bundle.sh kvm.sh targetserver.sh keystore.sh apps.sh provision.sh edgeadmin.sh admin.sh env.sh instance.sh analytics.sh opdk.sh session.sh; do
     # shellcheck disable=SC1090
     . "$APIGEE_TOOLKIT_HOME/libexec/$m"
   done

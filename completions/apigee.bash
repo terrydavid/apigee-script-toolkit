@@ -8,10 +8,10 @@
 # per resource, per-verb options, and profile names. The verb table is checked
 # against the modules in libexec/ by tests/test_completion.sh.
 
-_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product credential cache env virtualhost envgroup instance server stats report user org token profile doctor"
-_apigee_aliases="proxies api apis sharedflows sf kvms keyvaluemap target-servers targetserver ts keystores truststores apps developers dev products apiproduct credentials key keys caches envs environment environments virtualhosts vhost envgroups instances servers stat reports users organization profiles"
+_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product credential role resourcefile cache env virtualhost envgroup instance server stats report user org token profile doctor"
+_apigee_aliases="proxies api apis sharedflows sf kvms keyvaluemap target-servers targetserver ts keystores truststores apps developers dev products apiproduct credentials key keys roles resource resourcefiles caches envs environment environments virtualhosts vhost envgroups instances servers stat reports users organization profiles"
 _apigee_global_opts="--platform --org --env --profile -n --dry-run -y --yes --debug --json-engine --version -h --help"
-_apigee_bundle_verbs="list revisions latest deployed stale download import deploy undeploy delete-revision clean-revisions compare"
+_apigee_bundle_verbs="list revisions latest deployed stale download import deploy undeploy delete delete-revision clean-revisions compare"
 
 # canonical resource name for a typed resource/alias (empty if unknown)
 _apigee_canon() {
@@ -24,6 +24,8 @@ _apigee_canon() {
     truststore | truststores) echo truststore ;;
     app | apps) echo app ;;
     credential | credentials | key | keys) echo credential ;;
+    role | roles | userrole | userroles) echo role ;;
+    resourcefile | resourcefiles | resource) echo resourcefile ;;
     developer | developers | dev) echo developer ;;
     product | products | apiproduct) echo product ;;
     cache | caches) echo cache ;;
@@ -52,16 +54,18 @@ _apigee_verbs_for() {
     developer) echo "list get create delete export import" ;;
     product) echo "list get create delete attach-proxy detach-proxy proxies find export import" ;;
     credential) echo "list get add set-products delete delete-all" ;;
+    role) echo "list create delete add-user remove-user users permissions" ;;
+    resourcefile) echo "list get upload delete" ;;
     cache) echo "list get create delete clear" ;;
-    env) echo "list get health export import" ;;
+    env) echo "list get create delete health export import" ;;
     virtualhost) echo "list get create update delete" ;;
     envgroup) echo "list get attachments attach" ;;
     instance) echo "list attachments attach" ;;
     stats) echo "traffic query" ;;
     server) echo "list get env-servers org-servers ips names attach detach health" ;;
     report) echo "list get" ;;
-    user) echo "list" ;;
-    org) echo "get" ;;
+    user) echo "list create delete roles" ;;
+    org) echo "get delete" ;;
     token) echo "print header" ;;
     profile) echo "list use show current clear" ;;
   esac
