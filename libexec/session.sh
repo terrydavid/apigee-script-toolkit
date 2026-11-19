@@ -131,3 +131,74 @@ EOF
     *) apigee_die "unknown profile verb '$verb' (see 'apigee profile --help')" ;;
   esac
 }
+
+# apigee sa create|status|undo — a service account the toolkit runs as (no hourly re-login).
+sa_verbs() { printf '%s\n' create status undo; }
+
+sa_help() {
+  cat <<'EOF'
+Usage: apigee sa create [--name NAME] [--role ROLE]... [--read-only] [--save-profile NAME] [--dry-run]
+       apigee sa status
+       apigee sa undo
+
+create  makes SA NAME (default apigee-toolkit) in the org's project, grants it the roles
+        (default roles/apigee.admin), lets CLOUDSDK_CORE_ACCOUNT impersonate it, checks a
+        token really belongs to it, then switches gcloud to it (setup/gcloud-impersonate.sh).
+        --save-profile NAME instead writes CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT into
+        that profile, leaving gcloud's own configuration alone.
+status  shows the service account gcloud will use for toolkit commands.
+undo    stops impersonating in the active gcloud configuration.
+For one command only: apigee --impersonate SA_EMAIL ...
+EOF
+}
+
+sa_main() {
+  local verb="${1:-}"
+  shift || true
+  case "$verb" in
+    status)
+      local cur="${CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT:-}"
+      [[ -n "$cur" ]] || cur="$(gcloud config get-value auth/impersonate_service_account 2>/dev/null || true)"
+      if [[ -n "$cur" && "$cur" != "(unset)" ]]; then printf 'impersonating %s\n' "$cur"; else printf 'not impersonating (using the gcloud login)\n'; fi
+      ;;
+    undo)
+      local args=(--undo)
+      [[ "$APIGEE_DRY_RUN" == 1 ]] && args+=(-n)
+      "$APIGEE_TOOLKIT_HOME/setup/gcloud-impersonate.sh" "${args[@]}"
+      ;;
+    create)
+      local name=apigee-toolkit save="" args=() project="${APIGEE_ORG:-}"
+      while (($#)); do
+        case "$1" in
+          --name) name="${2:?--name needs a value}"; shift 2 ;;
+          --role) args+=(--role "${2:?--role needs a value}"); shift 2 ;;
+          --read-only) args+=(--read-only); shift ;;
+          --save-profile) save="${2:?--save-profile needs a value}"; shift 2 ;;
+          --dry-run | -n) APIGEE_DRY_RUN=1; shift ;;
+          *) apigee_die "unknown sa create option '$1'" ;;
+        esac
+      done
+      [[ -n "$project" ]] || apigee_die "no project: set APIGEE_ORG or pass --org"
+      [[ "$name" =~ ^[a-z][a-z0-9-]{4,28}[a-z0-9]$ ]] || apigee_die "invalid service account name '$name'"
+      local sa="$name@$project.iam.gserviceaccount.com" user="${CLOUDSDK_CORE_ACCOUNT:-}"
+      [[ -n "$user" ]] || user="$(gcloud config get-value account 2>/dev/null || true)"
+      [[ -n "$user" ]] || apigee_die "no login to start from: set CLOUDSDK_CORE_ACCOUNT"
+      apigee_confirm "Create service account $sa and let $user impersonate it."
+      args+=(--project "$project" --sa "$name" --user "$user" --yes)
+      [[ "$APIGEE_DRY_RUN" == 1 ]] && args+=(-n)
+      [[ -n "$save" ]] && args+=(--no-config)
+      "$APIGEE_TOOLKIT_HOME/setup/gcloud-impersonate.sh" "${args[@]}" || exit 1
+      if [[ -n "$save" ]]; then
+        [[ "$save" =~ ^[A-Za-z0-9._-]+$ ]] || apigee_die "invalid profile name '$save'"
+        local dir="${APIGEE_CONFIG_HOME:-$HOME/.config/apigee-toolkit}/profiles" f
+        f="$dir/$save.env"
+        mkdir -p "$dir"
+        { [[ -f "$f" ]] && grep -v '^CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT=' "$f" || true
+          grep -q '^APIGEE_ORG=' "$f" 2>/dev/null || printf 'APIGEE_ORG=%s\n' "$project"
+          printf 'CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT=%s\n' "$sa"; } >"$f.new" && mv "$f.new" "$f"
+        printf 'saved to %s; use it with: apigee --profile %s ...\n' "$f" "$save"
+      fi
+      ;;
+    *) apigee_die "unknown sa verb '$verb' (see 'apigee sa --help')" ;;
+  esac
+}

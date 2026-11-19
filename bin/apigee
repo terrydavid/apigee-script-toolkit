@@ -63,6 +63,7 @@ Resources and verbs:
   user           list                            (Edge only)
   org            get
   token          print an access token
+  sa             create status undo              (service account for toolkit commands)
   profile        list use show current clear
   doctor         verify configuration and authentication
 
@@ -70,6 +71,7 @@ Global options (accepted anywhere on the command line):
   --platform x|hybrid|edge   Override APIGEE_PLATFORM
   --org ORG                  Override APIGEE_ORG
   --env ENV                  Override APIGEE_ENV
+  --impersonate SA_EMAIL     Run gcloud as this service account (this command only)
   --profile NAME             Load config/profiles/NAME.env (overrides the environment)
   -n, --dry-run              Print mutating requests instead of sending them
   -y, --yes                  Do not ask for confirmation on mutating verbs
@@ -123,6 +125,7 @@ apigee_canonical_resource() {
     user | users) printf 'user\n' ;;
     org | organization) printf 'org\n' ;;
     token) printf 'token\n' ;;
+    sa | serviceaccount | service-account) printf 'sa\n' ;;
     profile | profiles) printf 'profile\n' ;;
     doctor) printf 'doctor\n' ;;
     *) return 1 ;;
@@ -143,7 +146,7 @@ apigee_resource_module() {
     credential) printf 'provision.sh\n' ;;
     role | resourcefile | audit | raw) printf 'admin.sh\n' ;;
     appgroup | datacollector | datastore | reference | securityprofile | site | endpoint | operation | apicategory | apidoc | flowhook | trace | iam | sync) printf 'xapi.sh\n' ;;
-    token | profile) printf 'session.sh\n' ;;
+    token | profile | sa) printf 'session.sh\n' ;;
   esac
 }
 
@@ -165,6 +168,9 @@ main() {
       --env=*) cli_env="${1#--env=}"; shift ;;
       --platform) cli_platform="${2:?--platform needs a value}"; shift 2 ;;
       --platform=*) cli_platform="${1#--platform=}"; shift ;;
+      --impersonate)
+        [[ "${2:-}" =~ ^[A-Za-z0-9._@-]+$ ]] || apigee_die "--impersonate needs a service account email"
+        export CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT="$2"; shift 2 ;;
       --profile) profile="${2:?--profile needs a value}"; shift 2 ;;
       --profile=*) profile="${1#--profile=}"; shift ;;
       -n | --dry-run) APIGEE_DRY_RUN=1; shift ;;
