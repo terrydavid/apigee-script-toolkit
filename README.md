@@ -44,31 +44,43 @@ apigee --help | apigee <resource> --help | apigee <resource> <verb> --help
 
 | Resource | Verbs | Platforms |
 |----------|-------|-----------|
-| `proxy` | list revisions latest deployed download import deploy undeploy delete-revision clean-revisions compare | both |
-| `sharedflow` | same as `proxy` | both |
-| `kvm` | list get create delete put export import (`--scope env\|org\|proxy:NAME`) | both |
-| `target-server` | list get create update delete | both |
-| `keystore`, `truststore` | list get | both |
-| `app` | list get approve revoke (`approve --all-pending`) | both |
-| `developer`, `product` | list get | both |
-| `env` | list get health export | both |
-| `org` | get | both |
-| `cache` | list clear | Edge only |
-| `virtualhost` | list get | Edge only |
-| `user` | list | Edge only |
+| `proxy` | list revisions latest deployed stale download import deploy undeploy delete delete-revision clean-revisions compare (`delete` refuses while deployed) | all |
+| `sharedflow` | same as `proxy` | all |
+| `kvm` | list get create delete flush put export import (`--scope env\|org\|proxy:NAME\|company:NAME`; company is Edge/OPDK) | all |
+| `target-server` | list get create update delete | all |
+| `keystore`, `truststore` | list get create delete upload-cert (key password from `APIGEE_KEY_PASSWORD`, never an argument) | all |
+| `app` | list get approve revoke create delete export import | all |
+| `developer` | list get create delete export import | all |
+| `product` | list get create delete attach-proxy detach-proxy proxies find export import | all |
+| `credential` | list get add set-products delete delete-all (consumer secret from `APIGEE_CONSUMER_SECRET` or `--secret-file`; `get` redacts unless `--show-credentials`) | all |
+| `env` | list get create delete health export import | all |
+| `org` | get; `delete --confirm-name ORG` | `delete` is OPDK only |
+| `cache` | list get create delete clear | Edge / OPDK |
+| `virtualhost` | list get create update delete | Edge / OPDK |
+| `user` | list create delete roles (password from `APIGEE_NEW_USER_PASSWORD`) | Edge / OPDK |
+| `role` | list create delete add-user remove-user users permissions | Edge / OPDK |
+| `resourcefile` | list get upload delete revision | Edge / OPDK (environment resource files) |
 | `envgroup` | list get attachments attach (attach is mutating) | X / hybrid only |
+| `instance` | list attachments attach | X / hybrid only. An environment runs deployments only once it is attached to an instance; an unattached one shows every deployment as `ERROR`. `attach` uses `--env`, takes several minutes and asks for confirmation. |
+| `server` | list get env-servers org-servers ips names attach detach health | OPDK only |
+| `audit` | products apps (finds products that list missing proxies and apps that use missing products; exit 1 on findings) | all |
 | `stats` | traffic query (analytics, read-only) | X / Edge |
 | `report` | list get (saved custom reports) | X / Edge |
-| `instance` | list attachments attach | X / hybrid only. An environment runs deployments only once it is attached to an instance; an unattached one shows every deployment as `ERROR` ("no instances are reporting status for this environment"). `attach` uses `--env`, takes several minutes and asks for confirmation. |
+| `raw` | `raw METHOD PATH [--json BODY]` for any management API path (absolute URLs refused; writes ask for confirmation) | all |
 | `token` | print an access token (`--header` for an `Authorization:` line) | both |
 | `profile` | list use show current clear | n/a |
 | `doctor` | runs `setup/doctor.sh` | both |
+
+**Platforms.** `x` and `hybrid` use the Apigee API with a Google token. `edge` is Apigee Edge
+(SaaS). `opdk` is Edge for Private Cloud: the same API as `edge` against your own management
+server (`APIGEE_EDGE_MGMT_URL`, basic auth by default), plus the OPDK-only commands `server` and
+`org delete`.
 
 Global options can appear anywhere on the command line:
 
 | Option | Meaning |
 |--------|---------|
-| `--platform x\|hybrid\|edge` | Override `APIGEE_PLATFORM` |
+| `--platform x\|hybrid\|edge\|opdk` | Override `APIGEE_PLATFORM` |
 | `--org ORG`, `--env ENV` | Override `APIGEE_ORG` / `APIGEE_ENV` |
 | `--profile NAME` | Load a profile for this command only |
 | `-n`, `--dry-run` | Run read requests, print every mutating request instead of sending it |
