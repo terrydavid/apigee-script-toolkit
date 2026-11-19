@@ -46,6 +46,8 @@ Resources and verbs:
   virtualhost    list get                        (Edge only)
   envgroup       list get                        (X/hybrid only)
   instance       list attachments attach         (X/hybrid only)
+  stats          traffic query                   (analytics, read-only)
+  report         list get                        (saved custom reports)
   user           list                            (Edge only)
   org            get
   token          print an access token
@@ -84,6 +86,8 @@ apigee_canonical_resource() {
     virtualhost | virtualhosts | vhost) printf 'virtualhost\n' ;;
     envgroup | envgroups) printf 'envgroup\n' ;;
     instance | instances) printf 'instance\n' ;;
+    stats | stat) printf 'stats\n' ;;
+    report | reports) printf 'report\n' ;;
     user | users) printf 'user\n' ;;
     org | organization) printf 'org\n' ;;
     token) printf 'token\n' ;;
@@ -102,13 +106,14 @@ apigee_resource_module() {
     app | developer | product) printf 'apps.sh\n' ;;
     org | env | cache | virtualhost | envgroup | user) printf 'env.sh\n' ;;
     instance) printf 'instance.sh\n' ;;
+    stats | report) printf 'analytics.sh\n' ;;
     token | profile) printf 'session.sh\n' ;;
   esac
 }
 
 apigee_load_modules() {
   local m
-  for m in bundle.sh kvm.sh targetserver.sh keystore.sh apps.sh env.sh instance.sh session.sh; do
+  for m in bundle.sh kvm.sh targetserver.sh keystore.sh apps.sh env.sh instance.sh analytics.sh session.sh; do
     # shellcheck disable=SC1090
     . "$APIGEE_TOOLKIT_HOME/libexec/$m"
   done

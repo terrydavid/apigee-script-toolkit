@@ -8,10 +8,10 @@
 # per resource, per-verb options, and profile names. The verb table is checked
 # against the modules in libexec/ by tests/test_completion.sh.
 
-_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product cache env virtualhost envgroup instance user org token profile doctor"
-_apigee_aliases="proxies api apis sharedflows sf kvms keyvaluemap target-servers targetserver ts keystores truststores apps developers dev products apiproduct caches envs environment environments virtualhosts vhost envgroups instances users organization profiles"
+_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product cache env virtualhost envgroup instance stats report user org token profile doctor"
+_apigee_aliases="proxies api apis sharedflows sf kvms keyvaluemap target-servers targetserver ts keystores truststores apps developers dev products apiproduct caches envs environment environments virtualhosts vhost envgroups instances stat reports users organization profiles"
 _apigee_global_opts="--platform --org --env --profile -n --dry-run -y --yes --debug --json-engine --version -h --help"
-_apigee_bundle_verbs="list revisions latest deployed download import deploy undeploy delete-revision clean-revisions compare"
+_apigee_bundle_verbs="list revisions latest deployed stale download import deploy undeploy delete-revision clean-revisions compare"
 
 # canonical resource name for a typed resource/alias (empty if unknown)
 _apigee_canon() {
@@ -30,6 +30,8 @@ _apigee_canon() {
     virtualhost | virtualhosts | vhost) echo virtualhost ;;
     envgroup | envgroups) echo envgroup ;;
     instance | instances) echo instance ;;
+    stats | stat) echo stats ;;
+    report | reports) echo report ;;
     user | users) echo user ;;
     org | organization) echo org ;;
     token) echo token ;;
@@ -51,6 +53,8 @@ _apigee_verbs_for() {
     virtualhost) echo "list get" ;;
     envgroup) echo "list get attachments attach" ;;
     instance) echo "list attachments attach" ;;
+    stats) echo "traffic query" ;;
+    report) echo "list get" ;;
     user) echo "list" ;;
     org) echo "get" ;;
     token) echo "print header" ;;
@@ -65,6 +69,9 @@ _apigee_verb_opts() { # resource verb
     "kvm import") echo "--overwrite --allow-masked --format" ;;
     "kvm export") echo "--format --out" ;;
     "proxy compare" | "sharedflow compare") echo "--dir" ;;
+    "proxy stale" | "sharedflow stale") echo "--include-undeployed" ;;
+    "stats traffic") echo "--by --select --time-unit" ;;
+    "stats query") echo "--select --range --filter --limit --time-unit --sort --sortby" ;;
     "proxy deploy" | "sharedflow deploy") echo "--latest --service-account" ;;
     "proxy clean-revisions" | "sharedflow clean-revisions") echo "--all --keep" ;;
     *) echo "--help" ;;

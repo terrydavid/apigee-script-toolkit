@@ -32,11 +32,11 @@ organizations list; products create/delete/describe/list/update.
 |--------|-------|
 | Logical scripts / file groups (rows below) | 263 |
 | Distinct files across all copies | 480 |
-| Implemented in this toolkit | 119 |
+| Implemented in this toolkit | 127 |
 | Covered by gcloud (fully or partly) | 38 (of which 4 are left to gcloud and not reimplemented) |
 | Replaced by toolkit infrastructure (profiles, lib, tests, README) | 39 |
 | Kept as a tool | 1 |
-| Dropped | 100 (artifact: 9, client-specific: 12, edge-only-legacy: 37, out-of-scope: 38, superseded: 4) |
+| Dropped | 92 (artifact: 9, client-specific: 12, edge-only-legacy: 37, out-of-scope: 30, superseded: 4) |
 
 | Original name(s) | Source copies | What it does | Edge API used | X/hybrid equivalent | Covered by gcloud? | New command or dropped (reason) |
 |---|---|---|---|---|---|---|
@@ -65,7 +65,7 @@ organizations list; products create/delete/describe/list/update.
 | `bin/chk1rtr` | A | Former-client-specific checks, data or helpers | — | n/a | n/a | dropped (client-specific; generic logic folded into kvm/token/profile) |
 | `bin/chkClient` | A | Former-client-specific checks, data or helpers | — | n/a | n/a | dropped (client-specific; generic logic folded into kvm/token/profile) |
 | `bin/chkDeployments` | A | Revision(s) deployed per environment | `/o/<client>/deployments` | GET .../environments/{env}/apis/{api}/deployments; .../apis/{api}/deployments | yes (deployments list/describe) | `apigee proxy deployed [--all-envs]` |
-| `bin/chkMetrics` | A | Analytics stats / reports | — | X: .../environments/{env}/stats, async queries | no | dropped (use the Apigee UI, apigeecli or BigQuery analytics export) |
+| `bin/chkMetrics` | A | Analytics stats / reports | — | X: .../environments/{env}/stats, async queries | no | `apigee stats traffic FROM TO` / `apigee stats query` |
 | `bin/chkenv`, `bin/dph3/chkenv` | TGAO | Set org/env/host variables for a session (per org / per client) | — | n/a | n/a | replaced by profiles: `apigee profile use NAME`, `source bin/apigee-env NAME`, config/apigee.env.example |
 | `bin/cleanKVMKeys` | TZGAO | Flush a map (delete + recreate, or delete every key) | `/o/{org}/e/{env}/keyvaluemaps/${kvm_name}/entries/$k`; `/o/{org}/e/{env}/keyvaluemaps/${kvm_name}?expand=true` | DELETE map/entries + POST map | no | `apigee kvm export` + `apigee kvm delete MAP` + `apigee kvm create MAP` (no single verb) |
 | `bin/cleanKeyValueMap` | TZGAO | Flush a map (delete + recreate, or delete every key) | `/o/{org_name}/environments/{env_name}/keyvaluemaps` | DELETE map/entries + POST map | no | `apigee kvm export` + `apigee kvm delete MAP` + `apigee kvm create MAP` (no single verb) |
@@ -127,19 +127,19 @@ organizations list; products create/delete/describe/list/update.
 | `bin/dph2/createManySSLVHosts` | TGAO | Create / update / delete virtual hosts | — | Edge only | no | dropped (Edge-only write; X routing uses envgroups managed via gcloud/Terraform) |
 | `bin/dph2/createManyVHosts` | TGAO | Create / update / delete virtual hosts | — | Edge only | no | dropped (Edge-only write; X routing uses envgroups managed via gcloud/Terraform) |
 | `bin/dph2/createUser` | TGAO | User roles / RBAC administration | — | Edge only; X uses Cloud IAM | no | dropped (Edge RBAC; X uses IAM) |
-| `bin/dph2/getAnals` | TGAO | Analytics stats / reports | `/o/{org}/e/{env}/analytics${STATSTR}` | X: .../environments/{env}/stats, async queries | no | dropped (use the Apigee UI, apigeecli or BigQuery analytics export) |
+| `bin/dph2/getAnals` | TGAO | Analytics stats / reports | `/o/{org}/e/{env}/analytics${STATSTR}` | X: .../environments/{env}/stats, async queries | no | `apigee stats traffic FROM TO` / `apigee stats query` |
 | `bin/dph2/getApigeeJson`, `bin/getApigeeJson` | TGAO | Raw GET of any management resource | — | any | n/a | dropped (use `curl -H "$(apigee token --header)" ...`) |
 | `bin/dph2/getApigeeXml`, `bin/getApigeeXml` | TGAO | Raw GET of any management resource | — | any | n/a | dropped (use `curl -H "$(apigee token --header)" ...`) |
 | `bin/dph2/getCache`, `bin/getCache` | TZGAO | Create / delete / inspect caches | `/o/{org}/e/{env}/caches/${CACHE}`; `/o/{org}/e/{env}/caches/{name}` | Edge only | no | dropped (Edge-only cache administration; X caches are implicit) |
 | `bin/dph2/getCacheEntries`, `bin/getCacheEntries` | TGAO | Create / delete / inspect caches | `/o/{org}/e/{env}/caches/`; `/o/{org}/e/{env}/caches/{name}` | Edge only | no | dropped (Edge-only cache administration; X caches are implicit) |
 | `bin/dph2/getDeveloper`, `bin/getDeveloper` | TGAO | Get a developer | `/o/{org}/developers/${DEVID}` | GET .../developers/{email} | yes (developers describe) | `apigee developer get` |
-| `bin/dph2/getReport` | TGAO | Analytics stats / reports | `/organizations/{org}/environments/{env}/stats/\`; `/organizations/{org}/reports${RPTID}` | X: .../environments/{env}/stats, async queries | no | dropped (use the Apigee UI, apigeecli or BigQuery analytics export) |
-| `bin/dph2/getReport.sh` | TGAO | Analytics stats / reports | `/o/{org}/e/{env}/reports/${RPTID}` | X: .../environments/{env}/stats, async queries | no | dropped (use the Apigee UI, apigeecli or BigQuery analytics export) |
-| `bin/dph2/getRptTraffic` | TGAO | Analytics stats / reports | `/organizations/{org}/environments/{env}/stats/\`; `/organizations/{org}/reports${RPTID}` | X: .../environments/{env}/stats, async queries | no | dropped (use the Apigee UI, apigeecli or BigQuery analytics export) |
-| `bin/dph2/getRptTrafficMonth` | TGAO | Analytics stats / reports | `/organizations/{org}/environments/{env}/stats/\`; `/organizations/{org}/reports${RPTID}` | X: .../environments/{env}/stats, async queries | no | dropped (use the Apigee UI, apigeecli or BigQuery analytics export) |
-| `bin/dph2/getStats` | TGAO | Analytics stats / reports | `/o/{org}/e/{env}/stats${STATSTR}` | X: .../environments/{env}/stats, async queries | no | dropped (use the Apigee UI, apigeecli or BigQuery analytics export) |
+| `bin/dph2/getReport` | TGAO | Analytics stats / reports | `/organizations/{org}/environments/{env}/stats/\`; `/organizations/{org}/reports${RPTID}` | X: .../environments/{env}/stats, async queries | no | `apigee report get ID` / `apigee stats traffic` |
+| `bin/dph2/getReport.sh` | TGAO | Analytics stats / reports | `/o/{org}/e/{env}/reports/${RPTID}` | X: .../environments/{env}/stats, async queries | no | `apigee report get ID` / `apigee stats traffic` |
+| `bin/dph2/getRptTraffic` | TGAO | Analytics stats / reports | `/organizations/{org}/environments/{env}/stats/\`; `/organizations/{org}/reports${RPTID}` | X: .../environments/{env}/stats, async queries | no | `apigee stats traffic FROM TO` / `apigee stats query` |
+| `bin/dph2/getRptTrafficMonth` | TGAO | Analytics stats / reports | `/organizations/{org}/environments/{env}/stats/\`; `/organizations/{org}/reports${RPTID}` | X: .../environments/{env}/stats, async queries | no | `apigee stats traffic FROM TO` / `apigee stats query` |
+| `bin/dph2/getStats` | TGAO | Analytics stats / reports | `/o/{org}/e/{env}/stats${STATSTR}` | X: .../environments/{env}/stats, async queries | no | `apigee stats traffic FROM TO` / `apigee stats query` |
 | `bin/dph2/importAll`, `bin/importAll` | TGAO | Zip a local proxy and import it (optionally deploy) | — | POST .../apis?action=import&name={api} (multipart) | no | `apigee proxy import` (+ `apigee proxy deploy --latest`) |
-| `bin/dph2/listStaleApis`, `bin/listStaleApis` | TGAO | Proxies whose deployed revision is older than the latest | — | deployments + revisions | no | `apigee proxy deployed` + `apigee proxy latest` |
+| `bin/dph2/listStaleApis`, `bin/listStaleApis` | TGAO | Proxies whose deployed revision is older than the latest | — | deployments + revisions | no | `apigee proxy stale [--include-undeployed]` |
 | `bin/dph2/loadApp`, `bin/loadApp` | TGAO | Create / load / delete developer apps | `/o/{org}/developers/${DEVELOPER}/apps` | POST/DELETE .../developers/{dev}/apps | no | dropped (app provisioning is out of scope; use apigeecli `apps create/delete` or the portal) |
 | `bin/dph2/mvApiEnv` | TGAO | Move an environment: export (and re-upload) TS, vhosts, KVMs, shared flows, proxies | — | composition of the above | no | `apigee env export DIR`; upload half = `kvm import` + `target-server create` + `proxy\|sharedflow import/deploy` |
 | `bin/dph2/postApp` | TGAO | Create / load / delete developer apps | `/o/{org}/developers/${DEVELOPER}/apps/${APP_NAME}` | POST/DELETE .../developers/{dev}/apps | no | dropped (app provisioning is out of scope; use apigeecli `apps create/delete` or the portal) |
@@ -288,7 +288,7 @@ organizations list; products create/delete/describe/list/update.
 | `bin/update` | A | Zip a local proxy and import it (optionally deploy) | — | POST .../apis?action=import&name={api} (multipart) | no | `apigee proxy import` (+ `apigee proxy deploy --latest`) |
 | `bin/verifyapigee-commodity.sh` | A | Former-client-specific checks, data or helpers | — | n/a | n/a | dropped (client-specific; generic logic folded into kvm/token/profile) |
 | `config/*` (9 files: per-org settings files, backups, conflict copies) | GA | Set org/env/host variables for a session (per org / per client) | — | n/a | n/a | replaced by profiles: `apigee profile use NAME`, `source bin/apigee-env NAME`, config/apigee.env.example |
-| `lib/bash_completion` | TGAO | bash completion for the old commands | — | n/a | n/a | dropped (not ported yet; see caveats) |
+| `lib/bash_completion` | TGAO | bash completion for the old commands | — | n/a | n/a | `completions/apigee.bash` + `setup/install-completion.sh` |
 | `lib/functions`, `lib/functions.2`, `lib/functions.old`, `lib/old/functions.orig`, `lib/old/functions.v.4`, `lib/old/functions.v0`, `lib/old/functions.v3`, `lib/old/functions.v4`, `lib/old/functions.v4a`, `lib/old/functions.v4b`, `lib/old/functions.v5` | TGAO | Shared shell library: option parsing, curl wrapper, debug, delete safety | — | n/a | n/a | replaced by `lib/platform.sh` + `bin/apigee` |
 | `lib/jp.sh` | TGAO | Pure-shell JSON parsers | — | n/a | n/a | replaced by `lib/json.sh` (jq, python3 fallback) |
 | `lib/json-lib.sh` | TGAO | Pure-shell JSON parsers | — | n/a | n/a | replaced by `lib/json.sh` (jq, python3 fallback) |

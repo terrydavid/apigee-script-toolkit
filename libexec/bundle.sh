@@ -4,7 +4,7 @@
 # Both resources share one implementation; $1 of every function is the
 # resource label ("proxy" or "sharedflow").
 
-BUNDLE_VERBS="list revisions latest deployed download import deploy undeploy delete-revision clean-revisions compare"
+BUNDLE_VERBS="list revisions latest deployed stale download import deploy undeploy delete-revision clean-revisions compare"
 
 # shellcheck disable=SC2086
 proxy_verbs() { printf '%s\n' $BUNDLE_VERBS; }
@@ -40,6 +40,7 @@ Verbs:
   revisions NAME               List revisions of $article $noun
   latest NAME                  Print the newest revision number
   deployed NAME [--all-envs]   Print revision(s) deployed in --env (or every env)
+  stale [--include-undeployed] List $nouns whose deployed revision is older than the latest
   download NAME [REV]          Download a revision bundle (.zip)
   import NAME ZIP|DIR          Import a bundle as a new revision
   deploy NAME REV|--latest     Deploy a revision to --env
@@ -60,6 +61,15 @@ Usage: apigee $label deployed NAME [--all-envs]
 
 Print revisions of NAME deployed in the current environment (--env), or
 "environment revision" pairs for every environment with --all-envs.
+EOF
+      ;;
+    stale)
+      cat <<EOF
+Usage: apigee $label stale [--include-undeployed]
+
+List every $noun whose newest deployed revision in --env is older than its latest
+revision, as "NAME (latest: L, deployed: D)". --include-undeployed also lists
+those with no deployment in --env ("deployed: none").
 EOF
       ;;
     download)
@@ -199,6 +209,28 @@ bundle_deployed() {
   else
     bundle_deployed_env "$label" "$name"
   fi
+}
+
+bundle_stale() {
+  local label="$1" undeployed=false name latest deployed
+  shift
+  while (($#)); do
+    case "$1" in
+      --include-undeployed) undeployed=true; shift ;;
+      *) apigee_die "unknown option $1 (see 'apigee $label stale --help')" ;;
+    esac
+  done
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    latest="$(bundle_latest "$label" "$name")" || continue
+    deployed="$(bundle_deployed_env "$label" "$name" | tail -n 1)"
+    if [[ -z "$deployed" ]]; then
+      [[ "$undeployed" == true ]] && printf '%s (latest: %s, deployed: none)\n' "$name" "$latest"
+    elif ((deployed < latest)); then
+      printf '%s (latest: %s, deployed: %s)\n' "$name" "$latest" "$deployed"
+    fi
+  done < <(bundle_list "$label")
+  return 0
 }
 
 # Expand "3 5-7 9..10" into one revision per line.
@@ -483,6 +515,7 @@ bundle_main() {
     revisions) bundle_require_name "$label" "${1:-}" revisions; bundle_revisions "$label" "$1" ;;
     latest) bundle_require_name "$label" "${1:-}" latest; bundle_latest "$label" "$1" ;;
     deployed) bundle_deployed "$label" "$@" ;;
+    stale) bundle_stale "$label" "$@" ;;
     download) bundle_download "$label" "$@" ;;
     import) bundle_import "$label" "$@" ;;
     deploy) bundle_deploy "$label" "$@" ;;

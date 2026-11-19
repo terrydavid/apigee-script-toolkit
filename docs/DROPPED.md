@@ -1,9 +1,10 @@
 # Dropped legacy scripts
 
-Generated from `docs/INVENTORY.md`. 100 rows (logical scripts or file groups) were dropped
+Generated from `docs/INVENTORY.md`. 92 rows (logical scripts or file groups) were dropped
 when the legacy `apigeetools/` tree (commit `5985f5c`, 221 files) was replaced by the unified
-toolkit in `154ea66`. Each group below shares one reason. `lib/bash_completion` was dropped at
-the time and is now ported as `completions/apigee.bash` (see README, *Shell completion*).
+toolkit in `154ea66`. Each group below shares one reason. `lib/bash_completion` and the analytics/report scripts (`getRptTraffic*`, `getReport*`, `getStats`,
+`getAnals`, `chkMetrics`) were first dropped and are now ported (`completions/apigee.bash`,
+`apigee stats`, `apigee report`); `listStaleApis` is now `apigee proxy stale`.
 
 ## Accounting of the old subdirectories
 
@@ -20,9 +21,10 @@ Every one of the 221 files in the old tree is covered by an inventory row:
 
 No script was lost without a decision. The only real gaps are the four `findBroken*` audits (dropped "for now") and flush-a-map (`cleanKVMKeys`/`cleanKeyValueMap`), which needs two verbs instead of one.
 
+
 ## dropped (artifacts)
 
-9 rows. 
+9 rows.
 
 - `.gitignore`, `bin/.gitignore`: Editor swap files, tmp/out files, awk scratch, .DS_Store, archives
 - `.tmp`, `bin/.tmp`: Editor swap files, tmp/out files, awk scratch, .DS_Store, archives
@@ -36,7 +38,7 @@ No script was lost without a decision. The only real gaps are the four `findBrok
 
 ## dropped (client-specific; generic logic folded into kvm/token/profile)
 
-10 rows. 
+10 rows.
 
 - `.DT2`: Former-client-specific checks, data or helpers
 - `bin/<client>.AppNames.txt`: Former-client-specific checks, data or helpers
@@ -51,7 +53,7 @@ No script was lost without a decision. The only real gaps are the four `findBrok
 
 ## dropped (credential lifecycle out of scope; use apigeecli `apps keys`)
 
-10 rows. 
+10 rows.
 
 - `bin/addCredential`, `bin/dph2/addCredential`: Developer app credential / key management
 - `bin/auditKeys`, `bin/dph3/auditKeys`: Developer app credential / key management
@@ -66,7 +68,7 @@ No script was lost without a decision. The only real gaps are the four `findBrok
 
 ## dropped (OPDK infrastructure; not applicable to X or Edge SaaS)
 
-11 rows. 
+11 rows.
 
 - `bin/addEnvironmentServer`, `bin/dph3/addEnvironmentServer`: Edge for Private Cloud server / zookeeper / router / node internals
 - `bin/deleteEnvironmentServer`, `bin/dph3/deleteEnvironmentServer`: Edge for Private Cloud server / zookeeper / router / node internals
@@ -80,21 +82,9 @@ No script was lost without a decision. The only real gaps are the four `findBrok
 - `bin/dph3/getSrvrNames`, `bin/getSrvrNames`: Edge for Private Cloud server / zookeeper / router / node internals
 - `bin/dph3/zkDereg`, `bin/zkDereg`: Edge for Private Cloud server / zookeeper / router / node internals
 
-## dropped (use the Apigee UI, apigeecli or BigQuery analytics export)
-
-7 rows. 
-
-- `bin/chkMetrics`: Analytics stats / reports
-- `bin/dph2/getAnals`: Analytics stats / reports
-- `bin/dph2/getReport`: Analytics stats / reports
-- `bin/dph2/getReport.sh`: Analytics stats / reports
-- `bin/dph2/getRptTraffic`: Analytics stats / reports
-- `bin/dph2/getRptTrafficMonth`: Analytics stats / reports
-- `bin/dph2/getStats`: Analytics stats / reports
-
 ## dropped (provisioning; use Terraform / gcloud apigee organizations provision)
 
-3 rows. 
+3 rows.
 
 - `bin/crOrgEnv`, `bin/dph2/crOrgEnv`: Create / delete organizations or environments
 - `bin/createEnvironment`, `bin/dph3/createEnvironment`: Create / delete organizations or environments
@@ -102,7 +92,7 @@ No script was lost without a decision. The only real gaps are the four `findBrok
 
 ## dropped (app provisioning is out of scope; use apigeecli `apps create/delete` or the portal)
 
-7 rows. 
+7 rows.
 
 - `bin/createApp`, `bin/dph2/createApp`: Create / load / delete developer apps
 - `bin/createApps`, `bin/dph3/createApps`: Create / load / delete developer apps
@@ -114,7 +104,7 @@ No script was lost without a decision. The only real gaps are the four `findBrok
 
 ## dropped (Edge-only cache administration; X caches are implicit)
 
-5 rows. 
+5 rows.
 
 - `bin/createCache`, `bin/dph3/createCache`: Create / delete / inspect caches
 - `bin/createCaches`, `bin/dph3/createCaches`: Create / delete / inspect caches
@@ -124,7 +114,7 @@ No script was lost without a decision. The only real gaps are the four `findBrok
 
 ## dropped (developer provisioning out of scope; use apigeecli `developers`)
 
-3 rows. 
+3 rows.
 
 - `bin/createDeveloper`, `bin/dph2/createDeveloper`: Create / delete developers
 - `bin/deleteDeveloper`, `bin/dph3/deleteDeveloper`: Create / delete developers
@@ -132,7 +122,7 @@ No script was lost without a decision. The only real gaps are the four `findBrok
 
 ## dropped (Edge-only write; X routing uses envgroups managed via gcloud/Terraform)
 
-7 rows. 
+7 rows.
 
 - `bin/createSslVirtualHost`, `bin/dph2/createSslVirtualHost`: Create / update / delete virtual hosts
 - `bin/createVirtualHost`, `bin/dph2/createVirtualHost`: Create / update / delete virtual hosts
@@ -144,7 +134,7 @@ No script was lost without a decision. The only real gaps are the four `findBrok
 
 ## dropped (Edge RBAC; X uses IAM)
 
-8 rows. 
+8 rows.
 
 - `bin/createUserRole`, `bin/dph3/createUserRole`: User roles / RBAC administration
 - `bin/deleteUserRole`, `bin/dph3/deleteUserRole`: User roles / RBAC administration
@@ -157,39 +147,39 @@ No script was lost without a decision. The only real gaps are the four `findBrok
 
 ## dropped (destructive org teardown; out of scope)
 
-2 rows. 
+2 rows.
 
 - `bin/delete-org.sh`: Delete everything in an org (teardown)
 - `bin/dph3/delOrg`: Delete everything in an org (teardown)
 
 ## dropped (whole-proxy delete is rare and destructive; use apigeecli `apis delete`)
 
-1 rows. 
+1 rows.
 
 - `bin/deleteApi`, `bin/dph3/deleteApi`: Delete an entire proxy
 
 ## dropped (use `curl -H "$(apigee token --header)" ...`)
 
-2 rows. 
+2 rows.
 
 - `bin/dph2/getApigeeJson`, `bin/getApigeeJson`: Raw GET of any management resource
 - `bin/dph2/getApigeeXml`, `bin/getApigeeXml`: Raw GET of any management resource
 
 ## dropped (use git directly; `apigee proxy compare --dir`)
 
-1 rows. 
+1 rows.
 
 - `bin/dph2/updateSCM`, `bin/updateSCM`: git wrapper for proxy source
 
 ## dropped (write path for TLS material; use apigeecli `keystores`/`aliases` or Terraform)
 
-1 rows. 
+1 rows.
 
 - `bin/dph2/uploadKeyCert`: Upload a key/cert to a keystore
 
 ## dropped for now (candidate skill: consistency audit)
 
-4 rows. 
+4 rows.
 
 - `bin/dph3/findBroken.tmplt`, `bin/findBroken.tmplt`, `test/findBroken.tmplt`: Find orphaned products / proxies / apps / developers
 - `bin/dph3/findBrokenApiProxies`, `bin/findBrokenApiProxies`, `test/findBrokenApiProxies`: Find orphaned products / proxies / apps / developers
@@ -198,13 +188,13 @@ No script was lost without a decision. The only real gaps are the four `findBrok
 
 ## dropped (Edge company scope; no X equivalent). Env/org/proxy scopes via `apigee kvm get`
 
-1 rows. 
+1 rows.
 
 - `bin/dph3/getKVMValComp`, `bin/getKVMValComp`: Get a company-scoped KVM value (Edge monetization)
 
 ## dropped (Edge env resource files; bundle resources travel with proxies)
 
-4 rows. 
+4 rows.
 
 - `bin/dph3/getResources`, `bin/getResources`: Environment / org resource files
 - `bin/dph3/loadResource`, `bin/loadResource`: Environment / org resource files
@@ -213,24 +203,18 @@ No script was lost without a decision. The only real gaps are the four `findBrok
 
 ## dropped (Apigee BaaS is retired)
 
-1 rows. 
+1 rows.
 
 - `bin/dph3/loadBaasCollection`, `bin/loadBaasCollection`: Load Apigee BaaS collections
 
-## dropped (not ported yet; see caveats)
-
-1 rows. 
-
-- `lib/bash_completion`: bash completion for the old commands
-
 ## dropped (client data; some files contained credentials)
 
-1 rows. 
+1 rows.
 
 - `data/*` (43 files): Sample request/response payloads and LDAP/SOAP fixtures from past engagements
 
 ## dropped (client org/host names); replaced by profiles
 
-1 rows. 
+1 rows.
 
 - `config/environments/*.d/*` (24 files): Per-org environment config files for past engagements
