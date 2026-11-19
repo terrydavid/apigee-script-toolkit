@@ -60,9 +60,9 @@ if [[ -n "${APIGEE_PROFILE:-$(apigee_current_profile_name)}" ]]; then
   ok "profile: ${APIGEE_PROFILE:-$(apigee_current_profile_name)}"
 fi
 case "${APIGEE_PLATFORM:-}" in
-  x | X | hybrid | apigee-x | edge | Edge | EDGE | opdk) ok "APIGEE_PLATFORM=$APIGEE_PLATFORM" ;;
+  x | X | hybrid | apigee-x | edge | Edge | EDGE | opdk | OPDK | private-cloud) ok "APIGEE_PLATFORM=$APIGEE_PLATFORM" ;;
   "") bad "APIGEE_PLATFORM is not set" "export APIGEE_PLATFORM=x (or edge), or create a profile from config/apigee.env.example" ;;
-  *) bad "APIGEE_PLATFORM='$APIGEE_PLATFORM' is not supported" "use x, hybrid or edge" ;;
+  *) bad "APIGEE_PLATFORM='$APIGEE_PLATFORM' is not supported" "use x, hybrid, edge or opdk" ;;
 esac
 if [[ -n "${APIGEE_ORG:-}" ]]; then ok "APIGEE_ORG=$APIGEE_ORG"; else bad "APIGEE_ORG is not set" "export APIGEE_ORG=<org> or set it in your profile"; fi
 if [[ -n "${APIGEE_ENV:-}" ]]; then ok "APIGEE_ENV=$APIGEE_ENV"; else printf '  [warn] APIGEE_ENV is not set (needed by environment-scoped commands)\n'; fi

@@ -309,4 +309,43 @@ test_identity_check_reads_impersonation_from_the_environment() {
   assert_status "accepted" 0
 }
 
+use_opdk() {
+  export APIGEE_PLATFORM=opdk APIGEE_ORG=org1 APIGEE_ENV=test APIGEE_EDGE_MGMT_URL=http://opdk.example.com:8080 APIGEE_EDGE_USER=admin@example.com
+  printf 'apigee-toolkit-edge admin@example.com opdk-pass\n' >>"$FAKE_KEYCHAIN_FILE"
+}
+
+test_opdk_requires_a_management_url() {
+  export APIGEE_PLATFORM=opdk APIGEE_ORG=org1
+  run "$APIGEE" proxy list
+  assert_status "no url" 1
+  assert_contains "names the setting" "$ERR" "APIGEE_EDGE_MGMT_URL"
+}
+
+test_opdk_uses_private_url_and_basic_auth_by_default() {
+  use_opdk
+  route GET '/v1/organizations/org1/apis$' 200 '["p1"]'
+  run "$APIGEE" proxy list
+  assert_status "list" 0
+  assert_contains "url" "$(curl_log)" "=== GET http://opdk.example.com:8080/v1/organizations/org1/apis"
+  assert_contains "basic" "$(curl_log)" 'config: user = "admin@example.com:opdk-pass"'
+}
+
+test_opdk_is_its_own_platform_in_messages_and_checks() {
+  use_opdk
+  run "$APIGEE" instance list
+  assert_status "x only" 1
+  assert_contains "label" "$ERR" "Apigee Edge for Private Cloud (OPDK)"
+  use_edge
+  run "$APIGEE" server list
+  assert_status "opdk only" 1
+  assert_contains "says why" "$ERR" "only on Apigee Edge for Private Cloud (OPDK)"
+}
+
+test_hybrid_is_still_x() {
+  export APIGEE_PLATFORM=hybrid APIGEE_ORG=org1
+  route GET '/v1/organizations/org1/apis$' 200 '[]'
+  run "$APIGEE" proxy list
+  assert_contains "x url" "$(curl_log)" "apigee.googleapis.com"
+}
+
 run_tests

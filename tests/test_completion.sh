@@ -58,7 +58,7 @@ test_completes_profile_names() {
 test_verb_table_matches_modules() {
   local res verbs expected
   for res in proxy sharedflow kvm targetserver keystore truststore app developer product \
-    cache env virtualhost envgroup instance stats report user org token profile; do
+    cache env virtualhost envgroup instance server stats report user org token profile; do
     expected="$(cd "$ROOT" && bash -c '
       export APIGEE_TOOLKIT_HOME="$PWD"; . lib/platform.sh 2>/dev/null
       for f in libexec/*.sh; do . "$f" 2>/dev/null; done

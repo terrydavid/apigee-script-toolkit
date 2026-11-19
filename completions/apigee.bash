@@ -8,8 +8,8 @@
 # per resource, per-verb options, and profile names. The verb table is checked
 # against the modules in libexec/ by tests/test_completion.sh.
 
-_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product cache env virtualhost envgroup instance stats report user org token profile doctor"
-_apigee_aliases="proxies api apis sharedflows sf kvms keyvaluemap target-servers targetserver ts keystores truststores apps developers dev products apiproduct caches envs environment environments virtualhosts vhost envgroups instances stat reports users organization profiles"
+_apigee_resources="proxy sharedflow kvm target-server keystore truststore app developer product cache env virtualhost envgroup instance server stats report user org token profile doctor"
+_apigee_aliases="proxies api apis sharedflows sf kvms keyvaluemap target-servers targetserver ts keystores truststores apps developers dev products apiproduct caches envs environment environments virtualhosts vhost envgroups instances servers stat reports users organization profiles"
 _apigee_global_opts="--platform --org --env --profile -n --dry-run -y --yes --debug --json-engine --version -h --help"
 _apigee_bundle_verbs="list revisions latest deployed stale download import deploy undeploy delete-revision clean-revisions compare"
 
@@ -31,6 +31,7 @@ _apigee_canon() {
     envgroup | envgroups) echo envgroup ;;
     instance | instances) echo instance ;;
     stats | stat) echo stats ;;
+    server | servers) echo server ;;
     report | reports) echo report ;;
     user | users) echo user ;;
     org | organization) echo org ;;
@@ -54,6 +55,7 @@ _apigee_verbs_for() {
     envgroup) echo "list get attachments attach" ;;
     instance) echo "list attachments attach" ;;
     stats) echo "traffic query" ;;
+    server) echo "list get env-servers org-servers ips names attach detach health" ;;
     report) echo "list get" ;;
     user) echo "list" ;;
     org) echo "get" ;;
@@ -97,7 +99,7 @@ _apigee() {
 
   # values of global options
   case "$prev" in
-    --platform) mapfile -t COMPREPLY < <(compgen -W "x hybrid edge" -- "$cur"); return 0 ;;
+    --platform) mapfile -t COMPREPLY < <(compgen -W "x hybrid edge opdk" -- "$cur"); return 0 ;;
     --json-engine) mapfile -t COMPREPLY < <(compgen -W "jq python" -- "$cur"); return 0 ;;
     --profile) mapfile -t COMPREPLY < <(compgen -W "$(_apigee_profiles)" -- "$cur"); return 0 ;;
     --org | --env | --service-account | --service-account-from | --kvm-format | --format | --keep) return 0 ;;

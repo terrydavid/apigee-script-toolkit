@@ -154,10 +154,16 @@ apigee_load_config() {
 apigee_platform_init() {
   case "${APIGEE_PLATFORM:-}" in
     x | X | hybrid | apigee-x) APIGEE_KIND=x ;;
-    edge | Edge | EDGE | opdk) APIGEE_KIND=edge ;;
-    "") apigee_die "APIGEE_PLATFORM is not set (use x, hybrid or edge; see config/apigee.env.example)" ;;
-    *) apigee_die "unsupported APIGEE_PLATFORM '${APIGEE_PLATFORM}' (use x, hybrid or edge)" ;;
+    edge | Edge | EDGE) APIGEE_KIND=edge ;;
+    opdk | OPDK | private-cloud) APIGEE_KIND=edge APIGEE_FLAVOR=opdk ;;
+    "") apigee_die "APIGEE_PLATFORM is not set (use x, hybrid, edge or opdk; see config/apigee.env.example)" ;;
+    *) apigee_die "unsupported APIGEE_PLATFORM '${APIGEE_PLATFORM}' (use x, hybrid, edge or opdk)" ;;
   esac
+  [[ "$APIGEE_KIND" == edge && "${APIGEE_FLAVOR:-}" != opdk ]] && APIGEE_FLAVOR=edge
+  [[ "$APIGEE_KIND" == x ]] && APIGEE_FLAVOR=x
+  if [[ "$APIGEE_FLAVOR" == opdk && -z "${APIGEE_EDGE_MGMT_URL:-}" ]]; then
+    apigee_die "APIGEE_PLATFORM=opdk needs APIGEE_EDGE_MGMT_URL (your management server, for example http://host:8080)"
+  fi
   local base
   if [[ "$APIGEE_KIND" == x ]]; then
     base="${APIGEE_X_API_URL:-$APIGEE_X_API_URL_DEFAULT}"
@@ -168,21 +174,28 @@ apigee_platform_init() {
     base="${base%/v1}/v1"
   fi
   APIGEE_BASE_URL="$base"
-  export APIGEE_KIND APIGEE_BASE_URL
+  export APIGEE_KIND APIGEE_FLAVOR APIGEE_BASE_URL
 }
 
 apigee_platform_label() {
-  if [[ "${1:-$APIGEE_KIND}" == x ]]; then
-    printf 'Apigee X/hybrid'
-  else
-    printf 'Apigee Edge'
-  fi
+  case "${1:-${APIGEE_FLAVOR:-$APIGEE_KIND}}" in
+    x | hybrid) printf 'Apigee X/hybrid' ;;
+    opdk) printf 'Apigee Edge for Private Cloud (OPDK)' ;;
+    *) printf 'Apigee Edge' ;;
+  esac
 }
 
-# apigee_require_platform x|edge "feature description"
+apigee_is_opdk() { [[ "${APIGEE_FLAVOR:-}" == opdk ]]; }
+
+# apigee_require_platform x|edge|opdk "feature description"
+# "edge" means the Edge management API family: Apigee Edge and OPDK.
 apigee_require_platform() {
-  local want="$1" what="$2"
-  if [[ "$APIGEE_KIND" != "$want" ]]; then
+  local want="$1" what="$2" ok=false
+  case "$want" in
+    opdk) apigee_is_opdk && ok=true ;;
+    *) [[ "$APIGEE_KIND" == "$want" ]] && ok=true ;;
+  esac
+  if [[ "$ok" != true ]]; then
     apigee_die "$what is not supported on $(apigee_platform_label) (only on $(apigee_platform_label "$want"))"
   fi
 }
@@ -281,8 +294,10 @@ apigee_edge_auth_mode() {
     printf 'token\n'
     return
   fi
-  case "${APIGEE_EDGE_AUTH:-oauth}" in
-    oauth | basic | token) printf '%s\n' "${APIGEE_EDGE_AUTH:-oauth}" ;;
+  local default=oauth
+  apigee_is_opdk && default=basic
+  case "${APIGEE_EDGE_AUTH:-$default}" in
+    oauth | basic | token) printf '%s\n' "${APIGEE_EDGE_AUTH:-$default}" ;;
     *) apigee_die "unsupported APIGEE_EDGE_AUTH '${APIGEE_EDGE_AUTH}' (use oauth, basic or token)" ;;
   esac
 }
